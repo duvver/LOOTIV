@@ -1,0 +1,8 @@
+node_modules/
+node_modules.zip
+.env
+.env.production
+startup-error.log
+npm-debug.log*
+.DS_Store
+.claude/settings.local.json

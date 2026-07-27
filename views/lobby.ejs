@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LOOTIV</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body class="app-body">
+  <header class="topbar topbar-centered">
+    <div class="topbar-center">
+      <a href="/" class="brand-logo"><img src="/images/lootivlogo.png" alt="LOOTIV" /></a>
+
+      <% if (!user) { %>
+        <form method="POST" action="/login" class="inline-login-form">
+          <input type="text" name="identifier" placeholder="Rumuz / E-Mail" value="<%= loginIdentifier %>" required autocomplete="username" />
+          <input type="password" name="password" placeholder="Sifre" required autocomplete="current-password" />
+          <button type="submit" class="btn btn-primary btn-sm">Giris Yap</button>
+          <a href="/register" class="btn btn-ghost btn-sm">Uye Ol</a>
+        </form>
+      <% } else { %>
+        <div class="user-area">
+          <div class="user-stack">
+            <span class="user-name">
+              <%= user.rumuz %>
+              <% if (user.is_admin) { %><span class="admin-badge">ADMIN</span><% } %>
+              <% if (user.vip_tier > 0) { %><span class="vip-badge">VIP <%= user.vip_tier %></span><% } %>
+            </span>
+            <span class="user-points"><span class="coin">&#9679;</span> <%= user.lt_balance %> LT</span>
+          </div>
+
+          <div class="user-avatar" title="<%= user.rumuz %>">
+            <% if (user.avatar_url) { %>
+              <img src="<%= user.avatar_url %>" alt="<%= user.rumuz %>" />
+            <% } else { %>
+              <span><%= user.rumuz.charAt(0).toUpperCase() %></span>
+            <% } %>
+          </div>
+
+          <span class="topbar-divider">|</span>
+
+          <nav class="topbar-icons">
+            <a href="#" class="topbar-icon-btn" title="Arkadaslar">
+              <span class="topbar-icon">&#128101;</span>
+              <span class="topbar-icon-label">Arkadaslar</span>
+            </a>
+            <a href="#" class="topbar-icon-btn" title="Bildirimler">
+              <span class="topbar-icon">&#128276;</span>
+              <span class="topbar-icon-label">Bildirim</span>
+            </a>
+            <a href="/settings/profile" class="topbar-icon-btn" title="Ayarlar">
+              <span class="topbar-icon">&#9881;&#65039;</span>
+              <span class="topbar-icon-label">Ayarlar</span>
+            </a>
+            <% if (user.is_admin) { %>
+              <a href="/admin" class="topbar-icon-btn" title="Admin Paneli">
+                <span class="topbar-icon">&#128737;&#65039;</span>
+                <span class="topbar-icon-label">Admin</span>
+              </a>
+            <% } %>
+          </nav>
+
+          <form method="POST" action="/logout">
+            <button type="submit" class="btn btn-ghost btn-sm">Cikis Yap</button>
+          </form>
+        </div>
+      <% } %>
+    </div>
+  </header>
+
+  <% if (loginError) { %>
+    <div class="topbar-login-error"><%= loginError %></div>
+  <% } %>
+
+  <main class="lobby-main">
+    <h1 class="lobby-title">LOOTIV</h1>
+    <% if (user) { %>
+      <p class="lobby-subtitle">Hos geldin, <%= user.rumuz %>!</p>
+    <% } else { %>
+      <p class="lobby-subtitle">Uye ol, 500 LT ile basla; hesabini dogrulayinca +500 LT daha kazan.</p>
+    <% } %>
+
+    <div class="game-grid">
+      <a href="/poker" class="game-card">
+        <div class="game-card-icon">&#127183;</div>
+        <div class="game-card-body">
+          <h2>Turk Pokeri</h2>
+          <p>Canli oyuncularla masaya otur, sohbet et.</p>
+        </div>
+        <div class="game-card-cta">
+          <% if (user) { %>Masaya Otur &rarr;<% } else { %>Giris Yap ve Otur &rarr;<% } %>
+        </div>
+      </a>
+
+      <div class="game-card game-card-disabled">
+        <div class="game-card-icon">&#127922;</div>
+        <div class="game-card-body">
+          <h2>Yakinda</h2>
+          <p>Yeni oyunlar cok yakinda eklenecek.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="lobby-widgets">
+      <!-- Gunun Sorusu -->
+      <% if (dailyQuestion && dailyQuestion.active) { %>
+        <div class="widget-card">
+          <div class="widget-header">
+            <span class="widget-icon">&#10067;</span>
+            <h3>Gunun Sorusu</h3>
+            <span class="widget-reward">+<%= dailyQuestion.reward_lt %> LT</span>
+          </div>
+          <p class="widget-question"><%= dailyQuestion.question_text %></p>
+
+          <% if (!user) { %>
+            <p class="widget-note">Cevaplamak icin giris yapmalisin.</p>
+          <% } else if (dailyAnswer) { %>
+            <p class="widget-note">
+              Cevabini verdin: <strong><%= dailyAnswer.selected_option %></strong>
+              &mdash; <%= dailyAnswer.is_correct ? 'Dogru! LT hesabina eklendi.' : 'Yanlis cevap, yarin tekrar dene.' %>
+            </p>
+          <% } else { %>
+            <form method="POST" action="/gunun-sorusu/cevapla" class="widget-options">
+              <% ['A','B','C','D'].forEach(function(opt) { %>
+                <% var optText = dailyQuestion['option_' + opt.toLowerCase()]; %>
+                <% if (optText) { %>
+                  <button type="submit" name="option" value="<%= opt %>" class="widget-option-btn">
+                    <span class="widget-option-letter"><%= opt %></span> <%= optText %>
+                  </button>
+                <% } %>
+              <% }); %>
+            </form>
+          <% } %>
+        </div>
+      <% } %>
+
+      <!-- Kazi Kazan -->
+      <% if (scratchConfig && scratchConfig.active) { %>
+        <div class="widget-card">
+          <div class="widget-header">
+            <span class="widget-icon">&#127920;</span>
+            <h3>Kazi Kazan</h3>
+          </div>
+
+          <% if (!user) { %>
+            <p class="widget-note">Kazimak icin giris yapmalisin.</p>
+          <% } else if (scratchToday) { %>
+            <div class="scratch-card scratch-revealed">
+              <span class="scratch-prize"><%= scratchToday.prize_won > 0 ? '+' + scratchToday.prize_won + ' LT' : 'Bos cikti' %></span>
+            </div>
+            <p class="widget-note">Bugunluk hakkini kullandin, yarin tekrar gel.</p>
+          <% } else { %>
+            <form method="POST" action="/kazikazan/oyna">
+              <button type="submit" class="scratch-card scratch-hidden">
+                <span>Kazimak icin tikla</span>
+              </button>
+            </form>
+          <% } %>
+        </div>
+      <% } %>
+    </div>
+
+    <!-- VIP planlari -->
+    <div class="vip-section">
+      <h2 class="admin-section-title">VIP Uyelik</h2>
+      <div class="vip-grid">
+        <% Object.keys(vipPlans).forEach(function(tier) { %>
+          <% var plan = vipPlans[tier]; %>
+          <div class="vip-plan-card <% if (user && user.vip_tier == tier) { %>vip-plan-active<% } %>">
+            <h3>VIP <%= tier %></h3>
+            <p class="vip-plan-duration"><%= plan.months %> Aylik</p>
+            <p class="vip-plan-instant">+<%= plan.instant.toLocaleString('tr-TR') %> LT aninda</p>
+            <p class="vip-plan-weekly">+<%= plan.weekly.toLocaleString('tr-TR') %> LT / hafta</p>
+            <% if (user && user.vip_tier == tier) { %>
+              <span class="tag tag-green">Aktif Uyeligin</span>
+            <% } %>
+          </div>
+        <% }); %>
+      </div>
+      <p class="vip-note">VIP uyelik satin almak icin yonetici ile iletisime gec.</p>
+    </div>
+  </main>
+</body>
+</html>

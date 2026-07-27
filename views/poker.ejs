@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Turk Pokeri - LOOTIV</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body class="app-body" data-user-id="<%= user.id %>">
+  <header class="topbar">
+    <div class="topbar-left">
+      <a href="/" class="brand-logo"><img src="/images/lootivlogo.png" alt="LOOTIV" /></a>
+    </div>
+    <div class="topbar-right">
+      <nav class="topbar-nav">
+        <a href="/">Lobi</a>
+      </nav>
+      <div class="user-chip">
+        <span class="user-name"><%= user.rumuz %></span>
+        <span class="user-points"><span class="coin">&#9679;</span> <%= user.lt_balance %> LT</span>
+      </div>
+      <a href="/" class="btn btn-ghost btn-sm">Lobiye Don</a>
+    </div>
+  </header>
+
+  <main class="poker-layout">
+    <section class="poker-table">
+      <div class="table-felt" id="table-felt">
+        <div class="table-title">Turk Pokeri</div>
+        <div class="table-status" id="table-status"></div>
+        <div class="table-pot" id="table-pot"></div>
+        <div class="table-community" id="table-community"></div>
+        <div class="table-seats" id="table-seats"></div>
+        <div class="table-banner" id="table-banner"></div>
+      </div>
+      <div class="action-bar" id="action-bar"></div>
+    </section>
+
+    <aside class="players-panel">
+      <h3 class="panel-title">Canli Oynayanlar <span id="player-count" class="panel-count">0</span></h3>
+      <ul id="player-list" class="player-list"></ul>
+    </aside>
+
+    <section class="chat-panel">
+      <div class="chat-tabs">
+        <button class="chat-tab active" data-channel="genel">Genel Sohbet</button>
+        <button class="chat-tab" data-channel="oyun">Oyun Sohbet</button>
+        <button class="chat-tab" data-channel="sistem">Sistem Mesajlari</button>
+      </div>
+
+      <div class="chat-body">
+        <div class="chat-messages" id="chat-messages" data-channel="genel"></div>
+      </div>
+
+      <form class="chat-input-row" id="chat-form">
+        <input type="text" id="chat-input" class="chat-input" placeholder="Mesajini yaz..." maxlength="500" autocomplete="off" />
+        <button type="submit" class="btn btn-primary btn-sm">Gonder</button>
+      </form>
+    </section>
+  </main>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/poker.js"></script>
+</body>
+</html>

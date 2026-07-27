@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Uye Ol - LOOTIV</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body class="auth-body">
+  <div class="auth-card">
+    <a href="/" class="brand-logo"><img src="/images/lootivlogo.png" alt="LOOTIV" /></a>
+    <h1>Uye Ol</h1>
+    <p class="subtitle">Hesap olustur, 500 LT ile basla.</p>
+
+    <% if (error) { %>
+      <div class="alert alert-error"><%= error %></div>
+    <% } %>
+
+    <form method="POST" action="/register" class="form">
+      <div class="form-group">
+        <label for="rumuz">Rumuz</label>
+        <input type="text" id="rumuz" name="rumuz" value="<%= form.rumuz || '' %>" minlength="3" maxlength="20" pattern="[a-zA-Z0-9_]+" title="Sadece harf, rakam ve alt cizgi kullanabilirsiniz." required autofocus />
+      </div>
+
+      <div class="form-group">
+        <label for="email">E-mail</label>
+        <input type="email" id="email" name="email" value="<%= form.email || '' %>" required />
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="password">Sifre</label>
+          <input type="password" id="password" name="password" required minlength="6" />
+        </div>
+        <div class="form-group">
+          <label for="password2">Sifre Tekrar</label>
+          <input type="password" id="password2" name="password2" required minlength="6" />
+        </div>
+      </div>
+
+      <label class="checkbox-row">
+        <input type="checkbox" name="terms" value="1" required />
+        <span>Uyelik sartlarini ve gizlilik politikasini okudum, kabul ediyorum.</span>
+      </label>
+
+      <button type="submit" class="btn btn-primary btn-block">Uye Ol</button>
+    </form>
+
+    <p class="auth-switch">Zaten hesabin var mi? <a href="/">Giris yap</a></p>
+  </div>
+</body>
+</html>

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Paneli - LOOTIV</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body class="app-body">
+  <header class="topbar">
+    <div class="topbar-left">
+      <a href="/" class="brand-logo"><img src="/images/lootivlogo.png" alt="LOOTIV" /></a>
+      <span class="admin-panel-title">Admin Paneli</span>
+    </div>
+    <div class="topbar-right">
+      <span class="user-name"><%= user.rumuz %> <span class="admin-badge">ADMIN</span></span>
+      <a href="/" class="btn btn-ghost btn-sm">Lobiye Don</a>
+    </div>
+  </header>
+
+  <main class="admin-main">
+    <% if (savedMsg) { %>
+      <div class="alert alert-success">Kaydedildi.</div>
+    <% } %>
+
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-value"><%= stats.total_users %></div>
+        <div class="stat-label">Toplam Uye</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value"><%= stats.total_lt.toLocaleString('tr-TR') %></div>
+        <div class="stat-label">Toplam LT</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value"><%= stats.verified_users %></div>
+        <div class="stat-label">Tam Dogrulanmis Uye</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value"><%= stats.vip_users %></div>
+        <div class="stat-label">VIP Uye</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value"><%= stats.banned_users %></div>
+        <div class="stat-label">Yasakli Uye</div>
+      </div>
+    </div>
+
+    <h2 class="admin-section-title">Tum Uyeler (<%= users.length %>)</h2>
+
+    <div class="admin-table-wrap">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Rumuz</th>
+            <th>E-posta</th>
+            <th>LT</th>
+            <th>Dogrulama</th>
+            <th>VIP</th>
+            <th>Rol</th>
+            <th>Durum</th>
+            <th>Kayit</th>
+            <th>Islemler</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% users.forEach(function(u) { %>
+            <tr>
+              <td>
+                <strong><%= u.rumuz %></strong>
+                <% if (u.is_admin) { %><span class="admin-badge">ADMIN</span><% } %>
+              </td>
+              <td><%= u.email %></td>
+              <td><%= u.lt_balance %></td>
+              <td>
+                <span class="tag <%= u.email_verified ? 'tag-green' : 'tag-gray' %>">Mail</span>
+                <span class="tag <%= u.phone_verified ? 'tag-green' : 'tag-gray' %>">Tel</span>
+              </td>
+              <td>
+                <% if (u.vip_tier > 0) { %>
+                  <span class="tag tag-gold">VIP <%= u.vip_tier %></span>
+                  <div class="admin-vip-expiry">Bitis: <%= u.vip_expires_at ? new Date(u.vip_expires_at).toLocaleDateString('tr-TR') : '-' %></div>
+                <% } else { %>
+                  <span class="tag tag-gray">Yok</span>
+                <% } %>
+                <form method="POST" action="/admin/users/<%= u.id %>/vip" class="admin-inline-form">
+                  <select name="tier" class="role-select-active">
+                    <option value="0" <%= u.vip_tier == 0 ? 'selected' : '' %>>VIP Yok</option>
+                    <% Object.keys(vipPlans).forEach(function(tier) { %>
+                      <option value="<%= tier %>" <%= u.vip_tier == tier ? 'selected' : '' %>><%= vipPlans[tier].label %></option>
+                    <% }); %>
+                  </select>
+                  <button type="submit" class="btn btn-ghost btn-sm">Uygula</button>
+                </form>
+              </td>
+              <td>
+                <select class="role-select" disabled title="Yakinda aktif olacak">
+                  <option><%= u.role %></option>
+                </select>
+              </td>
+              <td>
+                <% if (u.is_banned) { %><span class="tag tag-red">Yasakli</span><% } %>
+                <% if (u.is_muted) { %><span class="tag tag-orange">Susturuldu</span><% } %>
+                <% if (!u.is_banned && !u.is_muted) { %><span class="tag tag-green">Aktif</span><% } %>
+              </td>
+              <td><%= new Date(u.created_at).toLocaleDateString('tr-TR') %></td>
+              <td class="admin-actions">
+                <form method="POST" action="/admin/users/<%= u.id %>/mute" class="admin-inline-form">
+                  <button type="submit" class="btn btn-ghost btn-sm"><%= u.is_muted ? 'Sesini Ac' : 'Sustur' %></button>
+                </form>
+                <form method="POST" action="/admin/users/<%= u.id %>/ban" class="admin-inline-form">
+                  <% if (!u.is_banned) { %>
+                    <input type="text" name="reason" placeholder="Sebep (opsiyonel)" class="admin-reason-input" />
+                  <% } %>
+                  <button type="submit" class="btn btn-ghost btn-sm <%= u.is_banned ? '' : 'btn-danger' %>"><%= u.is_banned ? 'Yasagi Kaldir' : 'Yasakla' %></button>
+                </form>
+                <form method="POST" action="/admin/users/<%= u.id %>/lt" class="admin-inline-form">
+                  <input type="number" name="amount" placeholder="+/- LT" class="admin-lt-input" required />
+                  <button type="submit" class="btn btn-ghost btn-sm">Uygula</button>
+                </form>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Oyun loglari -->
+    <h2 class="admin-section-title">Poker El Loglari (son <%= gameLogs.length %>)</h2>
+    <div class="admin-table-wrap">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Tarih</th>
+            <th>Rumuz</th>
+            <th>El No</th>
+            <th>Oynadigi LT</th>
+            <th>Sonuc</th>
+            <th>LT Degisimi</th>
+            <th>O Anki Toplam LT</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (gameLogs.length === 0) { %>
+            <tr><td colspan="7" class="admin-empty-row">Henuz oynanmis el yok.</td></tr>
+          <% } %>
+          <% gameLogs.forEach(function(g) { %>
+            <tr>
+              <td><%= new Date(g.created_at).toLocaleString('tr-TR') %></td>
+              <td><%= g.rumuz %></td>
+              <td>#<%= g.hand_number %></td>
+              <td><%= g.played_lt %></td>
+              <td>
+                <% if (g.result === 'win') { %><span class="tag tag-green">Kazandi</span>
+                <% } else if (g.result === 'lose') { %><span class="tag tag-red">Kaybetti</span>
+                <% } else { %><span class="tag tag-gray">Berabere</span><% } %>
+              </td>
+              <td class="<%= g.lt_change >= 0 ? 'positive-change' : 'negative-change' %>"><%= g.lt_change >= 0 ? '+' : '' %><%= g.lt_change %></td>
+              <td><%= g.total_lt_snapshot %></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Gunun Sorusu yonetimi -->
+    <h2 class="admin-section-title">Gunun Sorusu</h2>
+    <div class="profile-card">
+      <form method="POST" action="/admin/gunun-sorusu" class="admin-form">
+        <div class="form-group">
+          <label>Soru</label>
+          <input type="text" name="questionText" value="<%= dailyQuestion.question_text || '' %>" placeholder="Soru metni" />
+        </div>
+        <div class="form-row-4">
+          <div class="form-group">
+            <label>A Secenegi</label>
+            <input type="text" name="optionA" value="<%= dailyQuestion.option_a || '' %>" />
+          </div>
+          <div class="form-group">
+            <label>B Secenegi</label>
+            <input type="text" name="optionB" value="<%= dailyQuestion.option_b || '' %>" />
+          </div>
+          <div class="form-group">
+            <label>C Secenegi</label>
+            <input type="text" name="optionC" value="<%= dailyQuestion.option_c || '' %>" />
+          </div>
+          <div class="form-group">
+            <label>D Secenegi</label>
+            <input type="text" name="optionD" value="<%= dailyQuestion.option_d || '' %>" />
+          </div>
+        </div>
+        <div class="form-row-3">
+          <div class="form-group">
+            <label>Dogru Secenek</label>
+            <select name="correctOption">
+              <% ['A','B','C','D'].forEach(function(opt) { %>
+                <option value="<%= opt %>" <%= dailyQuestion.correct_option === opt ? 'selected' : '' %>><%= opt %></option>
+              <% }); %>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Odul (LT)</label>
+            <input type="number" name="rewardLt" value="<%= dailyQuestion.reward_lt %>" min="0" />
+          </div>
+          <div class="form-group checkbox-inline">
+            <label class="checkbox-row">
+              <input type="checkbox" name="active" <%= dailyQuestion.active ? 'checked' : '' %> />
+              <span>Aktif (lobide goster)</span>
+            </label>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm">Kaydet (yeni versiyon, herkes tekrar cevaplayabilir)</button>
+      </form>
+    </div>
+
+    <!-- Kazi Kazan yonetimi -->
+    <h2 class="admin-section-title">Kazi Kazan</h2>
+    <div class="profile-card">
+      <form method="POST" action="/admin/kazikazan" class="admin-form">
+        <div class="form-group">
+          <label>Odul Havuzu (virgulle ayrilmis LT miktarlari, 0 = bos cikti)</label>
+          <input type="text" name="prizes" value="<%= scratchConfig.prizes %>" placeholder="0,50,100,250,500" />
+        </div>
+        <label class="checkbox-row">
+          <input type="checkbox" name="active" <%= scratchConfig.active ? 'checked' : '' %> />
+          <span>Aktif (lobide goster, gunde 1 hak)</span>
+        </label>
+        <button type="submit" class="btn btn-primary btn-sm">Kaydet</button>
+      </form>
+    </div>
+  </main>
+</body>
+</html>

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Profil Ayarlari - LOOTIV</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body class="app-body">
+  <header class="topbar topbar-centered">
+    <div class="topbar-center">
+      <a href="/" class="brand-logo"><img src="/images/lootivlogo.png" alt="LOOTIV" /></a>
+      <div class="user-area">
+        <div class="user-stack">
+          <span class="user-name"><%= user.rumuz %></span>
+          <span class="user-points"><span class="coin">&#9679;</span> <%= user.lt_balance %> LT</span>
+        </div>
+        <a href="/" class="btn btn-ghost btn-sm">Lobiye Don</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="profile-main">
+    <h1 class="lobby-title">Profil Ayarlari</h1>
+    <p class="lobby-subtitle">Hesabini dogrula, +500 LT bonus kazan.</p>
+
+    <div class="demo-banner">
+      Deneme surumu: e-posta ve SMS dogrulama kodlari gercekten gonderilmiyor, test amacli asagida ekranda gosteriliyor.
+    </div>
+
+    <% if (error) { %>
+      <div class="alert alert-error"><%= error %></div>
+    <% } %>
+    <% if (info) { %>
+      <div class="alert alert-info"><%= info %></div>
+    <% } %>
+
+    <!-- E-posta dogrulama -->
+    <div class="profile-card">
+      <div class="checklist-row">
+        <div class="check-badge <%= user.email_verified ? 'check-done' : '' %>"><%= user.email_verified ? '&#10003;' : '1' %></div>
+        <div class="checklist-body">
+          <h4>E-posta Dogrulama</h4>
+          <p class="checklist-sub-static"><%= user.email %></p>
+
+          <% if (user.email_verified) { %>
+            <p class="checklist-sub">E-postan dogrulandi.</p>
+          <% } else { %>
+            <% if (emailCode) { %>
+              <div class="code-preview code-preview-compact">
+                <div class="code-preview-label">Demo kodu (gercek hayatta e-postana gelirdi):</div>
+                <div class="code-preview-value"><%= emailCode %></div>
+              </div>
+            <% } %>
+            <form method="POST" action="/settings/profile/email/verify" class="inline-form">
+              <input type="text" name="code" placeholder="6 haneli kod" maxlength="6" required />
+              <button type="submit" class="btn btn-primary btn-sm">Dogrula</button>
+            </form>
+            <form method="POST" action="/settings/profile/email/send-code" class="resend-form">
+              <button type="submit" class="btn btn-ghost btn-sm">Kod Gonder</button>
+            </form>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- Telefon dogrulama -->
+      <div class="checklist-row">
+        <div class="check-badge <%= user.phone_verified ? 'check-done' : '' %>"><%= user.phone_verified ? '&#10003;' : '2' %></div>
+        <div class="checklist-body">
+          <h4>Telefon Dogrulama</h4>
+
+          <% if (user.phone_verified) { %>
+            <p class="checklist-sub-static"><%= user.phone %></p>
+            <p class="checklist-sub">Telefonun dogrulandi.</p>
+          <% } else { %>
+            <form method="POST" action="/settings/profile/phone" class="inline-form">
+              <input type="tel" name="phone" placeholder="05xx xxx xx xx" value="<%= user.phone || '' %>" required />
+              <button type="submit" class="btn btn-ghost btn-sm">Kaydet</button>
+            </form>
+
+            <% if (user.phone) { %>
+              <% if (phoneCode) { %>
+                <div class="code-preview code-preview-compact">
+                  <div class="code-preview-label">Demo kodu (gercek hayatta SMS ile gelirdi):</div>
+                  <div class="code-preview-value"><%= phoneCode %></div>
+                </div>
+              <% } %>
+              <form method="POST" action="/settings/profile/phone/verify" class="inline-form">
+                <input type="text" name="code" placeholder="6 haneli kod" maxlength="6" required />
+                <button type="submit" class="btn btn-primary btn-sm">Dogrula</button>
+              </form>
+              <form method="POST" action="/settings/profile/phone/send-code" class="resend-form">
+                <button type="submit" class="btn btn-ghost btn-sm">Kod Gonder</button>
+              </form>
+            <% } %>
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+    <% if (user.email_verified && user.phone_verified) { %>
+      <div class="alert alert-success">Hesabin tamamen dogrulandi<% if (user.verification_bonus_claimed) { %> ve +500 LT bonusunu kazandin!<% } %></div>
+    <% } %>
+  </main>
+</body>
+</html>
