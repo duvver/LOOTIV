@@ -10,8 +10,8 @@
   const chatInput = document.getElementById('chat-input');
   const tabs = Array.from(document.querySelectorAll('.chat-tab'));
 
-  const messagesByChannel = { genel: [], okey101: [], sistem: [] };
-  let activeChannel = 'genel';
+  const messagesByChannel = { oyun: [], sistem: [] };
+  let activeChannel = 'oyun';
 
   function formatTime(isoLike) {
     const d = new Date(isoLike.replace(' ', 'T') + 'Z');
@@ -46,6 +46,7 @@
     tab.addEventListener('click', () => {
       tabs.forEach((t) => t.classList.remove('active'));
       tab.classList.add('active');
+      tab.classList.remove('has-new');
       activeChannel = tab.dataset.channel;
       chatMessages.dataset.channel = activeChannel;
 
@@ -67,16 +68,26 @@
   });
 
   socket.on('chat:history', (history) => {
-    for (const ch of Object.keys(history)) {
-      if (messagesByChannel[ch] !== undefined) messagesByChannel[ch] = history[ch] || [];
-    }
+    // Sunucudan genel, okey101, vs. gelirse onu oyun kanalına yönlendirelim
+    const histOyun = [...(history.genel || []), ...(history.okey101 || []), ...(history.oyun || [])]
+      .sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
+    messagesByChannel['oyun'] = histOyun;
+    if (history.sistem) messagesByChannel['sistem'] = history.sistem;
+    
     renderMessages();
   });
 
   socket.on('chat:message', (msg) => {
-    if (messagesByChannel[msg.channel] === undefined) return;
-    messagesByChannel[msg.channel].push(msg);
-    if (msg.channel === activeChannel) renderMessages();
+    const ch = msg.channel === 'sistem' ? 'sistem' : 'oyun';
+    messagesByChannel[ch].push(msg);
+    if (messagesByChannel[ch].length > 200) messagesByChannel[ch].shift();
+    
+    if (ch === activeChannel) {
+      renderMessages();
+    } else {
+      const tab = tabs.find((t) => t.dataset.channel === ch);
+      if (tab) tab.classList.add('has-new');
+    }
   });
 
   socket.on('poker:players', (players) => {

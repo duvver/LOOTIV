@@ -81,6 +81,8 @@ CREATE TABLE IF NOT EXISTS daily_question_answers (
 CREATE TABLE IF NOT EXISTS scratch_config (
   id INT PRIMARY KEY DEFAULT 1,
   prizes TEXT NOT NULL DEFAULT '0,50,100,250,500',
+  entry_fee INT NOT NULL DEFAULT 50,
+  daily_limit INT NOT NULL DEFAULT 1,
   active BOOLEAN NOT NULL DEFAULT FALSE,
   updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
@@ -91,6 +93,28 @@ CREATE TABLE IF NOT EXISTS scratch_plays (
   user_id INT REFERENCES users(id),
   play_date DATE NOT NULL DEFAULT CURRENT_DATE,
   prize_won INT NOT NULL,
-  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-  UNIQUE(user_id, play_date)
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- Gunluk Gorevler
+CREATE TABLE IF NOT EXISTS daily_tasks (
+  id SERIAL PRIMARY KEY,
+  title TEXT NOT NULL,
+  task_type VARCHAR(50) NOT NULL, -- ornegin: play_okey, play_scratch, daily_login vs.
+  target_count INT NOT NULL DEFAULT 1,
+  reward_lt INT NOT NULL DEFAULT 0,
+  is_fixed BOOLEAN NOT NULL DEFAULT FALSE,
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS user_daily_tasks (
+  id SERIAL PRIMARY KEY,
+  user_id INT REFERENCES users(id) ON DELETE CASCADE,
+  task_id INT REFERENCES daily_tasks(id) ON DELETE CASCADE,
+  task_date DATE NOT NULL DEFAULT CURRENT_DATE,
+  progress INT NOT NULL DEFAULT 0,
+  is_completed BOOLEAN NOT NULL DEFAULT FALSE,
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  UNIQUE(user_id, task_id, task_date)
 );

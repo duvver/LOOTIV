@@ -121,18 +121,22 @@ app.get(
     const dailyQuestion = await db.getDailyQuestion();
     const scratchConfig = await db.getScratchConfig();
     let dailyAnswer = null;
-    let scratchToday = null;
+    let scratchCountToday = 0;
     let announcements = [];
     let friends = [];
+    let dailyTasks = [];
+    let userDailyTasks = {};
     if (req.user) {
       if (dailyQuestion && dailyQuestion.active) {
         dailyAnswer = await db.getUserDailyAnswer(req.user.id, dailyQuestion.version);
       }
       if (scratchConfig && scratchConfig.active) {
-        scratchToday = await db.getUserScratchToday(req.user.id);
+        scratchCountToday = await db.getUserScratchCountToday(req.user.id);
       }
       announcements = await db.getAnnouncements(4).catch(() => []);
       friends = await db.getFriends(req.user.id).catch(() => []);
+      
+      dailyTasks = await db.getUserDailyTasks(req.user.id);
     }
 
     res.render('lobby', {
@@ -142,9 +146,11 @@ app.get(
       dailyQuestion,
       dailyAnswer,
       scratchConfig,
-      scratchToday,
+      scratchCountToday,
       announcements,
       friends,
+      dailyTasks,
+      userDailyTasks,
       vipPlans: db.getVipPlans(),
     });
   })
@@ -239,6 +245,25 @@ app.post(
   })
 );
 
+// ================= Kazı Kazan =================
+app.get(
+  '/kazikazan',
+  attachUser,
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const scratchConfig = await db.getScratchConfig();
+    if (!scratchConfig || !scratchConfig.active) {
+      return res.redirect('/');
+    }
+    const scratchCountToday = await db.getUserScratchCountToday(req.user.id);
+    res.render('kazikazan', {
+      user: req.user,
+      scratchConfig,
+      scratchCountToday,
+    });
+  })
+);
+
 // ================= Gunun sorusu =================
 app.post(
   '/gunun-sorusu/cevapla',
@@ -261,19 +286,90 @@ app.post(
 );
 
 // ================= Kazi kazan =================
+app.get(
+  '/kazikazan',
+  attachUser,
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const config = await db.getScratchConfig();
+    if (!config || !config.active) return res.redirect('/');
+    
+    const count = await db.getUserScratchCountToday(req.user.id);
+    const limitReached = count >= config.daily_limit;
+
+    res.render('kazikazan', { 
+      config, 
+      count, 
+      limitReached,
+      meta: { title: 'Kazı Kazan' }
+    });
+  })
+);
+
 app.post(
   '/kazikazan/oyna',
   attachUser,
   requireAuth,
   asyncHandler(async (req, res) => {
     const config = await db.getScratchConfig();
-    if (!config || !config.active) return res.redirect('/');
+    if (!config || !config.active) {
+      return res.json({ success: false, message: 'Kazı kazan şu anda aktif değil.' });
+    }
 
-    const already = await db.getUserScratchToday(req.user.id);
-    if (already) return res.redirect('/');
+    const count = await db.getUserScratchCountToday(req.user.id);
+    if (count >= config.daily_limit) {
+      return res.json({ success: false, message: 'Günlük oynama limitine ulaştınız.' });
+    }
 
-    await db.playScratch(req.user.id);
-    res.redirect('/');
+    const user = await db.getUserById(req.user.id);
+    if (user.lt_balance < config.entry_fee) {
+      return res.json({ success: false, message: 'Yetersiz LT bakiyesi.' });
+    }
+
+    // Ücreti kes
+    await db.adjustLt(req.user.id, -config.entry_fee);
+
+    // Günlük görevi ilerlet (Kazı Kazan oynama)
+    await db.incrementUserTaskProgress(req.user.id, 'play_scratchcard', 1);
+
+    // Sonucu belirle (playScratch sadece DB kaydı yapar)
+    const prizes = (config.prizes || '0')
+      .split(',')
+      .map((p) => Number(p.trim()))
+      .filter((n) => Number.isFinite(n));
+    
+    const prize = prizes.length ? prizes[Math.floor(Math.random() * prizes.length)] : 0;
+    
+    await db.playScratch(req.user.id, prize);
+    
+    // 6 öğe oluştur. Eğer kazandıysa 3'ü prize, diğerleri farklı/rastgele.
+    let items = [];
+    if (prize > 0) {
+      items = [prize, prize, prize];
+      // Kalan 3 öğe kazanmayan ödüllerden olsun
+      let otherPrizes = prizes.filter(p => p !== prize && p > 0);
+      if(otherPrizes.length === 0) otherPrizes = [0, 10, 20];
+      for(let i=0; i<3; i++) {
+        items.push(otherPrizes[Math.floor(Math.random() * otherPrizes.length)]);
+      }
+    } else {
+      // Kaybettiyse en fazla 2 tane aynı ödül olabilir. Kolaylık için hepsini rastgele farklı verelim
+      let possible = prizes.filter(p => p > 0);
+      if(possible.length < 6) possible = [10, 20, 50, 100, 250, 500];
+      // Karıştır ve 6 tane al
+      possible = possible.sort(() => 0.5 - Math.random());
+      for(let i=0; i<6; i++) {
+        items.push(possible[i % possible.length]); // Eğer possible boyutu azsa döne döne ama yine de hepsi aynı olmaz
+      }
+      // Hepsini karıştırıp tekrar dağıtalım ki 3 tane aynı olmasın (Zaten possible'ı farklı elemanlardan kurduk)
+    }
+    
+    // Shuffle items array
+    items = items.sort(() => 0.5 - Math.random());
+
+    const newBalance = user.lt_balance - config.entry_fee + prize;
+
+    res.json({ success: true, prize, items, newBalance });
   })
 );
 
@@ -608,6 +704,16 @@ app.post(
   })
 );
 
+app.post(
+  '/duyurular/:id/sil',
+  attachUser,
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    await db.deleteAnnouncement(Number(req.params.id));
+    res.redirect('/duyurular?info=' + encodeURIComponent('Duyuru silindi.'));
+  })
+);
+
 // ================= Pazar (LT ile alim/satim) =================
 app.get(
   '/pazar',
@@ -812,6 +918,19 @@ const GAME_META = {
     accent: '#0f6e56',
     playUrl: '/okey101',
     desc: '21 tas, 101 acma, isleme ve ceza puanlariyla gercek 101 Okey.',
+    rules: [
+      { id: 'katlamali', label: 'Katlamalı Oyun', type: 'toggle', default: true }
+    ],
+    modes: [
+      { id: 'solo', label: 'Tekli', default: true },
+      { id: 'esli', label: 'Eşli', default: false }
+    ],
+    bets: [],
+    howToPlay: [
+      "Elinizdeki taşları seri veya çift yaparak toplamda en az 101 sayıya ulaşın.",
+      "Yere açılan serilere taş işleyebilir veya bitmek için tüm taşlarınızı per yapabilirsiniz.",
+      "Oyun sonunda elinde en az sayı kalan oyuncu eli kazanır."
+    ]
   },
   okey: {
     slug: 'okey',
@@ -820,14 +939,52 @@ const GAME_META = {
     accent: '#993556',
     playUrl: '/okey',
     desc: '4 kisilik masada gosterge ve okey ile klasik okey.',
+    rules: [
+      { id: 'gosterge', label: 'Gösterge Aktif', type: 'toggle', default: true },
+      { id: 'renkli', label: 'Renkli Bitiş', type: 'toggle', default: false },
+      { id: 'robon', label: 'Röbon', type: 'toggle', default: false }
+    ],
+    modes: [
+      { id: 'solo', label: 'Solo (Bireysel)', default: true },
+      { id: 'esli', label: 'Eşli (Takım)', default: false }
+    ],
+    bets: [
+      { id: '500', label: 'Başlangıç', amount: '500 G', value: 500 },
+      { id: '2500', label: 'Orta', amount: '2.5K G', value: 2500 },
+      { id: '10000', label: 'Pro', amount: '10K G', value: 10000 },
+      { id: '50000', label: 'Elit', amount: '50K G', value: 50000 }
+    ],
+    howToPlay: [
+      "Taşları aynı renkten sıralı veya farklı renkten aynı sayılar olacak şekilde en az 3'lü perler yapın.",
+      "Okey taşı, joker yerine geçer. Göstergeyi ilk elde belli edip ekstra puan alabilirsiniz.",
+      "Tüm taşlarınızı per yaptığınızda artan son taşı ortaya atarak bitin."
+    ]
   },
   poker: {
     slug: 'poker',
     name: 'Turk Pokeri',
     icon: '&#127183;',
-    accent: '#185fa5',
+    accent: '#353b99',
     playUrl: '/poker',
-    desc: 'Canli oyuncularla masaya otur, sohbet et.',
+    desc: '2-5 kisi, blöf, renk ve rest heyecanı. Kapali poker.',
+    rules: [
+      { id: 'hizli', label: 'Hızlı Oyun', type: 'toggle', default: false },
+      { id: 'gorme', label: 'Görmeden Artır', type: 'toggle', default: true }
+    ],
+    modes: [
+      { id: 'solo', label: 'Standart', default: true }
+    ],
+    bets: [
+      { id: '500', label: 'Başlangıç', amount: '500 G', value: 500 },
+      { id: '2500', label: 'Orta', amount: '2.5K G', value: 2500 },
+      { id: '10000', label: 'Pro', amount: '10K G', value: 10000 },
+      { id: '50000', label: 'Elit', amount: '50K G', value: 50000 }
+    ],
+    howToPlay: [
+      "Her oyuncuya 5 kart dağıtılır. Kart değiştirmeden önce ilk bahis turu yapılır.",
+      "Elinize uymayan kartları bırakıp yeni kart çekebilirsiniz. Sonra 2. bahis turu başlar.",
+      "Kartlar açıldığında en yüksek ele sahip olan potu (ortadaki parayı) kazanır."
+    ]
   },
 };
 
@@ -852,6 +1009,7 @@ app.get(
     const catalogItems = await db.getCatalogItems();
     const activeListings = await db.getAllActiveListings(200);
     const marketConfig = await db.getMarketConfig();
+    const dailyTasks = await db.getDailyTasks(true);
     res.render('admin', {
       user: req.user,
       users,
@@ -862,6 +1020,7 @@ app.get(
       catalogItems,
       activeListings,
       marketConfig,
+      dailyTasks,
       categories: db.MARKET_CATEGORIES,
       rarities: db.MARKET_RARITIES,
       vipPlans: db.getVipPlans(),
@@ -876,6 +1035,16 @@ app.post(
   requireAdmin,
   asyncHandler(async (req, res) => {
     await db.toggleMute(Number(req.params.id));
+    res.redirect('/admin');
+  })
+);
+
+app.post(
+  '/admin/users/:id/admin',
+  attachUser,
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    await db.toggleAdmin(Number(req.params.id));
     res.redirect('/admin');
   })
 );
@@ -938,7 +1107,7 @@ app.post(
   attachUser,
   requireAdmin,
   asyncHandler(async (req, res) => {
-    const { prizes, active } = req.body;
+    const { prizes, entry_fee, daily_limit, active } = req.body;
     const cleanedPrizes = (prizes || '')
       .split(',')
       .map((p) => p.trim())
@@ -946,9 +1115,42 @@ app.post(
       .join(',');
     await db.upsertScratchConfig({
       prizes: cleanedPrizes || '0',
+      entry_fee: Number(entry_fee) || 50,
+      daily_limit: Number(daily_limit) || 1,
       active: active === 'on' || active === '1' || active === 'true',
     });
     res.redirect('/admin?saved=kazikazan');
+  })
+);
+
+// ---- Admin: Günlük Görevler ----
+app.post(
+  '/admin/daily_tasks',
+  attachUser,
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const { action_type, title, task_type, target_count, reward_lt, is_fixed, active, task_id } = req.body;
+    
+    if (action_type === 'delete') {
+      await db.deleteDailyTask(task_id);
+    } else if (action_type === 'edit') {
+      await db.updateDailyTask(task_id, {
+        title, task_type, 
+        target_count: Number(target_count) || 1, 
+        reward_lt: Number(reward_lt) || 0,
+        is_fixed: is_fixed === 'on' || is_fixed === 'true',
+        active: active === 'on' || active === 'true'
+      });
+    } else if (action_type === 'add') {
+      await db.createDailyTask({
+        title, task_type, 
+        target_count: Number(target_count) || 1, 
+        reward_lt: Number(reward_lt) || 0,
+        is_fixed: is_fixed === 'on' || is_fixed === 'true',
+        active: active === 'on' || active === 'true'
+      });
+    }
+    res.redirect('/admin?saved=dailytasks');
   })
 );
 
@@ -1059,31 +1261,41 @@ async function broadcastLobbyPlayers() {
   io.to('lobby').emit('lobby:players', list);
 }
 
-async function systemMessage(text) {
+async function systemMessage(text, room = null) {
   const saved = await db.insertMessage({ userId: null, username: 'Sistem', channel: 'sistem', content: text });
-  io.emit('chat:message', {
+  const payload = {
     channel: 'sistem',
     username: 'Sistem',
     content: text,
     created_at: saved.created_at,
-  });
+  };
+  if (room) {
+    io.to(room).emit('chat:message', payload);
+  } else {
+    io.emit('chat:message', payload);
+  }
 }
 
-async function gameLogMessage(text, channel = 'oyun') {
+async function gameLogMessage(text, channel = 'oyun', room = null) {
   const saved = await db.insertMessage({ userId: null, username: 'Masa', channel, content: text });
-  io.emit('chat:message', {
+  const payload = {
     channel,
     username: 'Masa',
     content: text,
     created_at: saved.created_at,
-  });
+  };
+  if (room) {
+    io.to(room).emit('chat:message', payload);
+  } else {
+    io.emit('chat:message', payload);
+  }
 }
 
 const table = new PokerTable();
 const pendingStandTimers = new Map();
 const RECONNECT_GRACE_MS = 8000;
 
-table.on('log', (text) => gameLogMessage(text, 'oyun').catch(console.error));
+table.on('log', (text) => gameLogMessage(text, 'oyun', 'poker').catch(console.error));
 table.on('update', (state) => io.to('poker').emit('table:state', state));
 table.on('private-cards', (payload) => {
   for (const { userId, cards } of payload) {
@@ -1122,7 +1334,7 @@ table.on('hand-result', ({ handNumber, participants }) => {
 const okeyTable = new OkeyTable();
 const pendingStandTimersOkey = new Map();
 
-okeyTable.on('log', (text) => gameLogMessage(text, 'okey').catch(console.error));
+okeyTable.on('log', (text) => gameLogMessage(text, 'okey', 'okey').catch(console.error));
 okeyTable.on('update', (state) => io.to('okey').emit('okey:state', state));
 okeyTable.on('private-tiles', (payload) => {
   for (const { userId, tiles } of payload) {
@@ -1163,7 +1375,7 @@ okeyTable.on('hand-result', ({ handNumber, participants }) => {
 const okey101Table = new Okey101Table();
 const pendingStandTimers101 = new Map();
 
-okey101Table.on('log', (text) => gameLogMessage(text, 'okey101').catch(console.error));
+okey101Table.on('log', (text) => gameLogMessage(text, 'okey101', 'okey101').catch(console.error));
 okey101Table.on('update', (state) => io.to('okey101').emit('okey101:state', state));
 okey101Table.on('private-tiles', (payload) => {
   for (const { userId, tiles } of payload) {
@@ -1406,12 +1618,14 @@ io.on('connection', (socket) => {
     socket.on('chat:message', async (payload) => {
       if (!payload || typeof payload.text !== 'string') return;
       const channel = payload.channel;
-      if (channel !== 'genel' && channel !== 'oyun' && channel !== 'okey' && channel !== 'okey101') return;
+      if (channel !== 'genel' && channel !== 'oyun' && channel !== 'okey' && channel !== 'okey101' && channel !== 'poker') return;
       const text = payload.text.trim().slice(0, 500);
       if (!text) return;
 
+      const room = channel === 'genel' ? 'lobby' : game;
+
       const saved = await db.insertMessage({ userId: user.id, username: name, channel, content: text });
-      io.emit('chat:message', {
+      io.to(room).emit('chat:message', {
         channel,
         username: name,
         content: text,
@@ -1424,7 +1638,7 @@ io.on('connection', (socket) => {
       broadcastPlayers();
       broadcastLobbyPlayers().catch(() => {});
       if (game !== 'lobby') {
-        systemMessage(`${name} masadan ayrildi.`).catch(console.error);
+        systemMessage(`${name} masadan ayrildi.`, game).catch(console.error);
       }
       const stillConnected = Array.from(onlinePlayers.values()).some((p) => p.userId === user.id);
       if (!stillConnected && game === 'poker' && table.findSeatByUser(user.id) !== -1) {
@@ -1481,6 +1695,21 @@ function gracefulShutdown() {
 
 process.on('SIGINT', gracefulShutdown);
 process.on('SIGTERM', gracefulShutdown);
+
+// ================= GÜNLÜK GÖREV SIFIRLAMA KONTROLÜ =================
+let lastCheckedDate = new Date().toDateString();
+setInterval(async () => {
+  const currentDate = new Date().toDateString();
+  if (currentDate !== lastCheckedDate) {
+    lastCheckedDate = currentDate;
+    try {
+      await db.clearNonFixedDailyTasks();
+      console.log('Yeni gün başladı: Sabit olmayan günlük görevler temizlendi.');
+    } catch (err) {
+      console.error('Günlük görevleri temizlerken hata:', err);
+    }
+  }
+}, 60 * 1000); // Her dakika kontrol et
 
 db.init()
   .then(() => {

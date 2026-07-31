@@ -97,23 +97,16 @@
     </section>
   </main>
 
-  <!-- ===== Alt bar: sohbet + masa sekmesi ===== -->
-  <footer class="ok1-bottombar">
-    <button type="button" class="ok1-bottom-btn" id="ok1-chat-toggle" title="Sohbet">&#128172;</button>
-    <span class="ok1-bottom-table">#1</span>
-    <span class="ok1-bottom-spacer"></span>
-    <button type="button" class="ok1-bottom-btn" title="Bildirim">&#128276;</button>
-  </footer>
 
-  <!-- ===== Sohbet paneli (acilir) ===== -->
-  <aside class="ok1-chatpanel" id="ok1-chatpanel" hidden>
+
+  <!-- ===== Sohbet paneli (surekli acik) ===== -->
+  <aside class="ok1-chatpanel" id="ok1-chatpanel">
     <div class="chat-tabs">
-      <button class="chat-tab active" data-channel="genel">Genel</button>
-      <button class="chat-tab" data-channel="okey101">Oyun</button>
-      <button class="chat-tab" data-channel="sistem">Sistem</button>
+      <button class="chat-tab active" data-channel="oyun">Oyun Lobisi <span class="badge"></span></button>
+      <button class="chat-tab" data-channel="sistem">Sistem Mesaji <span class="badge"></span></button>
     </div>
     <div class="chat-body">
-      <div class="chat-messages" id="chat-messages" data-channel="genel"></div>
+      <div class="chat-messages" id="chat-messages" data-channel="oyun"></div>
     </div>
     <form class="chat-input-row" id="chat-form">
       <input type="text" id="chat-input" class="chat-input" placeholder="Mesajini yaz..." maxlength="500" autocomplete="off" />
@@ -127,12 +120,5 @@
   <script src="/socket.io/socket.io.js"></script>
   <script src="/js/okey101.js?v=1"></script>
   <script src="/js/notify.js?v=1"></script>
-  <script>
-    (function () {
-      var t = document.getElementById('ok1-chat-toggle');
-      var p = document.getElementById('ok1-chatpanel');
-      if (t && p) t.addEventListener('click', function () { p.hidden = !p.hidden; });
-    })();
-  </script>
 </body>
 </html>

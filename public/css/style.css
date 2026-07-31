@@ -51,6 +51,7 @@ body {
   font-family: var(--font);
   color: var(--text-main);
   background: var(--bg-deep);
+  padding-bottom: 200px;
 }
 
 a {
@@ -484,10 +485,9 @@ button {
   flex: 1;
   display: grid;
   grid-template-columns: 1fr 280px;
-  grid-template-rows: minmax(0, 1fr) 280px;
+  grid-template-rows: minmax(0, 1fr);
   grid-template-areas:
-    'table players'
-    'chat  chat';
+    'table players';
   gap: 1px;
   background: var(--border-subtle);
   min-height: 0;
@@ -1038,11 +1038,10 @@ button {
 
   .poker-layout {
     grid-template-columns: 1fr;
-    grid-template-rows: 320px 220px 320px;
+    grid-template-rows: 320px 220px;
     grid-template-areas:
       'table'
-      'players'
-      'chat';
+      'players';
   }
 
   .topbar {
@@ -1803,10 +1802,9 @@ button {
   flex: 1;
   display: grid;
   grid-template-columns: 1fr 280px;
-  grid-template-rows: minmax(0, 1fr) 280px;
+  grid-template-rows: minmax(0, 1fr);
   grid-template-areas:
-    'table players'
-    'chat  chat';
+    'table players';
   gap: 1px;
   background: var(--border-subtle);
   min-height: 0;
@@ -2377,11 +2375,10 @@ button {
 @media (max-width: 860px) {
   .okey-layout {
     grid-template-columns: 1fr;
-    grid-template-rows: 360px 220px 320px;
+    grid-template-rows: 360px 220px;
     grid-template-areas:
       'table'
-      'players'
-      'chat';
+      'players';
   }
 
   .okey-slot {

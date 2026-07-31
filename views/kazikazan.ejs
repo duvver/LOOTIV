@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <%- include('partials/theme-head', { title: 'Kazı Kazan - LOOTIV' }) %>
+  <style>
+    .scratch-container {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    .scratch-card {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1;
+      background: var(--surface-container-high);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      font-weight: bold;
+      color: var(--primary);
+    }
+    .scratch-card canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      cursor: crosshair;
+      z-index: 2;
+    }
+    .scratch-content {
+      position: absolute;
+      z-index: 1;
+      text-align: center;
+    }
+    .scratch-content img {
+      max-width: 60%;
+      margin: 0 auto 5px;
+    }
+  </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col font-body-md">
+  <%- include('partials/theme-nav', { user: user }) %>
+
+  <main class="container mx-auto px-4 py-8 flex-1">
+    <div class="max-w-2xl mx-auto bg-surface border border-outline-variant rounded-2xl shadow-sm p-6 text-center">
+      <h1 class="font-headline-lg text-headline-lg text-primary mb-2 flex items-center justify-center gap-2">
+        <span class="material-symbols-outlined text-4xl">redeem</span>
+        Kazı Kazan
+      </h1>
+      
+      <% if (scratchCountToday >= (scratchConfig.daily_limit || 1)) { %>
+        <div class="my-8 p-6 bg-surface-container-low rounded-xl">
+          <h2 class="font-headline-md text-headline-md text-primary mb-2">Günlük limitinize ulaştınız!</h2>
+          <p class="text-outline">Yarın tekrar gelip şansınızı deneyebilirsiniz.</p>
+          <a href="/" class="btn-primary mt-6 inline-block">Lobiye Dön</a>
+        </div>
+      <% } else { %>
+        <p class="font-body-md text-outline mb-6">Şansını dene! En az 3 aynı miktarı bul ve ödülü kazan.</p>
+        
+        <div class="flex justify-between items-center mb-6 px-4 py-3 bg-surface-container-lowest border border-outline-variant rounded-lg">
+          <div class="text-left">
+            <span class="block text-label-sm text-outline">Giriş Ücreti</span>
+            <span class="font-headline-sm text-primary"><%= scratchConfig.entry_fee || 0 %> LT</span>
+          </div>
+          <div class="text-right">
+            <span class="block text-label-sm text-outline">Kalan Hak</span>
+            <span class="font-headline-sm text-primary"><%= (scratchConfig.daily_limit || 1) - scratchCountToday %></span>
+          </div>
+        </div>
+
+        <div id="start-screen" class="my-8">
+          <button id="start-btn" class="btn-primary py-3 px-8 text-lg w-full sm:w-auto">
+            Oynamak İçin <%= scratchConfig.entry_fee || 0 %> LT Öde
+          </button>
+          <div id="error-msg" class="text-error mt-4 hidden"></div>
+        </div>
+
+        <div id="game-screen" class="hidden my-8">
+          <div class="scratch-container" id="scratch-grid">
+            <!-- Canvas boxes will be generated here by JS -->
+          </div>
+          <div id="result-msg" class="mt-6 font-headline-md text-headline-md hidden"></div>
+          <button id="play-again-btn" class="btn-secondary mt-4 hidden mx-auto">Tekrar Oyna</button>
+        </div>
+      <% } %>
+    </div>
+  </main>
+
+  <%- include('partials/theme-foot', { user: user }) %>
+
+  <script>
+    const startBtn = document.getElementById('start-btn');
+    const startScreen = document.getElementById('start-screen');
+    const gameScreen = document.getElementById('game-screen');
+    const scratchGrid = document.getElementById('scratch-grid');
+    const resultMsg = document.getElementById('result-msg');
+    const playAgainBtn = document.getElementById('play-again-btn');
+    const errorMsg = document.getElementById('error-msg');
+    
+    let gameItems = [];
+    let scratchedCount = 0;
+    let prizeWon = 0;
+    let newBalance = 0;
+    
+    if (startBtn) {
+      startBtn.addEventListener('click', async () => {
+        startBtn.disabled = true;
+        startBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-xl">autorenew</span> Lütfen bekleyin...';
+        
+        try {
+          const res = await fetch('/kazikazan/oyna', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+          });
+          const data = await res.json();
+          
+          if (!data.success) {
+            errorMsg.textContent = data.message;
+            errorMsg.classList.remove('hidden');
+            startBtn.disabled = false;
+            startBtn.innerHTML = 'Oynamak İçin <%= scratchConfig.entry_fee || 0 %> LT Öde';
+            return;
+          }
+          
+          gameItems = data.items;
+          prizeWon = data.prize;
+          newBalance = data.newBalance;
+          
+          // Güncel LT bakiyesini sayfadaki menüde güncelle
+          const ltEl = document.getElementById('nav-lt-balance');
+          if(ltEl) ltEl.textContent = newBalance + ' LT';
+          
+          initGame();
+        } catch(err) {
+          errorMsg.textContent = 'Bir hata oluştu, lütfen sayfayı yenileyin.';
+          errorMsg.classList.remove('hidden');
+        }
+      });
+    }
+
+    if (playAgainBtn) {
+      playAgainBtn.addEventListener('click', () => {
+        window.location.reload();
+      });
+    }
+
+    function initGame() {
+      startScreen.classList.add('hidden');
+      gameScreen.classList.remove('hidden');
+      scratchGrid.innerHTML = '';
+      scratchedCount = 0;
+      
+      gameItems.forEach((item, index) => {
+        const card = document.createElement('div');
+        card.className = 'scratch-card';
+        
+        const content = document.createElement('div');
+        content.className = 'scratch-content';
+        const displayText = item > 0 ? item + ' LT' : 'BOŞ';
+        content.innerHTML = `<span>${displayText}</span>`;
+        card.appendChild(content);
+        
+        const canvas = document.createElement('canvas');
+        card.appendChild(canvas);
+        scratchGrid.appendChild(card);
+        
+        setupCanvas(canvas, card, index);
+      });
+    }
+
+    function setupCanvas(canvas, card, index) {
+      const ctx = canvas.getContext('2d');
+      let isDrawing = false;
+      let scratchedArea = 0;
+      let isRevealed = false;
+      
+      // Boyutu ayarla
+      setTimeout(() => {
+        canvas.width = card.offsetWidth;
+        canvas.height = card.offsetHeight;
+        
+        // Kaplamayı çiz (gümüş renk)
+        ctx.fillStyle = '#b0bec5';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Üzerine desen veya yazı (LOOTIV)
+        ctx.fillStyle = '#90a4ae';
+        ctx.font = '20px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('KAZI', canvas.width / 2, canvas.height / 2);
+      }, 50); // DOM'a yerleşmesini bekle
+
+      function getBrushPos(xRef, yRef) {
+        const rect = canvas.getBoundingClientRect();
+        return {
+          x: Math.floor((xRef - rect.left) / (rect.right - rect.left) * canvas.width),
+          y: Math.floor((yRef - rect.top) / (rect.bottom - rect.top) * canvas.height)
+        };
+      }
+      
+      function scratch(x, y) {
+        if(isRevealed) return;
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.beginPath();
+        ctx.arc(x, y, 20, 0, Math.PI * 2);
+        ctx.fill();
+        checkReveal();
+      }
+      
+      function checkReveal() {
+        if(isRevealed) return;
+        const imageData = ctx.getImageData(0,0,canvas.width,canvas.height);
+        let pixels = imageData.data;
+        let transparentPixels = 0;
+        for (let i = 3; i < pixels.length; i += 4) {
+          if (pixels[i] === 0) transparentPixels++;
+        }
+        const totalPixels = pixels.length / 4;
+        const percentage = (transparentPixels / totalPixels) * 100;
+        
+        if (percentage > 50) {
+          isRevealed = true;
+          canvas.style.transition = 'opacity 0.3s';
+          canvas.style.opacity = '0';
+          setTimeout(() => { canvas.remove(); }, 300);
+          
+          scratchedCount++;
+          if (scratchedCount === 6) {
+            showResult();
+          }
+        }
+      }
+
+      // Mouse olayları
+      canvas.addEventListener('mousedown', (e) => {
+        isDrawing = true;
+        const pos = getBrushPos(e.clientX, e.clientY);
+        scratch(pos.x, pos.y);
+      });
+      canvas.addEventListener('mousemove', (e) => {
+        if (!isDrawing) return;
+        const pos = getBrushPos(e.clientX, e.clientY);
+        scratch(pos.x, pos.y);
+      });
+      canvas.addEventListener('mouseup', () => { isDrawing = false; });
+      canvas.addEventListener('mouseleave', () => { isDrawing = false; });
+      
+      // Touch olayları
+      canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        isDrawing = true;
+        const pos = getBrushPos(e.touches[0].clientX, e.touches[0].clientY);
+        scratch(pos.x, pos.y);
+      }, {passive: false});
+      canvas.addEventListener('touchmove', (e) => {
+        if (!isDrawing) return;
+        e.preventDefault();
+        const pos = getBrushPos(e.touches[0].clientX, e.touches[0].clientY);
+        scratch(pos.x, pos.y);
+      }, {passive: false});
+      canvas.addEventListener('touchend', () => { isDrawing = false; });
+    }
+
+    function showResult() {
+      resultMsg.classList.remove('hidden');
+      playAgainBtn.classList.remove('hidden');
+      
+      if (prizeWon > 0) {
+        resultMsg.className = 'mt-6 font-headline-md text-headline-md text-success-green';
+        resultMsg.innerHTML = `Tebrikler! <br/> <strong>${prizeWon} LT</strong> kazandınız!`;
+      } else {
+        resultMsg.className = 'mt-6 font-headline-md text-headline-md text-error';
+        resultMsg.innerHTML = 'Maalesef bu sefer boş çıktı.<br/> Şansınızı tekrar deneyin!';
+      }
+    }
+  </script>
+</body>
+</html>

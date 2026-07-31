@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Turk Pokeri - LOOTIV</title>
   <link rel="stylesheet" href="/css/style.css?v=6" />
+  <link rel="stylesheet" href="/css/okey101.css?v=4" />
 </head>
 <body class="app-body" data-user-id="<%= user.id %>">
   <header class="topbar">
@@ -41,23 +42,24 @@
       <ul id="player-list" class="player-list"></ul>
     </aside>
 
-    <section class="chat-panel">
-      <div class="chat-tabs">
-        <button class="chat-tab active" data-channel="genel">Genel Sohbet</button>
-        <button class="chat-tab" data-channel="oyun">Oyun Sohbet</button>
-        <button class="chat-tab" data-channel="sistem">Sistem Mesajlari</button>
-      </div>
-
-      <div class="chat-body">
-        <div class="chat-messages" id="chat-messages" data-channel="genel"></div>
-      </div>
-
-      <form class="chat-input-row" id="chat-form">
-        <input type="text" id="chat-input" class="chat-input" placeholder="Mesajini yaz..." maxlength="500" autocomplete="off" />
-        <button type="submit" class="btn btn-primary btn-sm">Gonder</button>
-      </form>
-    </section>
   </main>
+
+
+
+  <!-- ===== Sohbet paneli (surekli acik) ===== -->
+  <aside class="ok1-chatpanel" id="ok1-chatpanel">
+    <div class="chat-tabs">
+      <button class="chat-tab active" data-channel="oyun">Oyun Lobisi <span class="badge"></span></button>
+      <button class="chat-tab" data-channel="sistem">Sistem Mesaji <span class="badge"></span></button>
+    </div>
+    <div class="chat-body">
+      <div class="chat-messages" id="chat-messages" data-channel="oyun"></div>
+    </div>
+    <form class="chat-input-row" id="chat-form">
+      <input type="text" id="chat-input" class="chat-input" placeholder="Mesajini yaz..." maxlength="500" autocomplete="off" />
+      <button type="submit" class="btn btn-primary btn-sm">Gonder</button>
+    </form>
+  </aside>
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="/js/poker.js"></script>

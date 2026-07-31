@@ -525,9 +525,12 @@
         <span class="adm-nav-icon">&#128226;</span> Duyurular
       </a>
 
-      <div class="adm-nav-group">Oyun Ayarlari</div>
+      <div class="adm-nav-group">Oyun Ayarları</div>
+      <a class="adm-nav-link" data-page="dailytasks" onclick="showPage('dailytasks',this)">
+        <span class="adm-nav-icon">&#128221;</span> Günlük Görevler
+      </a>
       <a class="adm-nav-link" data-page="dailyq" onclick="showPage('dailyq',this)">
-        <span class="adm-nav-icon">&#10067;</span> Gunun Sorusu
+        <span class="adm-nav-icon">&#10067;</span> Günün Sorusu
       </a>
       <a class="adm-nav-link" data-page="scratch" onclick="showPage('scratch',this)">
         <span class="adm-nav-icon">&#127920;</span> Kazi Kazan
@@ -684,7 +687,7 @@
                         <!-- Sustur / Ses aç -->
                         <form method="POST" action="/admin/users/<%= u.id %>/mute">
                           <button type="submit" class="adm-btn <%= u.is_muted ? 'green' : 'amber' %>" title="<%= u.is_muted ? 'Sesini Ac' : 'Sustur' %>">
-                            <%= u.is_muted ? '&#128266;' : '&#128263;' %>
+                            <%- u.is_muted ? '&#128266;' : '&#128263;' %>
                           </button>
                         </form>
                         <!-- Ban / Kaldır -->
@@ -693,7 +696,13 @@
                             <input type="text" name="reason" placeholder="Sebep..." class="adm-input adm-input-md" />
                           <% } %>
                           <button type="submit" class="adm-btn <%= u.is_banned ? 'green' : 'red' %>" title="<%= u.is_banned ? 'Yasagi Kaldir' : 'Yasakla' %>">
-                            <%= u.is_banned ? '&#128275;' : '&#128274;' %>
+                            <%- u.is_banned ? '&#128275;' : '&#128274;' %>
+                          </button>
+                        </form>
+                        <!-- Yetkilendir -->
+                        <form method="POST" action="/admin/users/<%= u.id %>/admin">
+                          <button type="submit" class="adm-btn <%= u.is_admin ? 'red' : 'green' %>" title="<%= u.is_admin ? 'Yetkiyi Al' : 'Yetki Ver' %>">
+                            <%- u.is_admin ? '&#11088;' : '&#10025;' %>
                           </button>
                         </form>
                         <!-- LT ekle/çıkar -->
@@ -920,20 +929,123 @@
         <div class="adm-section-body">
           <form method="POST" action="/admin/kazikazan" class="adm-form">
             <div class="adm-field">
-              <label>Odul Havuzu</label>
+              <label>Ödül Havuzu</label>
               <input type="text" name="prizes" value="<%= scratchConfig.prizes %>" placeholder="0,50,100,250,500" />
-              <span style="font-size:12px;color:#8b949e;margin-top:4px;">Virgülle ayrilmis LT miktarlari. 0 = bos cikti anlamina gelir. Havuzdan rastgele biri secilir.</span>
+              <span style="font-size:12px;color:#8b949e;margin-top:4px;">Virgülle ayrılmış LT miktarları. 0 = boş çıktı anlamına gelir. Havuzdan rastgele biri seçilir.</span>
             </div>
-            <div>
+            <div class="adm-field" style="margin-top:1rem;">
+              <label>Giriş Ücreti (LT)</label>
+              <input type="number" name="entry_fee" value="<%= scratchConfig.entry_fee || 50 %>" min="0" />
+            </div>
+            <div class="adm-field" style="margin-top:1rem;">
+              <label>Günlük Oynama Limiti</label>
+              <input type="number" name="daily_limit" value="<%= scratchConfig.daily_limit || 1 %>" min="1" />
+            </div>
+            <div style="margin-top:1rem;">
               <label class="adm-checkbox-row">
                 <input type="checkbox" name="active" <%= scratchConfig.active ? 'checked' : '' %> />
-                <span>Aktif (lobide goster, gunde 1 hak)</span>
+                <span>Aktif (lobide göster)</span>
               </label>
             </div>
             <div class="adm-form-footer">
               <button type="submit" class="adm-save-btn">&#10003; Kaydet</button>
             </div>
           </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== SAYFA: Günlük Görevler ========== -->
+    <div class="adm-page" id="page-dailytasks">
+      <div class="adm-section open">
+        <div class="adm-section-head" onclick="toggleSection(this)">
+          <span class="adm-section-head-icon">&#128221;</span>
+          <div class="adm-section-head-text">
+            <div class="adm-section-head-title">Günlük Görevler</div>
+            <div class="adm-section-head-sub">Görev ekle, düzenle veya sil</div>
+          </div>
+          <span class="adm-chevron">&#9660;</span>
+        </div>
+        <div class="adm-section-body">
+          <form method="POST" action="/admin/daily_tasks" class="adm-form" style="margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--adm-border);">
+            <input type="hidden" name="action_type" value="add" />
+            <h3 style="margin-bottom: 1rem; color: var(--adm-text);">Yeni Görev Ekle</h3>
+            <div class="adm-field">
+              <label>Görev Başlığı</label>
+              <input type="text" name="title" placeholder="Örn: Okey'de 5 el kazan" required />
+            </div>
+            <div class="adm-field" style="margin-top: 1rem;">
+              <label>Görev Tipi</label>
+              <select name="task_type" class="adm-select" required>
+                <option value="play_okey_hands">Okey El Oyna</option>
+                <option value="win_okey_hands">Okey El Kazan</option>
+                <option value="play_poker_hands">Poker El Oyna</option>
+                <option value="win_poker_hands">Poker El Kazan</option>
+                <option value="spend_lt">LT Harca</option>
+                <option value="play_scratchcard">Kazı Kazan Oyna</option>
+                <option value="daily_login">Günlük Giriş Yap</option>
+              </select>
+            </div>
+            <div class="adm-field" style="margin-top: 1rem;">
+              <label>Hedef Miktar</label>
+              <input type="number" name="target_count" value="1" min="1" required />
+            </div>
+            <div class="adm-field" style="margin-top: 1rem;">
+              <label>Ödül (LT)</label>
+              <input type="number" name="reward_lt" value="100" min="0" required />
+            </div>
+            <div style="margin-top: 1rem; display: flex; gap: 2rem;">
+              <label class="adm-checkbox-row">
+                <input type="checkbox" name="is_fixed" />
+                <span>Sabit (Her gün yenilenir, silinmez)</span>
+              </label>
+              <label class="adm-checkbox-row">
+                <input type="checkbox" name="active" checked />
+                <span>Aktif</span>
+              </label>
+            </div>
+            <div class="adm-form-footer">
+              <button type="submit" class="adm-save-btn">&#10133; Görev Ekle</button>
+            </div>
+          </form>
+
+          <table class="adm-table">
+            <thead>
+              <tr>
+                <th>Başlık</th>
+                <th>Tip / Hedef</th>
+                <th>Ödül</th>
+                <th>Durum</th>
+                <th>İşlem</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (dailyTasks && dailyTasks.length > 0) { %>
+                <% dailyTasks.forEach(t => { %>
+                  <tr>
+                    <td><%= t.title %></td>
+                    <td><%= t.task_type %> (<%= t.target_count %>)</td>
+                    <td><%= t.reward_lt %> LT</td>
+                    <td>
+                      <% if (t.is_fixed) { %><span class="adm-tag adm-tag-blue">Sabit</span><% } %>
+                      <% if (t.active) { %><span class="adm-tag adm-tag-green">Aktif</span><% } else { %><span class="adm-tag adm-tag-red">Pasif</span><% } %>
+                    </td>
+                    <td>
+                      <form method="POST" action="/admin/daily_tasks" style="display:inline-block;" onsubmit="return confirm('Bu görevi silmek istediğinize emin misiniz?');">
+                        <input type="hidden" name="action_type" value="delete" />
+                        <input type="hidden" name="task_id" value="<%= t.id %>" />
+                        <button type="submit" class="adm-btn red sm">Sil</button>
+                      </form>
+                    </td>
+                  </tr>
+                <% }) %>
+              <% } else { %>
+                <tr>
+                  <td colspan="5" style="text-align: center; color: #8b949e;">Henüz günlük görev eklenmemiş.</td>
+                </tr>
+              <% } %>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -1230,14 +1342,15 @@
   <script>
     /* ======= Sayfa geçiş sistemi ======= */
     var PAGE_LABELS = {
-      dashboard:     'Genel Bakis',
-      users:         'Uyeler',
-      gamelogs:      'Oyun Loglari',
+      dashboard:     'Genel Bakış',
+      users:         'Üyeler',
+      gamelogs:      'Oyun Logları',
       announcements: 'Duyurular',
-      dailyq:        'Gunun Sorusu',
-      scratch:       'Kazi Kazan',
-      vip:           'VIP Yonetimi',
-      market:        'Pazar Yonetimi',
+      dailytasks:    'Günlük Görevler',
+      dailyq:        'Günün Sorusu',
+      scratch:       'Kazı Kazan',
+      vip:           'VIP Yönetimi',
+      market:        'Pazar Yönetimi'
     };
 
     function showPage(id, linkEl) {

@@ -43,6 +43,11 @@
               <span class="material-symbols-outlined text-secondary">campaign</span>
               <h3 class="font-headline-md text-headline-md text-primary"><%= a.title %></h3>
               <span class="text-label-sm text-outline ml-auto"><%= a.admin_rumuz %> · <%= new Date(a.created_at).toLocaleString('tr-TR') %></span>
+              <% if (user && user.is_admin) { %>
+                <form method="POST" action="/duyurular/<%= a.id %>/sil" onsubmit="return confirm('Bu duyuruyu silmek istediğinize emin misiniz?');" style="display:inline-block; margin-left:8px;">
+                  <button type="submit" class="text-red-500 hover:text-red-700 transition-colors" title="Duyuruyu Sil"><span class="material-symbols-outlined text-[18px] align-middle">delete</span></button>
+                </form>
+              <% } %>
             </div>
             <p class="font-body-md text-on-surface-variant leading-relaxed" style="white-space: pre-wrap; word-break: break-word;"><%= a.content %></p>
           </div>

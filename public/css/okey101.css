@@ -699,44 +699,64 @@
 /* ---------- Sohbet paneli (acilir) ---------- */
 .ok1-chatpanel {
   position: fixed;
-  bottom: 54px; left: 12px;
-  width: 320px; max-width: calc(100vw - 24px);
-  height: 380px;
-  background: #10303f;
-  border: 1px solid #0a2331;
-  border-radius: 12px;
+  bottom: 0; left: 0; right: 0;
+  width: 100%;
+  height: 200px;
+  background: var(--bg-panel, #ffffff);
+  border-top: 1px solid var(--border-subtle, #e2e8e2);
   display: flex; flex-direction: column;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-  z-index: 40;
-  overflow: hidden;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
+  z-index: 100;
 }
-.ok1-chatpanel .chat-tabs { display: flex; border-bottom: 1px solid #0a2331; }
+.ok1-chatpanel .chat-tabs { 
+  display: flex; 
+  justify-content: flex-start;
+  border-bottom: 1px solid var(--border-subtle, #e2e8e2); 
+}
 .ok1-chatpanel .chat-tab {
-  flex: 1; background: transparent; border: none;
-  color: #9fc5d4; font-size: 12.5px; font-weight: 600;
-  padding: 10px; cursor: pointer;
+  flex: none; background: transparent; border: none;
+  color: var(--text-dim, #5f6b64); font-size: 14px; font-weight: 600;
+  padding: 12px 20px; cursor: pointer;
   border-bottom: 2px solid transparent;
+  position: relative;
 }
-.ok1-chatpanel .chat-tab.active { color: var(--ok1-cyan); border-bottom-color: var(--ok1-cyan); }
+.ok1-chatpanel .chat-tab.active { color: var(--green, #0f6e56); border-bottom-color: var(--green, #0f6e56); }
+.ok1-chatpanel .chat-tab .badge {
+  display: none;
+  position: absolute;
+  top: 50%;
+  right: 5px;
+  transform: translateY(-50%);
+  background: #ff4757;
+  color: white;
+  border-radius: 50%;
+  width: 8px;
+  height: 8px;
+}
+.ok1-chatpanel .chat-tab.has-new .badge {
+  display: block;
+}
 .ok1-chatpanel .chat-body { flex: 1; min-height: 0; overflow: hidden; }
 .ok1-chatpanel .chat-messages {
   height: 100%; overflow-y: auto;
   padding: 12px 14px;
   display: flex; flex-direction: column; gap: 7px;
+  background: var(--bg-deep, #eef1ee);
 }
 .chat-message { font-size: 13px; line-height: 1.5; display: flex; gap: 6px; flex-wrap: wrap; }
-.chat-message-author { color: var(--ok1-cyan); font-weight: 700; }
-.chat-message-text { color: #eaf4f8; word-break: break-word; }
-.chat-message-time { color: #6f8b98; font-size: 10.5px; margin-left: auto; }
-.chat-message-system, .chat-message-system .chat-message-text { color: #7f97a3; font-style: italic; }
+.chat-message-author { color: var(--green, #0f6e56); font-weight: 700; }
+.chat-message-text { color: var(--text-main, #16241f); word-break: break-word; }
+.chat-message-time { color: var(--text-faint, #93a099); font-size: 10.5px; margin-left: auto; }
+.chat-message-system, .chat-message-system .chat-message-text { color: var(--text-dim, #5f6b64); font-style: italic; }
 .ok1-chatpanel .chat-input-row {
   display: flex; gap: 8px;
-  padding: 10px; border-top: 1px solid #0a2331;
+  padding: 10px; border-top: 1px solid var(--border-subtle, #e2e8e2);
+  background: var(--bg-panel, #ffffff);
 }
 .ok1-chatpanel .chat-input {
-  flex: 1; background: #0d2c3d;
-  border: 1px solid #0a2331; border-radius: 8px;
-  padding: 9px 12px; color: #eaf4f8; font-size: 13px; outline: none;
+  flex: 1; background: var(--bg-deep, #eef1ee);
+  border: 1px solid var(--border-subtle, #e2e8e2); border-radius: 8px;
+  padding: 9px 12px; color: var(--text-main, #16241f); font-size: 13px; outline: none;
 }
 
 /* ---------- Duyarli ---------- */
