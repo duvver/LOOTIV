@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>101 Okey - LOOTIV</title>
+  <link rel="stylesheet" href="/css/style.css?v=6" />
+  <link rel="stylesheet" href="/css/okey101.css?v=4" />
+</head>
+<body class="ok1-body" data-user-id="<%= user.id %>">
+
+  <!-- ===== Ust bar ===== -->
+  <header class="ok1-topbar">
+    <div class="ok1-topbar-left">
+      <a href="/oyun/okey101" class="ok1-tab-masalar">
+        <span class="ok1-tab-icon">&#9776;</span> MASALAR
+      </a>
+      <span class="ok1-table-no">#1</span>
+      <a href="/oyun/okey101" class="ok1-hemenoyna">HEMEN<br/>OYNA! &#9193;</a>
+    </div>
+
+    <div class="ok1-topbar-right">
+      <span class="ok1-username"><%= user.rumuz %></span>
+      <span class="ok1-avatar" title="<%= user.rumuz %>">
+        <% if (user.avatar_url) { %>
+          <img src="<%= user.avatar_url %>" alt="<%= user.rumuz %>" />
+        <% } else { %>
+          <span><%= user.rumuz.charAt(0).toUpperCase() %></span>
+        <% } %>
+      </span>
+      <a href="/" class="ok1-icon-btn" title="Ana Sayfaya Don">&#9881;</a>
+      <span class="ok1-lt"><%= user.lt_balance.toLocaleString('tr-TR') %> <span class="ok1-lt-coin">&#9679;</span></span>
+    </div>
+  </header>
+
+  <!-- ===== Bilgi seridi (el / puan / yardim) ===== -->
+  <div class="ok1-infobar">
+    <div class="ok1-info-left">
+      <a href="/" class="ok1-mini-btn" title="Cikis">&#8630;</a>
+      <span class="ok1-mini-btn" title="Ayar">&#10052;</span>
+      <span class="ok1-mini-btn" title="Puan tablosu">&#128203;</span>
+      <span class="ok1-el">EL <b id="ok1-el">-</b></span>
+      <span class="ok1-puan"><b id="ok1-puan">-</b><span>PUAN</span></span>
+    </div>
+    <div class="ok1-info-right" id="okey-status"><!-- durum/sure JS ile --></div>
+  </div>
+
+  <!-- ===== Oyun alani ===== -->
+  <main class="ok1-main">
+    <section class="ok1-tablewrap">
+      <div class="ok1-felt" id="okey-felt">
+        <span class="ok1-felt-label">Puan tablosu</span>
+
+        <!-- Acilan perler: sol SERILER (2x13), sag CIFTLER (3 blok, her biri 2x13) -->
+        <div class="ok1-gridbg">
+          <div class="ok1-seri-grid"></div>
+          <div class="ok1-cift-grids">
+            <div class="ok1-cift-grid"></div>
+            <div class="ok1-cift-grid"></div>
+            <div class="ok1-cift-grid"></div>
+          </div>
+        </div>
+        <!-- Acilan perlerin dustugu gercek pano (JS bunu doldurur; izgaranin uzerinde durur) -->
+        <div class="ok1-board okey101-board" id="okey101-board"></div>
+
+        <!-- Koltuklar (0=alt,1=sol,2=ust,3=sag) -->
+        <div class="okey-seats" id="okey-seats"></div>
+
+        <!-- Deste + gosterge + acma kutulari -->
+        <div class="okey-middle okey-middle-101">
+          <div class="okey-deck" id="okey-deck">
+            <div class="okey-deck-pile" id="okey-deck-pile" title="Desteden cek"></div>
+            <div class="okey-deck-count" id="okey-deck-count"></div>
+          </div>
+          <div class="okey-indicator" id="okey-indicator"></div>
+        </div>
+
+        <!-- Kose iskartalari -->
+        <div class="okey-corner okey-corner-0" id="okey-corner-0"></div>
+        <div class="okey-corner okey-corner-1" id="okey-corner-1"></div>
+        <div class="okey-corner okey-corner-2" id="okey-corner-2"></div>
+        <div class="okey-corner okey-corner-3" id="okey-corner-3"></div>
+
+        <div class="okey-banner" id="okey-banner"></div>
+      </div>
+
+      <!-- Istaka + diz butonlari -->
+      <div class="ok1-rackzone">
+        <button type="button" class="ok1-diz-btn ok1-diz-cift" id="okey-cift-diz"><span>&#199;&#304;FT</span><span>D&#304;Z</span></button>
+        <div class="ok1-rack-holder">
+          <div class="ok1-diz-total" id="ok1-diz-total" hidden></div>
+          <div class="okey-rack" id="okey-rack"></div>
+        </div>
+        <button type="button" class="ok1-diz-btn ok1-diz-seri" id="okey-seri-diz"><span>SER&#304;</span><span>D&#304;Z</span></button>
+      </div>
+      <div class="okey-action-bar" id="okey-action-bar"></div>
+    </section>
+  </main>
+
+  <!-- ===== Alt bar: sohbet + masa sekmesi ===== -->
+  <footer class="ok1-bottombar">
+    <button type="button" class="ok1-bottom-btn" id="ok1-chat-toggle" title="Sohbet">&#128172;</button>
+    <span class="ok1-bottom-table">#1</span>
+    <span class="ok1-bottom-spacer"></span>
+    <button type="button" class="ok1-bottom-btn" title="Bildirim">&#128276;</button>
+  </footer>
+
+  <!-- ===== Sohbet paneli (acilir) ===== -->
+  <aside class="ok1-chatpanel" id="ok1-chatpanel" hidden>
+    <div class="chat-tabs">
+      <button class="chat-tab active" data-channel="genel">Genel</button>
+      <button class="chat-tab" data-channel="okey101">Oyun</button>
+      <button class="chat-tab" data-channel="sistem">Sistem</button>
+    </div>
+    <div class="chat-body">
+      <div class="chat-messages" id="chat-messages" data-channel="genel"></div>
+    </div>
+    <form class="chat-input-row" id="chat-form">
+      <input type="text" id="chat-input" class="chat-input" placeholder="Mesajini yaz..." maxlength="500" autocomplete="off" />
+      <button type="submit" class="btn btn-primary btn-sm">Gonder</button>
+    </form>
+    <!-- Canli oyuncu sayaci (gizli tutucu; JS bunu doldurabilir) -->
+    <ul id="player-list" class="player-list" hidden></ul>
+    <span id="player-count" hidden>0</span>
+  </aside>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/okey101.js?v=1"></script>
+  <script src="/js/notify.js?v=1"></script>
+  <script>
+    (function () {
+      var t = document.getElementById('ok1-chat-toggle');
+      var p = document.getElementById('ok1-chatpanel');
+      if (t && p) t.addEventListener('click', function () { p.hidden = !p.hidden; });
+    })();
+  </script>
+</body>
+</html>

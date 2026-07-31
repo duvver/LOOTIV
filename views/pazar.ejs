@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html class="light" lang="tr">
+<head>
+  <%- include('partials/theme-head', { pageTitle: 'Pazar — LOOTIV' }) %>
+  <style>
+    .rarity-common { border-left: 4px solid #BDC3C7; }
+    .rarity-rare { border-left: 4px solid #3498db; }
+    .rarity-epic { border-left: 4px solid #9b59b6; }
+    .rarity-legendary { border-left: 4px solid #f1c40f; }
+    .live-ticker { animation: ticker 30s linear infinite; }
+    @keyframes ticker { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+  </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col">
+
+  <%- include('partials/theme-nav', { active: 'pazar', user: user, unreadCount: typeof unreadCount !== 'undefined' ? unreadCount : 0 }) %>
+
+  <%
+    var catLabels = { silah:'Silahlar', zirh:'Zirlar', koleksiyon:'Koleksiyonluklar', karakter:'Karakterler', diger:'Diger' };
+    var catIcons = { silah:'swords', zirh:'shield', koleksiyon:'token', karakter:'person', diger:'more_horiz' };
+    var rarLabels = { common:'Siradan', rare:'Nadir', epic:'Epik', legendary:'Efsanevi' };
+    var rarBadge = { common:'text-outline', rare:'text-blue-500', epic:'text-tertiary', legendary:'text-secondary-container' };
+    function fmt(n){ return (Number(n)||0).toLocaleString('tr-TR'); }
+    function qp(extra){ // mevcut filtreleri koruyarak link uret
+      var p = [];
+      if (filters.category) p.push('kategori=' + filters.category);
+      if (filters.rarity) p.push('nadirlik=' + filters.rarity);
+      if (filters.q) p.push('ara=' + encodeURIComponent(filters.q));
+      Object.keys(extra||{}).forEach(function(k){ p = p.filter(function(x){return x.indexOf(k+'=')!==0;}); if(extra[k]!=null) p.push(k+'='+extra[k]); });
+      return '/pazar' + (p.length ? '?' + p.join('&') : '');
+    }
+  %>
+
+  <!-- Canli satis serisi -->
+  <% if (recentSales && recentSales.length) { %>
+    <div class="bg-primary text-white py-2 overflow-hidden whitespace-nowrap relative">
+      <div class="live-ticker flex gap-12 items-center">
+        <% recentSales.forEach(function(s){ %>
+          <span class="flex items-center gap-2 font-label-sm"><span class="w-2 h-2 rounded-full bg-success-green"></span> SON SATIS: <%= s.title %> — <%= fmt(s.price_lt) %> LT</span>
+        <% }); %>
+      </div>
+    </div>
+  <% } %>
+
+  <main class="max-w-container-max mx-auto w-full px-margin-mobile md:px-margin-desktop py-8 flex flex-col md:flex-row gap-4 flex-grow">
+
+    <!-- Sol filtre paneli -->
+    <aside class="w-full md:w-64 flex flex-col gap-6 shrink-0">
+      <a href="/pazar/ilan" class="w-full bg-secondary-container text-white py-4 rounded-xl shadow-md flex items-center justify-center gap-2 font-headline-md hover:scale-[1.02] active:scale-95 transition-all">
+        <span class="material-symbols-outlined">add_circle</span> Ilan Olustur
+      </a>
+      <p class="text-body-sm text-outline px-2 italic text-center">Envanterindeki esyayi secip satisa cikar. Satislardan %<%= commission %> islem komisyonu alinir.</p>
+
+      <!-- İstatistik -->
+      <div class="bg-white p-4 rounded-xl border border-outline-variant/30 shadow-sm space-y-4">
+        <h3 class="font-headline-md text-primary text-sm uppercase tracking-wider">Pazar Istatistikleri</h3>
+        <div class="bg-surface-container-low p-3 rounded-lg">
+          <span class="text-label-sm text-outline block">Toplam Islem Hacmi</span>
+          <span class="font-headline-md text-primary"><%= fmt(stats.total_volume) %> LT</span>
+        </div>
+        <div class="bg-surface-container-low p-3 rounded-lg">
+          <span class="text-label-sm text-outline block">Aktif Ilanlar</span>
+          <span class="font-headline-md text-primary"><%= fmt(stats.active_count) %></span>
+        </div>
+      </div>
+
+      <!-- Kategoriler -->
+      <div class="bg-white p-4 rounded-xl border border-outline-variant/30 shadow-sm">
+        <h3 class="font-headline-md text-primary text-sm uppercase tracking-wider mb-4">Kategoriler</h3>
+        <div class="flex flex-col gap-1">
+          <a href="<%= qp({kategori:null}) %>" class="flex items-center justify-between p-2 rounded-lg <%= !filters.category ? 'bg-surface-container-low text-primary font-semibold' : 'hover:bg-surface-container-low text-on-surface-variant' %> transition-colors">
+            <span class="flex items-center gap-2"><span class="material-symbols-outlined text-sm">grid_view</span> Tumu</span>
+          </a>
+          <% categories.forEach(function(c){ %>
+            <a href="<%= qp({kategori:c}) %>" class="flex items-center justify-between p-2 rounded-lg <%= filters.category === c ? 'bg-surface-container-low text-primary font-semibold' : 'hover:bg-surface-container-low text-on-surface-variant' %> transition-colors">
+              <span class="flex items-center gap-2"><span class="material-symbols-outlined text-sm"><%= catIcons[c] %></span> <%= catLabels[c] %></span>
+            </a>
+          <% }); %>
+        </div>
+      </div>
+
+      <!-- Nadirlik -->
+      <div class="bg-white p-4 rounded-xl border border-outline-variant/30 shadow-sm">
+        <h3 class="font-headline-md text-primary text-sm uppercase tracking-wider mb-4">Nadirlik</h3>
+        <div class="flex flex-col gap-1">
+          <a href="<%= qp({nadirlik:null}) %>" class="p-2 rounded-lg text-body-sm <%= !filters.rarity ? 'bg-surface-container-low text-primary font-semibold' : 'hover:bg-surface-container-low text-on-surface-variant' %>">Tumu</a>
+          <% rarities.forEach(function(r){ %>
+            <a href="<%= qp({nadirlik:r}) %>" class="p-2 rounded-lg text-body-sm <%= filters.rarity === r ? 'bg-surface-container-low text-primary font-semibold' : 'hover:bg-surface-container-low text-on-surface-variant' %>"><%= rarLabels[r] %></a>
+          <% }); %>
+        </div>
+      </div>
+
+      <!-- Arama -->
+      <div class="bg-white p-4 rounded-xl border border-outline-variant/30 shadow-sm">
+        <h3 class="font-headline-md text-primary text-sm uppercase tracking-wider mb-4">Ara</h3>
+        <form method="GET" action="/pazar" class="flex flex-col gap-2">
+          <% if (filters.category) { %><input type="hidden" name="kategori" value="<%= filters.category %>" /><% } %>
+          <% if (filters.rarity) { %><input type="hidden" name="nadirlik" value="<%= filters.rarity %>" /><% } %>
+          <input name="ara" value="<%= filters.q || '' %>" placeholder="Esya adi..." class="w-full bg-surface-container-low border-none rounded-lg p-2 text-body-sm" />
+          <button type="submit" class="w-full py-2 bg-primary text-white rounded-lg font-label-md text-label-sm">Filtrele</button>
+        </form>
+      </div>
+    </aside>
+
+    <!-- Ana içerik -->
+    <div class="flex-grow flex flex-col gap-8">
+      <% if (info) { %><div class="p-4 bg-success-green/10 text-success-green rounded-lg font-body-sm"><%= info %></div><% } %>
+      <% if (error) { %><div class="p-4 bg-error-container text-on-error-container rounded-lg font-body-sm"><%= error %></div><% } %>
+
+      <!-- Kendi ilanlarım -->
+      <% if (myListings && myListings.filter(function(m){return m.status==='active';}).length) { %>
+        <section>
+          <h2 class="font-headline-md text-headline-md text-primary mb-4">Aktif Ilanlarim</h2>
+          <div class="flex flex-col gap-2">
+            <% myListings.filter(function(m){return m.status==='active';}).forEach(function(m){ %>
+              <div class="bg-white rounded-lg border border-outline-variant/30 p-3 flex items-center justify-between gap-3">
+                <div class="flex items-center gap-3 min-w-0">
+                  <span class="material-symbols-outlined text-outline"><%= catIcons[m.category] || 'inventory_2' %></span>
+                  <span class="font-label-md text-primary truncate"><%= m.title %></span>
+                  <span class="text-secondary-container font-bold"><%= fmt(m.price_lt) %> LT</span>
+                </div>
+                <form method="POST" action="/pazar/<%= m.id %>/iptal" onsubmit="return confirm('Ilan iptal edilsin mi?');">
+                  <button class="px-3 py-1.5 border border-error text-error rounded-lg font-label-md text-label-sm hover:bg-error hover:text-white transition-all">Iptal</button>
+                </form>
+              </div>
+            <% }); %>
+          </div>
+        </section>
+      <% } %>
+
+      <!-- İlan listesi -->
+      <section>
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="font-headline-lg text-headline-lg text-primary">Pazar Ilanlari</h2>
+          <span class="text-body-sm text-outline"><%= listings.length %> ilan</span>
+        </div>
+
+        <% if (!listings.length) { %>
+          <div class="bg-white rounded-xl border border-outline-variant/30 p-12 text-center">
+            <span class="material-symbols-outlined text-5xl text-outline">storefront</span>
+            <p class="mt-3 font-headline-md text-primary">Bu filtrede ilan yok</p>
+            <p class="text-body-sm text-outline">Ilk ilani sen olustur.</p>
+            <a href="/pazar/ilan" class="inline-block mt-4 px-5 py-2 bg-secondary-container text-white rounded-lg font-label-md text-label-md">Ilan Olustur</a>
+          </div>
+        <% } else { %>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <% listings.forEach(function(l){ var mine = l.seller_id === user.id; %>
+              <div class="bg-white rounded-xl shadow-sm border border-outline-variant/30 overflow-hidden hover:shadow-md transition-shadow group rarity-<%= l.rarity %>">
+                <div class="relative h-40 bg-surface-container-low flex items-center justify-center">
+                  <% if (l.image_url) { %>
+                    <img class="w-full h-full object-contain p-4 transition-transform duration-500 group-hover:scale-105" src="<%= l.image_url %>" alt="<%= l.title %>" />
+                  <% } else { %>
+                    <span class="material-symbols-outlined text-6xl text-outline/40"><%= catIcons[l.category] || 'inventory_2' %></span>
+                  <% } %>
+                  <span class="absolute top-2 right-2 bg-white/90 backdrop-blur px-2 py-1 rounded text-[10px] font-bold uppercase <%= rarBadge[l.rarity] %>"><%= rarLabels[l.rarity] %></span>
+                </div>
+                <div class="p-4 space-y-3">
+                  <div>
+                    <h5 class="font-headline-md text-base truncate"><%= l.title %></h5>
+                    <p class="text-label-sm text-outline flex items-center gap-1">
+                      <span class="material-symbols-outlined text-[14px]">account_circle</span> <%= l.seller_rumuz %>
+                    </p>
+                  </div>
+                  <div class="flex items-center justify-between pt-2 border-t border-outline-variant/20">
+                    <span class="text-primary font-bold text-lg"><%= fmt(l.price_lt) %> LT</span>
+                    <% if (mine) { %>
+                      <span class="text-label-sm text-outline italic">Senin</span>
+                    <% } else { %>
+                      <form method="POST" action="/pazar/<%= l.id %>/satinal" onsubmit="return confirm('<%= l.title.replace(/'/g, '') %> — <%= fmt(l.price_lt) %> LT ile satin alinsin mi?');">
+                        <button class="bg-primary text-white p-2 rounded-lg hover:bg-secondary-container transition-colors" title="Satin al">
+                          <span class="material-symbols-outlined text-sm">shopping_cart</span>
+                        </button>
+                      </form>
+                    <% } %>
+                  </div>
+                </div>
+              </div>
+            <% }); %>
+          </div>
+        <% } %>
+      </section>
+    </div>
+  </main>
+
+  <%- include('partials/theme-foot', { user: user }) %>
+</body>
+</html>

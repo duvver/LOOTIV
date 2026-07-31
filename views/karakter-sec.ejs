@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html class="light" lang="tr">
+<head>
+  <%- include('partials/theme-head', { pageTitle: 'Karakter Sec — LOOTIV' }) %>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col">
+
+  <%- include('partials/theme-nav', { active: '', user: user, unreadCount: typeof unreadCount !== 'undefined' ? unreadCount : 0 }) %>
+
+  <main class="flex-grow max-w-4xl mx-auto w-full px-margin-mobile md:px-margin-desktop py-10 text-center">
+    <h1 class="font-headline-lg text-headline-lg text-primary mb-2">Karakterini Sec</h1>
+    <p class="font-body-md text-on-surface-variant mb-8">Basit birkac karakterden birini sec. Karakter gorselleri yakinda eklenecek.</p>
+
+    <% if (typeof error !== 'undefined' && error) { %>
+      <div class="mb-6 p-3 bg-error-container text-on-error-container rounded-lg font-body-sm inline-block"><%= error %></div>
+    <% } %>
+
+    <form method="POST" action="/karakter-sec" id="charsel-form">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <% characters.forEach(function (c) { %>
+          <label class="charsel-card cursor-pointer relative bg-white rounded-xl border-2 <%= user.character_class === c.slug ? 'border-secondary-container' : 'border-outline-variant/40' %> p-6 flex flex-col items-center gap-3 hover:-translate-y-1 transition-all" data-slug="<%= c.slug %>">
+            <input type="radio" name="character" value="<%= c.slug %>" class="hidden" <%= user.character_class === c.slug ? 'checked' : '' %> />
+            <span class="w-20 h-20 rounded-full bg-primary-fixed-dim text-primary flex items-center justify-center text-4xl"><%- c.icon %></span>
+            <span class="font-headline-md text-headline-md text-primary"><%= c.name %></span>
+            <span class="font-body-sm text-outline leading-snug"><%= c.desc %></span>
+            <span class="charsel-check absolute top-2 right-2 text-success-green opacity-0"><span class="material-symbols-outlined">check_circle</span></span>
+          </label>
+        <% }); %>
+      </div>
+      <button type="submit" id="charsel-submit" disabled class="px-8 py-3 bg-secondary-container text-white rounded-lg font-label-md text-label-md hover:opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed">Devam Et</button>
+    </form>
+  </main>
+
+  <%- include('partials/theme-foot', { user: user }) %>
+  <script>
+    (function () {
+      var cards = Array.prototype.slice.call(document.querySelectorAll('.charsel-card'));
+      var submit = document.getElementById('charsel-submit');
+      function sync() {
+        var any = false;
+        cards.forEach(function (card) {
+          var input = card.querySelector('input');
+          var check = card.querySelector('.charsel-check');
+          if (input.checked) {
+            card.classList.add('border-secondary-container');
+            card.classList.remove('border-outline-variant/40');
+            if (check) check.style.opacity = '1';
+            any = true;
+          } else {
+            card.classList.remove('border-secondary-container');
+            card.classList.add('border-outline-variant/40');
+            if (check) check.style.opacity = '0';
+          }
+        });
+        submit.disabled = !any;
+      }
+      cards.forEach(function (card) {
+        card.addEventListener('click', function () { card.querySelector('input').checked = true; sync(); });
+      });
+      sync();
+    })();
+  </script>
+</body>
+</html>

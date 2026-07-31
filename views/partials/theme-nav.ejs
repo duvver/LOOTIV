@@ -1,0 +1,89 @@
+<%
+  // Nexus Play tema ust menusu. Parametreler: active, user, unreadCount
+  var _active = typeof active !== 'undefined' ? active : '';
+  var _unread = typeof unreadCount !== 'undefined' ? unreadCount : 0;
+  function navCls(key) {
+    return key === _active
+      ? 'font-label-md text-label-md text-primary border-b-2 border-primary pb-1'
+      : 'font-label-md text-label-md text-outline hover:text-primary transition-colors';
+  }
+%>
+<header class="sticky top-0 z-50 bg-white shadow-sm h-16 w-full">
+  <div class="flex justify-between items-center px-margin-mobile md:px-margin-desktop w-full max-w-container-max mx-auto h-full">
+    <div class="flex items-center gap-8">
+      <a href="/" class="flex items-center gap-2">
+        <img src="/images/lootivlogo.png" alt="LOOTIV" class="h-8" />
+        <span class="text-headline-md font-headline-lg text-primary hidden sm:inline"></span>
+      </a>
+      <% if (user) { %>
+        <nav class="hidden md:flex items-center gap-6 h-full">
+          <a class="<%= navCls('home') %>" href="/">Anasayfa</a>
+          <a class="<%= navCls('oyunlar') %>" href="/#oyunlar">Oyunlar</a>
+          <a class="<%= navCls('pazar') %>" href="/pazar">Pazar</a>
+          <a class="<%= navCls('envanter') %>" href="/envanter">Envanter</a>
+          <a class="<%= navCls('siralama') %>" href="/siralama">Sıralama</a>
+          <a class="<%= navCls('bloglar') %>" href="/bloglar">Bloglar</a>
+          <a class="<%= navCls('arkadaslar') %>" href="/arkadaslar">Arkadaşlar</a>
+          <a class="<%= navCls('duyurular') %>" href="/duyurular">Duyurular</a>
+          <% if (user.is_admin) { %><a class="<%= navCls('admin') %>" href="/admin">Admin</a><% } %>
+        </nav>
+      <% } %>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <% if (user) { %>
+        <!-- LT bakiyesi -->
+        <span class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-secondary-container/40 rounded-full font-label-md text-label-sm text-on-secondary-container">
+          <span class="w-2 h-2 rounded-full bg-amber-gold"></span>
+          <%= user.lt_balance.toLocaleString('tr-TR') %> LT
+        </span>
+        <% if (user.vip_tier > 0) { %>
+          <span class="hidden sm:inline px-2 py-1 bg-energetic-purple/15 text-energetic-purple rounded-full text-label-sm font-label-md">VIP <%= user.vip_tier %></span>
+        <% } %>
+
+        <!-- Bildirim zili -->
+        <a href="/duyurular" class="relative p-2 text-outline hover:bg-surface-container rounded-full transition-colors" title="Duyurular">
+          <span class="material-symbols-outlined">notifications</span>
+          <span id="nav-announce-badge" class="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-error text-white text-[11px] font-bold rounded-full" <%= _unread > 0 ? '' : 'hidden' %>><%= _unread %></span>
+        </a>
+
+        <!-- Ayarlar -->
+        <a href="/settings/profile" class="hidden sm:flex items-center gap-2 px-4 py-2 border border-silver-light rounded-lg font-label-md text-label-md text-primary hover:bg-surface-container transition-all">Ayarlar</a>
+
+        <!-- Avatar -->
+        <a href="/settings/profile" class="w-10 h-10 rounded-full bg-primary overflow-hidden border-2 border-primary/10 flex items-center justify-center text-white font-headline-lg font-bold" title="<%= user.rumuz %>">
+          <% if (user.avatar_url) { %>
+            <img class="w-full h-full object-cover" src="<%= user.avatar_url %>" alt="<%= user.rumuz %>" />
+          <% } else { %>
+            <span><%= user.rumuz.charAt(0).toUpperCase() %></span>
+          <% } %>
+        </a>
+
+        <!-- Mobil menu butonu -->
+        <button class="md:hidden p-2 text-primary" onclick="document.getElementById('mobile-nav').classList.toggle('hidden')">
+          <span class="material-symbols-outlined">menu</span>
+        </button>
+      <% } else { %>
+        <a href="/" class="font-label-md text-label-md text-primary hover:underline">Giris</a>
+        <a href="/register" class="px-4 py-2 bg-secondary text-white rounded-lg font-label-md text-label-md hover:opacity-90 transition-all">Uye Ol</a>
+      <% } %>
+    </div>
+  </div>
+
+  <!-- Mobil acilir menu -->
+  <% if (user) { %>
+    <nav id="mobile-nav" class="hidden md:hidden bg-white border-t border-outline-variant px-margin-mobile py-3 flex-col gap-1">
+      <a class="block py-2 font-label-md text-label-md text-on-surface" href="/">Anasayfa</a>
+      <a class="block py-2 font-label-md text-label-md text-on-surface" href="/#oyunlar">Oyunlar</a>
+      <a class="block py-2 font-label-md text-label-md text-on-surface" href="/pazar">Pazar</a>
+      <a class="block py-2 font-label-md text-label-md text-on-surface" href="/envanter">Envanter</a>
+      <a class="block py-2 font-label-md text-label-md text-on-surface" href="/siralama">Sıralama</a>
+      <a class="block py-2 font-label-md text-label-md text-on-surface" href="/bloglar">Bloglar</a>
+      <a class="block py-2 font-label-md text-label-md text-on-surface" href="/arkadaslar">Arkadaşlar</a>
+      <a class="block py-2 font-label-md text-label-md text-on-surface" href="/duyurular">Duyurular</a>
+      <a class="block py-2 font-label-md text-label-md text-on-surface" href="/settings/profile">Ayarlar</a>
+      <% if (user.is_admin) { %><a class="block py-2 font-label-md text-label-md text-on-surface" href="/admin">Admin</a><% } %>
+      <form method="POST" action="/logout"><button type="submit" class="w-full text-left py-2 font-label-md text-label-md text-error">Cikis</button></form>
+    </nav>
+  <% } %>
+</header>

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html class="light" lang="tr">
+<head>
+  <%- include('partials/theme-head', { pageTitle: blog.title + ' — LOOTIV' }) %>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col">
+
+  <%- include('partials/theme-nav', { active: 'bloglar', user: user, unreadCount: typeof unreadCount !== 'undefined' ? unreadCount : 0 }) %>
+
+  <main class="flex-grow max-w-3xl mx-auto w-full px-margin-mobile md:px-margin-desktop py-8">
+    <a href="/bloglar" class="text-primary font-label-md hover:underline flex items-center gap-1 mb-4"><span class="material-symbols-outlined text-sm">arrow_back</span> Bloglar</a>
+
+    <article class="bg-white rounded-xl border border-outline-variant/30 shadow-sm p-8">
+      <div class="flex items-center gap-3 mb-4">
+        <span class="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center font-bold overflow-hidden">
+          <% if (blog.avatar_url) { %><img class="w-full h-full object-cover" src="<%= blog.avatar_url %>" alt="" /><% } else { %><span><%= blog.rumuz.charAt(0).toUpperCase() %></span><% } %>
+        </span>
+        <span class="font-label-md text-label-md text-primary"><%= blog.rumuz %></span>
+        <span class="text-label-sm text-outline"><%= new Date(blog.created_at).toLocaleDateString('tr-TR') %></span>
+      </div>
+
+      <h1 class="font-headline-lg text-headline-lg text-primary mb-6"><%= blog.title %></h1>
+      <div class="font-body-lg text-body-md text-on-surface leading-relaxed" style="white-space: pre-wrap; word-break: break-word;"><%= blog.content %></div>
+
+      <% if (blog.user_id === user.id || user.is_admin) { %>
+        <div class="flex gap-2 mt-8 pt-6 border-t border-outline-variant/30">
+          <% if (blog.user_id === user.id) { %>
+            <a href="/bloglar/<%= blog.id %>/duzenle" class="px-4 py-2 border border-silver-light text-primary rounded-lg font-label-md text-label-sm hover:bg-surface-container-low transition-all">Duzenle</a>
+          <% } %>
+          <form method="POST" action="/bloglar/<%= blog.id %>/sil" onsubmit="return confirm('Bu yazi silinsin mi?');">
+            <button class="px-4 py-2 border border-error text-error rounded-lg font-label-md text-label-sm hover:bg-error hover:text-white transition-all">Sil</button>
+          </form>
+        </div>
+      <% } %>
+    </article>
+  </main>
+
+  <%- include('partials/theme-foot', { user: user }) %>
+</body>
+</html>

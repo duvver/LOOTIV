@@ -3,231 +3,1313 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin Paneli - LOOTIV</title>
-  <link rel="stylesheet" href="/css/style.css" />
+  <title>Admin Paneli — LOOTIV</title>
+  <link rel="stylesheet" href="/css/style.css?v=6" />
+  <style>
+    /* ========== ADMIN SHELL ========== */
+    .adm-body {
+      min-height: 100vh;
+      display: flex;
+      background: #0d1117;
+      font-family: var(--font);
+      color: #e6edf3;
+    }
+
+    /* ---- Sol kenar çubuğu ---- */
+    .adm-sidebar {
+      width: 230px;
+      min-height: 100vh;
+      background: #161b22;
+      border-right: 1px solid #30363d;
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 100;
+    }
+
+    .adm-sidebar-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 18px 20px;
+      border-bottom: 1px solid #30363d;
+      text-decoration: none;
+    }
+
+    .adm-sidebar-brand img { height: 30px; }
+
+    .adm-sidebar-label {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--green-bright);
+    }
+
+    .adm-nav {
+      flex: 1;
+      padding: 14px 0;
+      overflow-y: auto;
+    }
+
+    .adm-nav-group {
+      padding: 6px 12px 2px;
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #8b949e;
+      margin-top: 10px;
+    }
+
+    .adm-nav-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 18px;
+      font-size: 13.5px;
+      font-weight: 500;
+      color: #8b949e;
+      text-decoration: none;
+      border-left: 3px solid transparent;
+      transition: color 0.15s, background 0.15s, border-color 0.15s;
+      cursor: pointer;
+    }
+
+    .adm-nav-link:hover,
+    .adm-nav-link.active {
+      background: rgba(255,255,255,0.04);
+      color: #e6edf3;
+      border-left-color: var(--green-bright);
+    }
+
+    .adm-nav-link.active { color: var(--green-bright); }
+
+    .adm-nav-icon { font-size: 16px; width: 20px; text-align: center; flex-shrink: 0; }
+
+    .adm-sidebar-footer {
+      padding: 14px 18px;
+      border-top: 1px solid #30363d;
+    }
+
+    .adm-user-chip {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .adm-user-av {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--green);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 800;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .adm-user-info { flex: 1; min-width: 0; }
+    .adm-user-name { font-size: 13px; font-weight: 700; color: #e6edf3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .adm-user-role { font-size: 11px; color: var(--green-bright); font-weight: 600; }
+
+    .adm-exit-btn {
+      padding: 5px 8px;
+      background: transparent;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      color: #8b949e;
+      font-size: 12px;
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .adm-exit-btn:hover { color: #e6edf3; border-color: #8b949e; }
+
+    /* ---- İçerik alanı ---- */
+    .adm-content {
+      margin-left: 230px;
+      flex: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ---- Üst bar ---- */
+    .adm-topbar {
+      background: #161b22;
+      border-bottom: 1px solid #30363d;
+      padding: 14px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .adm-page-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: #e6edf3;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .adm-topbar-actions { display: flex; align-items: center; gap: 10px; }
+
+    /* ---- Sayfa içeriği ---- */
+    .adm-page { display: none; padding: 24px 28px 48px; flex: 1; }
+    .adm-page.visible { display: block; }
+
+    /* ---- Stat kartları ---- */
+    .adm-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+
+    .adm-stat {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .adm-stat-icon { font-size: 22px; }
+
+    .adm-stat-val {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--green-bright);
+      line-height: 1;
+    }
+
+    .adm-stat-label { font-size: 12px; color: #8b949e; font-weight: 500; }
+
+    /* ---- Bölüm kutuları (accordion) ---- */
+    .adm-section {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+
+    .adm-section-head {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 15px 20px;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s;
+    }
+
+    .adm-section-head:hover { background: rgba(255,255,255,0.03); }
+
+    .adm-section-head-icon { font-size: 18px; flex-shrink: 0; }
+
+    .adm-section-head-text { flex: 1; }
+    .adm-section-head-title { font-size: 14px; font-weight: 700; color: #e6edf3; }
+    .adm-section-head-sub { font-size: 12px; color: #8b949e; margin-top: 1px; }
+
+    .adm-section-badge {
+      background: rgba(29,158,117,0.18);
+      color: var(--green-bright);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+
+    .adm-section-badge.red {
+      background: rgba(192,57,43,0.15);
+      color: #e06c75;
+    }
+
+    .adm-section-badge.amber {
+      background: rgba(132,101,21,0.25);
+      color: #e3b341;
+    }
+
+    .adm-chevron {
+      font-size: 12px;
+      color: #8b949e;
+      transition: transform 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .adm-section.open .adm-chevron { transform: rotate(180deg); }
+
+    .adm-section-body {
+      display: none;
+      border-top: 1px solid #30363d;
+    }
+
+    .adm-section.open .adm-section-body { display: block; }
+
+    /* ---- Tablo ---- */
+    .adm-table-scroll { overflow-x: auto; }
+
+    .adm-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .adm-table th {
+      padding: 10px 14px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #8b949e;
+      border-bottom: 1px solid #30363d;
+      white-space: nowrap;
+      background: #0d1117;
+    }
+
+    .adm-table td {
+      padding: 11px 14px;
+      border-bottom: 1px solid #21262d;
+      vertical-align: middle;
+      color: #c9d1d9;
+      white-space: nowrap;
+    }
+
+    .adm-table tbody tr:last-child td { border-bottom: none; }
+
+    .adm-table tbody tr:hover td { background: rgba(255,255,255,0.02); }
+
+    /* ---- Satır içi aksiyonlar ---- */
+    .adm-actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .adm-actions form { display: inline-flex; align-items: center; gap: 4px; }
+
+    .adm-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid #30363d;
+      background: transparent;
+      color: #c9d1d9;
+      cursor: pointer;
+      transition: background 0.13s, border-color 0.13s, color 0.13s;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .adm-btn:hover { background: rgba(255,255,255,0.06); color: #e6edf3; border-color: #8b949e; }
+    .adm-btn.green { border-color: #2ea043; color: #3fb950; }
+    .adm-btn.green:hover { background: rgba(62,185,80,0.1); }
+    .adm-btn.red { border-color: #da3633; color: #f85149; }
+    .adm-btn.red:hover { background: rgba(248,81,73,0.1); }
+    .adm-btn.amber { border-color: #9e6a03; color: #e3b341; }
+    .adm-btn.amber:hover { background: rgba(227,179,65,0.1); }
+
+    /* ---- Input'lar (dark) ---- */
+    .adm-input {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 12.5px;
+      color: #e6edf3;
+      font-family: inherit;
+      outline: none;
+    }
+
+    .adm-input:focus { border-color: var(--green-bright); box-shadow: 0 0 0 3px rgba(29,158,117,0.12); }
+
+    .adm-input-sm { width: 90px; }
+    .adm-input-md { width: 150px; }
+    .adm-input-lg { width: 100%; }
+
+    .adm-select {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 6px 8px;
+      font-size: 12px;
+      color: #e6edf3;
+      font-family: inherit;
+      outline: none;
+    }
+
+    .adm-select:focus { border-color: var(--green-bright); }
+
+    /* ---- Form bölümleri ---- */
+    .adm-form { display: flex; flex-direction: column; gap: 14px; padding: 20px; }
+
+    .adm-form-row {
+      display: grid;
+      gap: 12px;
+    }
+
+    .adm-form-row-2 { grid-template-columns: 1fr 1fr; }
+    .adm-form-row-4 { grid-template-columns: repeat(4, 1fr); }
+    .adm-form-row-3 { grid-template-columns: 1fr 1fr auto; align-items: end; }
+
+    .adm-field { display: flex; flex-direction: column; gap: 5px; }
+    .adm-field label { font-size: 12px; color: #8b949e; font-weight: 600; }
+    .adm-field input, .adm-field select, .adm-field textarea { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 8px 10px; font-size: 13.5px; color: #e6edf3; font-family: inherit; outline: none; }
+    .adm-field input:focus, .adm-field select:focus, .adm-field textarea:focus { border-color: var(--green-bright); box-shadow: 0 0 0 3px rgba(29,158,117,0.1); }
+    .adm-field textarea { resize: vertical; line-height: 1.5; }
+
+    .adm-checkbox-row { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #c9d1d9; }
+    .adm-checkbox-row input[type=checkbox] { accent-color: var(--green-bright); width: 16px; height: 16px; }
+
+    .adm-form-footer { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+    .adm-save-btn {
+      background: var(--green);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 9px 20px;
+      font-size: 13.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .adm-save-btn:hover { background: var(--green-deep); }
+
+    .adm-note { font-size: 12px; color: #8b949e; }
+
+    /* ---- Tag & badge'ler ---- */
+    .adm-tag {
+      display: inline-block;
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 999px;
+      margin-right: 3px;
+    }
+
+    .adm-tag-green { background: rgba(62,185,80,0.18); color: #3fb950; }
+    .adm-tag-red { background: rgba(248,81,73,0.15); color: #f85149; }
+    .adm-tag-gray { background: rgba(139,148,158,0.15); color: #8b949e; }
+    .adm-tag-amber { background: rgba(227,179,65,0.18); color: #e3b341; }
+    .adm-tag-purple { background: rgba(188,140,255,0.18); color: #bc8cff; }
+    .adm-tag-blue { background: rgba(88,166,255,0.18); color: #58a6ff; }
+
+    .adm-badge-admin {
+      background: rgba(29,158,117,0.2);
+      color: var(--green-bright);
+      font-size: 10px;
+      font-weight: 800;
+      padding: 1px 6px;
+      border-radius: 999px;
+      letter-spacing: 0.5px;
+    }
+
+    /* ---- Oyun log rengi ---- */
+    .adm-pos { color: #3fb950; font-weight: 700; }
+    .adm-neg { color: #f85149; font-weight: 700; }
+
+    /* ---- Alert ---- */
+    .adm-alert {
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 13.5px;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .adm-alert-success {
+      background: rgba(62,185,80,0.12);
+      border: 1px solid rgba(62,185,80,0.3);
+      color: #3fb950;
+    }
+
+    /* ---- Boş durum ---- */
+    .adm-empty {
+      text-align: center;
+      color: #8b949e;
+      padding: 32px !important;
+      font-size: 13px;
+    }
+
+    /* ---- Arama kutusu ---- */
+    .adm-search-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 16px;
+      border-bottom: 1px solid #30363d;
+    }
+
+    .adm-search-input {
+      flex: 1;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 13.5px;
+      color: #e6edf3;
+      font-family: inherit;
+      outline: none;
+    }
+
+    .adm-search-input:focus { border-color: var(--green-bright); }
+    .adm-search-input::placeholder { color: #8b949e; }
+
+    .adm-filter-count { font-size: 12px; color: #8b949e; white-space: nowrap; }
+
+    /* ---- Mobil ---- */
+    .adm-hamburger {
+      display: none;
+      background: none;
+      border: 1px solid #30363d;
+      color: #8b949e;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    @media (max-width: 860px) {
+      .adm-sidebar { transform: translateX(-100%); transition: transform 0.22s ease; }
+      .adm-sidebar.open { transform: translateX(0); box-shadow: 8px 0 32px rgba(0,0,0,0.5); }
+      .adm-content { margin-left: 0; }
+      .adm-hamburger { display: inline-flex; }
+      .adm-form-row-4 { grid-template-columns: 1fr 1fr; }
+      .adm-form-row-3 { grid-template-columns: 1fr; }
+      .adm-page { padding: 18px 16px 48px; }
+    }
+  </style>
 </head>
-<body class="app-body">
-  <header class="topbar">
-    <div class="topbar-left">
-      <a href="/" class="brand-logo"><img src="/images/lootivlogo.png" alt="LOOTIV" /></a>
-      <span class="admin-panel-title">Admin Paneli</span>
+<body class="adm-body">
+
+  <!-- ===== Sol kenar çubuğu ===== -->
+  <nav class="adm-sidebar" id="adm-sidebar">
+    <a href="/" class="adm-sidebar-brand">
+      <img src="/images/lootivlogo.png" alt="LOOTIV" />
+      <span class="adm-sidebar-label">Admin</span>
+    </a>
+
+    <div class="adm-nav">
+      <div class="adm-nav-group">Genel</div>
+      <a class="adm-nav-link active" data-page="dashboard" onclick="showPage('dashboard',this)">
+        <span class="adm-nav-icon">&#128202;</span> Genel Bakis
+      </a>
+
+      <div class="adm-nav-group">Yonetim</div>
+      <a class="adm-nav-link" data-page="users" onclick="showPage('users',this)">
+        <span class="adm-nav-icon">&#128101;</span> Uyeler
+      </a>
+      <a class="adm-nav-link" data-page="gamelogs" onclick="showPage('gamelogs',this)">
+        <span class="adm-nav-icon">&#127183;</span> Oyun Loglari
+      </a>
+      <a class="adm-nav-link" data-page="announcements" onclick="showPage('announcements',this)">
+        <span class="adm-nav-icon">&#128226;</span> Duyurular
+      </a>
+
+      <div class="adm-nav-group">Oyun Ayarlari</div>
+      <a class="adm-nav-link" data-page="dailyq" onclick="showPage('dailyq',this)">
+        <span class="adm-nav-icon">&#10067;</span> Gunun Sorusu
+      </a>
+      <a class="adm-nav-link" data-page="scratch" onclick="showPage('scratch',this)">
+        <span class="adm-nav-icon">&#127920;</span> Kazi Kazan
+      </a>
+      <a class="adm-nav-link" data-page="vip" onclick="showPage('vip',this)">
+        <span class="adm-nav-icon">&#128081;</span> VIP Yonetimi
+      </a>
+
+      <div class="adm-nav-group">Pazar</div>
+      <a class="adm-nav-link" data-page="market" onclick="showPage('market',this)">
+        <span class="adm-nav-icon">&#128722;</span> Pazar Yonetimi
+      </a>
     </div>
-    <div class="topbar-right">
-      <span class="user-name"><%= user.rumuz %> <span class="admin-badge">ADMIN</span></span>
-      <a href="/" class="btn btn-ghost btn-sm">Lobiye Don</a>
+
+    <div class="adm-sidebar-footer">
+      <div class="adm-user-chip">
+        <div class="adm-user-av"><%= user.rumuz.charAt(0).toUpperCase() %></div>
+        <div class="adm-user-info">
+          <div class="adm-user-name"><%= user.rumuz %></div>
+          <div class="adm-user-role">Super Admin</div>
+        </div>
+        <a href="/" class="adm-exit-btn" title="Ana Sayfaya Don">&#8617;</a>
+      </div>
     </div>
-  </header>
+  </nav>
 
-  <main class="admin-main">
-    <% if (savedMsg) { %>
-      <div class="alert alert-success">Kaydedildi.</div>
-    <% } %>
+  <!-- ===== İçerik alanı ===== -->
+  <div class="adm-content">
 
-    <div class="stat-grid">
-      <div class="stat-card">
-        <div class="stat-value"><%= stats.total_users %></div>
-        <div class="stat-label">Toplam Uye</div>
+    <!-- Üst bar -->
+    <div class="adm-topbar">
+      <div class="adm-page-title">
+        <button class="adm-hamburger" id="adm-hamburger" onclick="toggleSidebar()">&#9776;</button>
+        <span id="adm-page-label">Genel Bakis</span>
       </div>
-      <div class="stat-card">
-        <div class="stat-value"><%= stats.total_lt.toLocaleString('tr-TR') %></div>
-        <div class="stat-label">Toplam LT</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value"><%= stats.verified_users %></div>
-        <div class="stat-label">Tam Dogrulanmis Uye</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value"><%= stats.vip_users %></div>
-        <div class="stat-label">VIP Uye</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value"><%= stats.banned_users %></div>
-        <div class="stat-label">Yasakli Uye</div>
+      <div class="adm-topbar-actions">
+        <% if (savedMsg) { %>
+          <span style="font-size:13px;color:#3fb950;">&#10003; Kaydedildi</span>
+        <% } %>
+        <a href="/" class="adm-btn">&#8617; Ana Sayfa</a>
       </div>
     </div>
 
-    <h2 class="admin-section-title">Tum Uyeler (<%= users.length %>)</h2>
+    <!-- ========== SAYFA: Genel Bakis ========== -->
+    <div class="adm-page visible" id="page-dashboard">
+      <% if (savedMsg) { %>
+        <div class="adm-alert adm-alert-success">&#10003; Degisiklikler kaydedildi.</div>
+      <% } %>
 
-    <div class="admin-table-wrap">
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>Rumuz</th>
-            <th>E-posta</th>
-            <th>LT</th>
-            <th>Dogrulama</th>
-            <th>VIP</th>
-            <th>Rol</th>
-            <th>Durum</th>
-            <th>Kayit</th>
-            <th>Islemler</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% users.forEach(function(u) { %>
-            <tr>
-              <td>
-                <strong><%= u.rumuz %></strong>
-                <% if (u.is_admin) { %><span class="admin-badge">ADMIN</span><% } %>
-              </td>
-              <td><%= u.email %></td>
-              <td><%= u.lt_balance %></td>
-              <td>
-                <span class="tag <%= u.email_verified ? 'tag-green' : 'tag-gray' %>">Mail</span>
-                <span class="tag <%= u.phone_verified ? 'tag-green' : 'tag-gray' %>">Tel</span>
-              </td>
-              <td>
-                <% if (u.vip_tier > 0) { %>
-                  <span class="tag tag-gold">VIP <%= u.vip_tier %></span>
-                  <div class="admin-vip-expiry">Bitis: <%= u.vip_expires_at ? new Date(u.vip_expires_at).toLocaleDateString('tr-TR') : '-' %></div>
-                <% } else { %>
-                  <span class="tag tag-gray">Yok</span>
+      <div class="adm-stats">
+        <div class="adm-stat">
+          <div class="adm-stat-icon">&#128101;</div>
+          <div class="adm-stat-val"><%= stats.total_users %></div>
+          <div class="adm-stat-label">Toplam Uye</div>
+        </div>
+        <div class="adm-stat">
+          <div class="adm-stat-icon">&#9679;</div>
+          <div class="adm-stat-val"><%= stats.total_lt.toLocaleString('tr-TR') %></div>
+          <div class="adm-stat-label">Toplam LT (dagitilan)</div>
+        </div>
+        <div class="adm-stat">
+          <div class="adm-stat-icon">&#10003;</div>
+          <div class="adm-stat-val"><%= stats.verified_users %></div>
+          <div class="adm-stat-label">Tam Dogrulanmis</div>
+        </div>
+        <div class="adm-stat">
+          <div class="adm-stat-icon">&#128081;</div>
+          <div class="adm-stat-val"><%= stats.vip_users %></div>
+          <div class="adm-stat-label">VIP Uye</div>
+        </div>
+        <div class="adm-stat">
+          <div class="adm-stat-icon">&#128683;</div>
+          <div class="adm-stat-val" style="color:<%= stats.banned_users > 0 ? '#f85149' : '#3fb950' %>"><%= stats.banned_users %></div>
+          <div class="adm-stat-label">Yasakli Uye</div>
+        </div>
+        <div class="adm-stat">
+          <div class="adm-stat-icon">&#127183;</div>
+          <div class="adm-stat-val"><%= gameLogs.length %></div>
+          <div class="adm-stat-label">Son Oyun Logu</div>
+        </div>
+      </div>
+
+      <!-- Hızlı erişim linkleri -->
+      <div style="display:flex;flex-wrap:wrap;gap:10px;">
+        <a class="adm-btn green" onclick="showPage('users',document.querySelector('[data-page=users]'))">&#128101; Uyeler</a>
+        <a class="adm-btn" onclick="showPage('gamelogs',document.querySelector('[data-page=gamelogs]'))">&#127183; Oyun Loglari</a>
+        <a class="adm-btn" onclick="showPage('announcements',document.querySelector('[data-page=announcements]'))">&#128226; Duyuru Yayinla</a>
+        <a class="adm-btn amber" onclick="showPage('dailyq',document.querySelector('[data-page=dailyq]'))">&#10067; Gunun Sorusu</a>
+        <a class="adm-btn amber" onclick="showPage('scratch',document.querySelector('[data-page=scratch]'))">&#127920; Kazi Kazan</a>
+      </div>
+    </div>
+
+    <!-- ========== SAYFA: Üyeler ========== -->
+    <div class="adm-page" id="page-users">
+      <div class="adm-section open">
+        <div class="adm-section-head" onclick="toggleSection(this)">
+          <span class="adm-section-head-icon">&#128101;</span>
+          <div class="adm-section-head-text">
+            <div class="adm-section-head-title">Tum Uyeler</div>
+            <div class="adm-section-head-sub">Uye listesi, ban/sustur, LT ayarlama</div>
+          </div>
+          <span class="adm-section-badge"><%= users.length %> uye</span>
+          <span class="adm-chevron">&#9660;</span>
+        </div>
+        <div class="adm-section-body">
+          <div class="adm-search-row">
+            <input type="text" class="adm-search-input" id="user-search" placeholder="Rumuz veya e-posta ara..." oninput="filterUsers()" />
+            <span class="adm-filter-count" id="user-count"><%= users.length %> / <%= users.length %></span>
+          </div>
+          <div class="adm-table-scroll">
+            <table class="adm-table" id="user-table">
+              <thead>
+                <tr>
+                  <th>Rumuz</th>
+                  <th>E-posta</th>
+                  <th>LT</th>
+                  <th>Dogrulama</th>
+                  <th>Karakter</th>
+                  <th>Durum</th>
+                  <th>Kayit</th>
+                  <th>Islemler</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% users.forEach(function(u) { %>
+                  <tr class="user-row" data-rumuz="<%= u.rumuz.toLowerCase() %>" data-email="<%= u.email.toLowerCase() %>">
+                    <td>
+                      <strong style="color:#e6edf3;"><%= u.rumuz %></strong>
+                      <% if (u.is_admin) { %> <span class="adm-badge-admin">ADMIN</span><% } %>
+                      <% if (u.vip_tier > 0) { %> <span class="adm-tag adm-tag-purple">VIP<%= u.vip_tier %></span><% } %>
+                    </td>
+                    <td style="color:#8b949e;font-size:12px;"><%= u.email %></td>
+                    <td><strong style="color:#e3b341;"><%= u.lt_balance.toLocaleString('tr-TR') %></strong></td>
+                    <td>
+                      <span class="adm-tag <%= u.email_verified ? 'adm-tag-green' : 'adm-tag-gray' %>">Mail</span>
+                      <span class="adm-tag <%= u.phone_verified ? 'adm-tag-green' : 'adm-tag-gray' %>">Tel</span>
+                    </td>
+                    <td>
+                      <% var charLabels = {savasci:'Savasci',rahip:'Rahip',sura:'Sura',ninja:'Ninja'}; %>
+                      <% if (u.character_class) { %>
+                        <span class="adm-tag adm-tag-blue"><%= charLabels[u.character_class] || u.character_class %></span>
+                      <% } else { %>
+                        <span style="color:#8b949e;font-size:12px;">—</span>
+                      <% } %>
+                    </td>
+                    <td>
+                      <% if (u.is_banned) { %><span class="adm-tag adm-tag-red">Yasakli</span>
+                      <% } else if (u.is_muted) { %><span class="adm-tag adm-tag-amber">Susturuldu</span>
+                      <% } else { %><span class="adm-tag adm-tag-green">Aktif</span><% } %>
+                    </td>
+                    <td style="color:#8b949e;font-size:12px;"><%= new Date(u.created_at).toLocaleDateString('tr-TR') %></td>
+                    <td>
+                      <div class="adm-actions">
+                        <!-- Sustur / Ses aç -->
+                        <form method="POST" action="/admin/users/<%= u.id %>/mute">
+                          <button type="submit" class="adm-btn <%= u.is_muted ? 'green' : 'amber' %>" title="<%= u.is_muted ? 'Sesini Ac' : 'Sustur' %>">
+                            <%= u.is_muted ? '&#128266;' : '&#128263;' %>
+                          </button>
+                        </form>
+                        <!-- Ban / Kaldır -->
+                        <form method="POST" action="/admin/users/<%= u.id %>/ban" style="display:inline-flex;align-items:center;gap:4px;">
+                          <% if (!u.is_banned) { %>
+                            <input type="text" name="reason" placeholder="Sebep..." class="adm-input adm-input-md" />
+                          <% } %>
+                          <button type="submit" class="adm-btn <%= u.is_banned ? 'green' : 'red' %>" title="<%= u.is_banned ? 'Yasagi Kaldir' : 'Yasakla' %>">
+                            <%= u.is_banned ? '&#128275;' : '&#128274;' %>
+                          </button>
+                        </form>
+                        <!-- LT ekle/çıkar -->
+                        <form method="POST" action="/admin/users/<%= u.id %>/lt" style="display:inline-flex;align-items:center;gap:4px;">
+                          <input type="number" name="amount" placeholder="+/- LT" class="adm-input adm-input-sm" required />
+                          <button type="submit" class="adm-btn green">&#9679; LT</button>
+                        </form>
+                      </div>
+                    </td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== SAYFA: Oyun Logları ========== -->
+    <div class="adm-page" id="page-gamelogs">
+      <div class="adm-section open">
+        <div class="adm-section-head" onclick="toggleSection(this)">
+          <span class="adm-section-head-icon">&#127183;</span>
+          <div class="adm-section-head-text">
+            <div class="adm-section-head-title">Oyun Loglari</div>
+            <div class="adm-section-head-sub">Poker, Canak Okey ve 101 Okey el sonuclari</div>
+          </div>
+          <span class="adm-section-badge"><%= gameLogs.length %> log</span>
+          <span class="adm-chevron">&#9660;</span>
+        </div>
+        <div class="adm-section-body">
+          <div class="adm-search-row">
+            <input type="text" class="adm-search-input" id="log-search" placeholder="Rumuz ara..." oninput="filterLogs()" />
+            <span class="adm-filter-count" id="log-count"><%= gameLogs.length %> / <%= gameLogs.length %></span>
+          </div>
+          <div class="adm-table-scroll">
+            <table class="adm-table" id="log-table">
+              <thead>
+                <tr>
+                  <th>Tarih</th>
+                  <th>Oyun</th>
+                  <th>Rumuz</th>
+                  <th>El</th>
+                  <th>Oynanan LT</th>
+                  <th>Sonuc</th>
+                  <th>LT Degisimi</th>
+                  <th>Toplam LT</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (!gameLogs.length) { %>
+                  <tr><td colspan="8" class="adm-empty">Henuz oynanmis el yok.</td></tr>
                 <% } %>
-                <form method="POST" action="/admin/users/<%= u.id %>/vip" class="admin-inline-form">
-                  <select name="tier" class="role-select-active">
-                    <option value="0" <%= u.vip_tier == 0 ? 'selected' : '' %>>VIP Yok</option>
-                    <% Object.keys(vipPlans).forEach(function(tier) { %>
-                      <option value="<%= tier %>" <%= u.vip_tier == tier ? 'selected' : '' %>><%= vipPlans[tier].label %></option>
-                    <% }); %>
-                  </select>
-                  <button type="submit" class="btn btn-ghost btn-sm">Uygula</button>
-                </form>
-              </td>
-              <td>
-                <select class="role-select" disabled title="Yakinda aktif olacak">
-                  <option><%= u.role %></option>
+                <% gameLogs.forEach(function(g) { %>
+                  <tr class="log-row" data-rumuz="<%= g.rumuz.toLowerCase() %>">
+                    <td style="color:#8b949e;font-size:12px;"><%= new Date(g.created_at).toLocaleString('tr-TR') %></td>
+                    <td>
+                      <span class="adm-tag <%=
+                        g.game === 'okey' ? 'adm-tag-blue' :
+                        g.game === 'okey101' ? 'adm-tag-purple' : 'adm-tag-green' %>">
+                        <%= g.game === 'okey' ? 'Canak Okey' : g.game === 'okey101' ? '101 Okey' : 'Poker' %>
+                      </span>
+                    </td>
+                    <td><strong style="color:#e6edf3;"><%= g.rumuz %></strong></td>
+                    <td style="color:#8b949e;">#<%= g.hand_number %></td>
+                    <td><%= g.played_lt.toLocaleString('tr-TR') %></td>
+                    <td>
+                      <% if (g.result === 'win') { %><span class="adm-tag adm-tag-green">Kazandi</span>
+                      <% } else if (g.result === 'lose') { %><span class="adm-tag adm-tag-red">Kaybetti</span>
+                      <% } else { %><span class="adm-tag adm-tag-gray">Berabere</span><% } %>
+                    </td>
+                    <td class="<%= g.lt_change >= 0 ? 'adm-pos' : 'adm-neg' %>">
+                      <%= g.lt_change >= 0 ? '+' : '' %><%= g.lt_change.toLocaleString('tr-TR') %>
+                    </td>
+                    <td style="color:#8b949e;"><%= g.total_lt_snapshot.toLocaleString('tr-TR') %></td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== SAYFA: Duyurular ========== -->
+    <div class="adm-page" id="page-announcements">
+      <div class="adm-section open">
+        <div class="adm-section-head" onclick="toggleSection(this)">
+          <span class="adm-section-head-icon">&#128226;</span>
+          <div class="adm-section-head-text">
+            <div class="adm-section-head-title">Duyuru Yayinla</div>
+            <div class="adm-section-head-sub">Herkese aninda bildirim gider</div>
+          </div>
+          <span class="adm-chevron">&#9660;</span>
+        </div>
+        <div class="adm-section-body">
+          <form method="POST" action="/duyurular" class="adm-form">
+            <div class="adm-field">
+              <label>Baslik</label>
+              <input type="text" name="title" maxlength="150" required placeholder="Duyuru basligi" />
+            </div>
+            <div class="adm-field">
+              <label>Mesaj</label>
+              <textarea name="content" rows="4" maxlength="5000" required placeholder="Duyuru icerigini yaz..."></textarea>
+            </div>
+            <div class="adm-form-footer">
+              <button type="submit" class="adm-save-btn">&#128226; Yayinla &amp; Bildirim Gonder</button>
+              <span class="adm-note">Tum bagli kullanicilara aninda toast bildirimi duser.</span>
+            </div>
+          </form>
+        </div>
+      </div>
+      <p style="font-size:13px;color:#8b949e;margin-top:10px;">Tum duyuruları görmek için <a href="/duyurular" style="color:var(--green-bright);">Duyurular sayfasına</a> git.</p>
+    </div>
+
+    <!-- ========== SAYFA: Günün Sorusu ========== -->
+    <div class="adm-page" id="page-dailyq">
+      <!-- Mevcut soru önizlemesi -->
+      <div class="adm-section">
+        <div class="adm-section-head" onclick="toggleSection(this)">
+          <span class="adm-section-head-icon">&#128065;</span>
+          <div class="adm-section-head-text">
+            <div class="adm-section-head-title">Mevcut Soru</div>
+            <div class="adm-section-head-sub">Simdi aktif olan soru</div>
+          </div>
+          <span class="adm-section-badge <%= dailyQuestion.active ? '' : 'red' %>"><%= dailyQuestion.active ? 'Aktif' : 'Pasif' %></span>
+          <span class="adm-chevron">&#9660;</span>
+        </div>
+        <div class="adm-section-body">
+          <div style="padding:16px 20px;">
+            <% if (dailyQuestion.question_text) { %>
+              <p style="font-size:15px;color:#e6edf3;margin-bottom:12px;font-weight:600;"><%= dailyQuestion.question_text %></p>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                <% ['A','B','C','D'].forEach(function(opt){ var txt = dailyQuestion['option_' + opt.toLowerCase()]; if(txt){ %>
+                  <div style="background:#0d1117;border:1px solid <%- dailyQuestion.correct_option === opt ? 'var(--green-bright)' : '#30363d' %>;border-radius:8px;padding:10px 14px;font-size:13px;color:<%- dailyQuestion.correct_option === opt ? 'var(--green-bright)' : '#c9d1d9' %>;">
+                    <strong><%= opt %>.</strong> <%= txt %>
+                  </div>
+                <% } }); %>
+              </div>
+              <p style="margin-top:10px;font-size:12px;color:#8b949e;">Odul: <strong style="color:#e3b341;"><%= dailyQuestion.reward_lt %> LT</strong> &nbsp;|&nbsp; Versiyon: <strong>#<%= dailyQuestion.version %></strong></p>
+            <% } else { %>
+              <p style="color:#8b949e;font-size:13px;">Henuz soru eklenmemis.</p>
+            <% } %>
+          </div>
+        </div>
+      </div>
+
+      <!-- Soru düzenleme -->
+      <div class="adm-section open">
+        <div class="adm-section-head" onclick="toggleSection(this)">
+          <span class="adm-section-head-icon">&#9998;</span>
+          <div class="adm-section-head-text">
+            <div class="adm-section-head-title">Soruyu Duzenle / Yeni Soru Ekle</div>
+            <div class="adm-section-head-sub">Kaydedilince versiyon artar, herkes tekrar cevaplayabilir</div>
+          </div>
+          <span class="adm-chevron">&#9660;</span>
+        </div>
+        <div class="adm-section-body">
+          <form method="POST" action="/admin/gunun-sorusu" class="adm-form">
+            <div class="adm-field">
+              <label>Soru Metni</label>
+              <input type="text" name="questionText" value="<%= dailyQuestion.question_text || '' %>" required placeholder="Soru metnini gir..." />
+            </div>
+            <div class="adm-form-row adm-form-row-2">
+              <div class="adm-field">
+                <label>A Secenegi</label>
+                <input type="text" name="optionA" value="<%= dailyQuestion.option_a || '' %>" placeholder="A secenegi" />
+              </div>
+              <div class="adm-field">
+                <label>B Secenegi</label>
+                <input type="text" name="optionB" value="<%= dailyQuestion.option_b || '' %>" placeholder="B secenegi" />
+              </div>
+              <div class="adm-field">
+                <label>C Secenegi</label>
+                <input type="text" name="optionC" value="<%= dailyQuestion.option_c || '' %>" placeholder="C secenegi" />
+              </div>
+              <div class="adm-field">
+                <label>D Secenegi</label>
+                <input type="text" name="optionD" value="<%= dailyQuestion.option_d || '' %>" placeholder="D secenegi" />
+              </div>
+            </div>
+            <div class="adm-form-row adm-form-row-3">
+              <div class="adm-field">
+                <label>Dogru Secenek</label>
+                <select name="correctOption">
+                  <% ['A','B','C','D'].forEach(function(opt) { %>
+                    <option value="<%= opt %>" <%= dailyQuestion.correct_option === opt ? 'selected' : '' %>><%= opt %></option>
+                  <% }); %>
                 </select>
-              </td>
-              <td>
-                <% if (u.is_banned) { %><span class="tag tag-red">Yasakli</span><% } %>
-                <% if (u.is_muted) { %><span class="tag tag-orange">Susturuldu</span><% } %>
-                <% if (!u.is_banned && !u.is_muted) { %><span class="tag tag-green">Aktif</span><% } %>
-              </td>
-              <td><%= new Date(u.created_at).toLocaleDateString('tr-TR') %></td>
-              <td class="admin-actions">
-                <form method="POST" action="/admin/users/<%= u.id %>/mute" class="admin-inline-form">
-                  <button type="submit" class="btn btn-ghost btn-sm"><%= u.is_muted ? 'Sesini Ac' : 'Sustur' %></button>
-                </form>
-                <form method="POST" action="/admin/users/<%= u.id %>/ban" class="admin-inline-form">
-                  <% if (!u.is_banned) { %>
-                    <input type="text" name="reason" placeholder="Sebep (opsiyonel)" class="admin-reason-input" />
+              </div>
+              <div class="adm-field">
+                <label>Odul (LT)</label>
+                <input type="number" name="rewardLt" value="<%= dailyQuestion.reward_lt %>" min="0" />
+              </div>
+              <div class="adm-field">
+                <label>&nbsp;</label>
+                <label class="adm-checkbox-row">
+                  <input type="checkbox" name="active" <%= dailyQuestion.active ? 'checked' : '' %> />
+                  <span>Aktif (lobide goster)</span>
+                </label>
+              </div>
+            </div>
+            <div class="adm-form-footer">
+              <button type="submit" class="adm-save-btn">&#10003; Kaydet</button>
+              <span class="adm-note">Yeni versiyon olusturulur — onceki cevaplar etkilenmez.</span>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== SAYFA: Kazı Kazan ========== -->
+    <div class="adm-page" id="page-scratch">
+      <div class="adm-section open">
+        <div class="adm-section-head" onclick="toggleSection(this)">
+          <span class="adm-section-head-icon">&#127920;</span>
+          <div class="adm-section-head-text">
+            <div class="adm-section-head-title">Kazi Kazan Ayarlari</div>
+            <div class="adm-section-head-sub">Odul havuzu ve aktiflik durumu</div>
+          </div>
+          <span class="adm-section-badge <%= scratchConfig.active ? '' : 'red' %>"><%= scratchConfig.active ? 'Aktif' : 'Pasif' %></span>
+          <span class="adm-chevron">&#9660;</span>
+        </div>
+        <div class="adm-section-body">
+          <form method="POST" action="/admin/kazikazan" class="adm-form">
+            <div class="adm-field">
+              <label>Odul Havuzu</label>
+              <input type="text" name="prizes" value="<%= scratchConfig.prizes %>" placeholder="0,50,100,250,500" />
+              <span style="font-size:12px;color:#8b949e;margin-top:4px;">Virgülle ayrilmis LT miktarlari. 0 = bos cikti anlamina gelir. Havuzdan rastgele biri secilir.</span>
+            </div>
+            <div>
+              <label class="adm-checkbox-row">
+                <input type="checkbox" name="active" <%= scratchConfig.active ? 'checked' : '' %> />
+                <span>Aktif (lobide goster, gunde 1 hak)</span>
+              </label>
+            </div>
+            <div class="adm-form-footer">
+              <button type="submit" class="adm-save-btn">&#10003; Kaydet</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== SAYFA: VIP Yönetimi ========== -->
+    <div class="adm-page" id="page-vip">
+      <div class="adm-section open">
+        <div class="adm-section-head" onclick="toggleSection(this)">
+          <span class="adm-section-head-icon">&#128081;</span>
+          <div class="adm-section-head-text">
+            <div class="adm-section-head-title">VIP Uye Yonetimi</div>
+            <div class="adm-section-head-sub">Uyelere VIP atama ve kaldir</div>
+          </div>
+          <span class="adm-section-badge adm-section-badge amber"><%= stats.vip_users %> VIP uye</span>
+          <span class="adm-chevron">&#9660;</span>
+        </div>
+        <div class="adm-section-body">
+          <div class="adm-table-scroll">
+            <table class="adm-table">
+              <thead>
+                <tr>
+                  <th>Rumuz</th>
+                  <th>Mevcut VIP</th>
+                  <th>Bitis Tarihi</th>
+                  <th>VIP Degistir</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% users.forEach(function(u) { %>
+                  <tr>
+                    <td><strong style="color:#e6edf3;"><%= u.rumuz %></strong></td>
+                    <td>
+                      <% if (u.vip_tier > 0) { %>
+                        <span class="adm-tag adm-tag-purple">VIP <%= u.vip_tier %></span>
+                      <% } else { %>
+                        <span class="adm-tag adm-tag-gray">Yok</span>
+                      <% } %>
+                    </td>
+                    <td style="color:#8b949e;font-size:12px;">
+                      <%= u.vip_expires_at ? new Date(u.vip_expires_at).toLocaleDateString('tr-TR') : '—' %>
+                    </td>
+                    <td>
+                      <form method="POST" action="/admin/users/<%= u.id %>/vip" style="display:inline-flex;align-items:center;gap:6px;">
+                        <select name="tier" class="adm-select">
+                          <option value="0" <%= u.vip_tier == 0 ? 'selected' : '' %>>VIP Yok</option>
+                          <% Object.keys(vipPlans).forEach(function(tier) { %>
+                            <option value="<%= tier %>" <%= u.vip_tier == tier ? 'selected' : '' %>><%= vipPlans[tier].label %></option>
+                          <% }); %>
+                        </select>
+                        <button type="submit" class="adm-btn green">Uygula</button>
+                      </form>
+                    </td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIP plan bilgileri -->
+      <div class="adm-section">
+        <div class="adm-section-head" onclick="toggleSection(this)">
+          <span class="adm-section-head-icon">&#128196;</span>
+          <div class="adm-section-head-text">
+            <div class="adm-section-head-title">VIP Plan Detaylari</div>
+            <div class="adm-section-head-sub">Anlık ve haftalık LT bonuslari</div>
+          </div>
+          <span class="adm-chevron">&#9660;</span>
+        </div>
+        <div class="adm-section-body">
+          <div class="adm-table-scroll">
+            <table class="adm-table">
+              <thead>
+                <tr><th>Plan</th><th>Sure</th><th>Anlik LT</th><th>Haftalik LT</th></tr>
+              </thead>
+              <tbody>
+                <% Object.keys(vipPlans).forEach(function(tier){ var p = vipPlans[tier]; %>
+                  <tr>
+                    <td><span class="adm-tag adm-tag-purple">VIP <%= tier %></span></td>
+                    <td><%= p.months %> ay</td>
+                    <td class="adm-pos">+<%= p.instant.toLocaleString('tr-TR') %> LT</td>
+                    <td class="adm-pos">+<%= p.weekly.toLocaleString('tr-TR') %> LT / hafta</td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== SAYFA: Pazar Yonetimi ========== -->
+    <div class="adm-page" id="page-market">
+      <%
+        var mCatLabels = { silah:'Silahlar', zirh:'Zirlar', koleksiyon:'Koleksiyonluklar', karakter:'Karakterler', diger:'Diger' };
+        var mRarLabels = { common:'Siradan', rare:'Nadir', epic:'Epik', legendary:'Efsanevi' };
+      %>
+
+      <!-- Komisyon ayari -->
+      <div class="adm-section open">
+        <div class="adm-section-head" onclick="toggleSection(this)">
+          <span class="adm-section-head-icon">&#128181;</span>
+          <div class="adm-section-head-text">
+            <div class="adm-section-head-title">Komisyon Orani</div>
+            <div class="adm-section-head-sub">Her satistan kesilen yuzde</div>
+          </div>
+          <span class="adm-section-badge amber">%<%= marketConfig.commission_percent %></span>
+          <span class="adm-chevron">&#9660;</span>
+        </div>
+        <div class="adm-section-body">
+          <form method="POST" action="/admin/market/commission" class="adm-form">
+            <div class="adm-form-row adm-form-row-3">
+              <div class="adm-field">
+                <label>Komisyon (%)</label>
+                <input type="number" name="commission" min="0" max="100" value="<%= marketConfig.commission_percent %>" required />
+              </div>
+              <div class="adm-field"></div>
+              <div class="adm-field">
+                <label>&nbsp;</label>
+                <button type="submit" class="adm-save-btn">&#10003; Kaydet</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Yeni esya (katalog) olustur -->
+      <div class="adm-section open">
+        <div class="adm-section-head" onclick="toggleSection(this)">
+          <span class="adm-section-head-icon">&#10133;</span>
+          <div class="adm-section-head-text">
+            <div class="adm-section-head-title">Yeni Esya Olustur</div>
+            <div class="adm-section-head-sub">Katalogda esya tanimla (kategori, nadirlik, gorsel)</div>
+          </div>
+          <span class="adm-chevron">&#9660;</span>
+        </div>
+        <div class="adm-section-body">
+          <form method="POST" action="/admin/market/item" class="adm-form">
+            <div class="adm-form-row adm-form-row-2">
+              <div class="adm-field">
+                <label>Esya Adi</label>
+                <input type="text" name="name" maxlength="120" required placeholder="Orn: Efsanevi Kilic" />
+              </div>
+              <div class="adm-field">
+                <label>Gorsel URL (istege bagli)</label>
+                <input type="text" name="image_url" placeholder="https://..." />
+              </div>
+              <div class="adm-field">
+                <label>Kategori</label>
+                <select name="category">
+                  <% categories.forEach(function(c){ %>
+                    <option value="<%= c %>"><%= mCatLabels[c] || c %></option>
+                  <% }); %>
+                </select>
+              </div>
+              <div class="adm-field">
+                <label>Nadirlik</label>
+                <select name="rarity">
+                  <% rarities.forEach(function(r){ %>
+                    <option value="<%= r %>"><%= mRarLabels[r] || r %></option>
+                  <% }); %>
+                </select>
+              </div>
+            </div>
+            <div class="adm-form-footer">
+              <button type="submit" class="adm-save-btn">&#10133; Esya Ekle</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Katalog listesi -->
+      <div class="adm-section open">
+        <div class="adm-section-head" onclick="toggleSection(this)">
+          <span class="adm-section-head-icon">&#128230;</span>
+          <div class="adm-section-head-text">
+            <div class="adm-section-head-title">Esya Katalogu</div>
+            <div class="adm-section-head-sub">Tanimli esyalar</div>
+          </div>
+          <span class="adm-section-badge"><%= catalogItems.length %> esya</span>
+          <span class="adm-chevron">&#9660;</span>
+        </div>
+        <div class="adm-section-body">
+          <div class="adm-table-scroll">
+            <table class="adm-table">
+              <thead>
+                <tr><th>Ad</th><th>Kategori</th><th>Nadirlik</th><th>Islem</th></tr>
+              </thead>
+              <tbody>
+                <% if (!catalogItems.length) { %>
+                  <tr><td colspan="4" class="adm-empty">Henuz esya tanimlanmamis.</td></tr>
+                <% } %>
+                <% catalogItems.forEach(function(it){ %>
+                  <tr>
+                    <td><strong style="color:#e6edf3;"><%= it.name %></strong></td>
+                    <td><%= mCatLabels[it.category] || it.category %></td>
+                    <td><span class="adm-tag adm-tag-purple"><%= mRarLabels[it.rarity] || it.rarity %></span></td>
+                    <td>
+                      <form method="POST" action="/admin/market/item/<%= it.id %>/sil" onsubmit="return confirm('Bu esya katalogdan silinsin mi?');">
+                        <button type="submit" class="adm-btn red">&#128465; Sil</button>
+                      </form>
+                    </td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Kullaniciya esya ver -->
+      <div class="adm-section open">
+        <div class="adm-section-head" onclick="toggleSection(this)">
+          <span class="adm-section-head-icon">&#127873;</span>
+          <div class="adm-section-head-text">
+            <div class="adm-section-head-title">Kullaniciya Esya Ver</div>
+            <div class="adm-section-head-sub">Secilen esya kullanicinin envanterine eklenir</div>
+          </div>
+          <span class="adm-chevron">&#9660;</span>
+        </div>
+        <div class="adm-section-body">
+          <form method="POST" action="/admin/market/grant" class="adm-form">
+            <div class="adm-form-row adm-form-row-3">
+              <div class="adm-field">
+                <label>Kullanici Rumuzu</label>
+                <input type="text" name="rumuz" required placeholder="Rumuz" />
+              </div>
+              <div class="adm-field">
+                <label>Esya</label>
+                <select name="catalog_id" required>
+                  <% if (!catalogItems.length) { %>
+                    <option value="">Once esya olustur</option>
                   <% } %>
-                  <button type="submit" class="btn btn-ghost btn-sm <%= u.is_banned ? '' : 'btn-danger' %>"><%= u.is_banned ? 'Yasagi Kaldir' : 'Yasakla' %></button>
-                </form>
-                <form method="POST" action="/admin/users/<%= u.id %>/lt" class="admin-inline-form">
-                  <input type="number" name="amount" placeholder="+/- LT" class="admin-lt-input" required />
-                  <button type="submit" class="btn btn-ghost btn-sm">Uygula</button>
-                </form>
-              </td>
-            </tr>
-          <% }); %>
-        </tbody>
-      </table>
+                  <% catalogItems.forEach(function(it){ %>
+                    <option value="<%= it.id %>"><%= it.name %> (<%= mRarLabels[it.rarity] || it.rarity %>)</option>
+                  <% }); %>
+                </select>
+              </div>
+              <div class="adm-field">
+                <label>&nbsp;</label>
+                <button type="submit" class="adm-save-btn">&#127873; Ver</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Aktif ilanlar -->
+      <div class="adm-section open">
+        <div class="adm-section-head" onclick="toggleSection(this)">
+          <span class="adm-section-head-icon">&#127991;</span>
+          <div class="adm-section-head-text">
+            <div class="adm-section-head-title">Aktif Ilanlar</div>
+            <div class="adm-section-head-sub">Pazardaki tum aktif ilanlar - kaldirabilirsin</div>
+          </div>
+          <span class="adm-section-badge"><%= activeListings.length %> ilan</span>
+          <span class="adm-chevron">&#9660;</span>
+        </div>
+        <div class="adm-section-body">
+          <div class="adm-table-scroll">
+            <table class="adm-table">
+              <thead>
+                <tr><th>Baslik</th><th>Satici</th><th>Kategori</th><th>Fiyat</th><th>Islem</th></tr>
+              </thead>
+              <tbody>
+                <% if (!activeListings.length) { %>
+                  <tr><td colspan="5" class="adm-empty">Aktif ilan yok.</td></tr>
+                <% } %>
+                <% activeListings.forEach(function(l){ %>
+                  <tr>
+                    <td><strong style="color:#e6edf3;"><%= l.title %></strong></td>
+                    <td style="color:#8b949e;"><%= l.seller_rumuz %></td>
+                    <td><%= mCatLabels[l.category] || l.category %></td>
+                    <td><strong style="color:#e3b341;"><%= l.price_lt.toLocaleString('tr-TR') %> LT</strong></td>
+                    <td>
+                      <form method="POST" action="/admin/market/listing/<%= l.id %>/sil" onsubmit="return confirm('Ilan kaldirilsin mi? Esya saticinin envanterine geri doner.');">
+                        <button type="submit" class="adm-btn red">&#128465; Kaldir</button>
+                      </form>
+                    </td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- Oyun loglari -->
-    <h2 class="admin-section-title">Poker El Loglari (son <%= gameLogs.length %>)</h2>
-    <div class="admin-table-wrap">
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>Tarih</th>
-            <th>Rumuz</th>
-            <th>El No</th>
-            <th>Oynadigi LT</th>
-            <th>Sonuc</th>
-            <th>LT Degisimi</th>
-            <th>O Anki Toplam LT</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% if (gameLogs.length === 0) { %>
-            <tr><td colspan="7" class="admin-empty-row">Henuz oynanmis el yok.</td></tr>
-          <% } %>
-          <% gameLogs.forEach(function(g) { %>
-            <tr>
-              <td><%= new Date(g.created_at).toLocaleString('tr-TR') %></td>
-              <td><%= g.rumuz %></td>
-              <td>#<%= g.hand_number %></td>
-              <td><%= g.played_lt %></td>
-              <td>
-                <% if (g.result === 'win') { %><span class="tag tag-green">Kazandi</span>
-                <% } else if (g.result === 'lose') { %><span class="tag tag-red">Kaybetti</span>
-                <% } else { %><span class="tag tag-gray">Berabere</span><% } %>
-              </td>
-              <td class="<%= g.lt_change >= 0 ? 'positive-change' : 'negative-change' %>"><%= g.lt_change >= 0 ? '+' : '' %><%= g.lt_change %></td>
-              <td><%= g.total_lt_snapshot %></td>
-            </tr>
-          <% }); %>
-        </tbody>
-      </table>
-    </div>
+  </div><!-- /adm-content -->
 
-    <!-- Gunun Sorusu yonetimi -->
-    <h2 class="admin-section-title">Gunun Sorusu</h2>
-    <div class="profile-card">
-      <form method="POST" action="/admin/gunun-sorusu" class="admin-form">
-        <div class="form-group">
-          <label>Soru</label>
-          <input type="text" name="questionText" value="<%= dailyQuestion.question_text || '' %>" placeholder="Soru metni" />
-        </div>
-        <div class="form-row-4">
-          <div class="form-group">
-            <label>A Secenegi</label>
-            <input type="text" name="optionA" value="<%= dailyQuestion.option_a || '' %>" />
-          </div>
-          <div class="form-group">
-            <label>B Secenegi</label>
-            <input type="text" name="optionB" value="<%= dailyQuestion.option_b || '' %>" />
-          </div>
-          <div class="form-group">
-            <label>C Secenegi</label>
-            <input type="text" name="optionC" value="<%= dailyQuestion.option_c || '' %>" />
-          </div>
-          <div class="form-group">
-            <label>D Secenegi</label>
-            <input type="text" name="optionD" value="<%= dailyQuestion.option_d || '' %>" />
-          </div>
-        </div>
-        <div class="form-row-3">
-          <div class="form-group">
-            <label>Dogru Secenek</label>
-            <select name="correctOption">
-              <% ['A','B','C','D'].forEach(function(opt) { %>
-                <option value="<%= opt %>" <%= dailyQuestion.correct_option === opt ? 'selected' : '' %>><%= opt %></option>
-              <% }); %>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Odul (LT)</label>
-            <input type="number" name="rewardLt" value="<%= dailyQuestion.reward_lt %>" min="0" />
-          </div>
-          <div class="form-group checkbox-inline">
-            <label class="checkbox-row">
-              <input type="checkbox" name="active" <%= dailyQuestion.active ? 'checked' : '' %> />
-              <span>Aktif (lobide goster)</span>
-            </label>
-          </div>
-        </div>
-        <button type="submit" class="btn btn-primary btn-sm">Kaydet (yeni versiyon, herkes tekrar cevaplayabilir)</button>
-      </form>
-    </div>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/notify.js?v=1"></script>
+  <script>
+    /* ======= Sayfa geçiş sistemi ======= */
+    var PAGE_LABELS = {
+      dashboard:     'Genel Bakis',
+      users:         'Uyeler',
+      gamelogs:      'Oyun Loglari',
+      announcements: 'Duyurular',
+      dailyq:        'Gunun Sorusu',
+      scratch:       'Kazi Kazan',
+      vip:           'VIP Yonetimi',
+      market:        'Pazar Yonetimi',
+    };
 
-    <!-- Kazi Kazan yonetimi -->
-    <h2 class="admin-section-title">Kazi Kazan</h2>
-    <div class="profile-card">
-      <form method="POST" action="/admin/kazikazan" class="admin-form">
-        <div class="form-group">
-          <label>Odul Havuzu (virgulle ayrilmis LT miktarlari, 0 = bos cikti)</label>
-          <input type="text" name="prizes" value="<%= scratchConfig.prizes %>" placeholder="0,50,100,250,500" />
-        </div>
-        <label class="checkbox-row">
-          <input type="checkbox" name="active" <%= scratchConfig.active ? 'checked' : '' %> />
-          <span>Aktif (lobide goster, gunde 1 hak)</span>
-        </label>
-        <button type="submit" class="btn btn-primary btn-sm">Kaydet</button>
-      </form>
-    </div>
-  </main>
+    function showPage(id, linkEl) {
+      document.querySelectorAll('.adm-page').forEach(function(p){ p.classList.remove('visible'); });
+      var target = document.getElementById('page-' + id);
+      if (target) target.classList.add('visible');
+      document.querySelectorAll('.adm-nav-link').forEach(function(l){ l.classList.remove('active'); });
+      if (linkEl) linkEl.classList.add('active');
+      var lbl = document.getElementById('adm-page-label');
+      if (lbl) lbl.textContent = PAGE_LABELS[id] || id;
+      // URL hash güncelle (sayfa yenilenince konumu koru)
+      history.replaceState(null, '', '#' + id);
+      // Mobilde menüyü kapat
+      document.getElementById('adm-sidebar').classList.remove('open');
+    }
+
+    /* Hash'ten başlangıç sayfasını belirle */
+    (function(){
+      var hash = location.hash.replace('#','');
+      if (hash && document.getElementById('page-' + hash)) {
+        var link = document.querySelector('[data-page=' + hash + ']');
+        showPage(hash, link);
+      }
+    })();
+
+    /* ======= Accordion aç/kapat ======= */
+    function toggleSection(headEl) {
+      var section = headEl.closest('.adm-section');
+      section.classList.toggle('open');
+    }
+
+    /* ======= Mobil sidebar ======= */
+    function toggleSidebar() {
+      document.getElementById('adm-sidebar').classList.toggle('open');
+    }
+
+    // Sidebar dışına tıklayınca kapat
+    document.addEventListener('click', function(e) {
+      var sb = document.getElementById('adm-sidebar');
+      var hm = document.getElementById('adm-hamburger');
+      if (sb && !sb.contains(e.target) && hm && !hm.contains(e.target)) {
+        sb.classList.remove('open');
+      }
+    });
+
+    /* ======= Üye arama / filtreleme ======= */
+    function filterUsers() {
+      var q = document.getElementById('user-search').value.toLowerCase();
+      var rows = document.querySelectorAll('.user-row');
+      var visible = 0;
+      rows.forEach(function(r) {
+        var match = r.dataset.rumuz.includes(q) || r.dataset.email.includes(q);
+        r.style.display = match ? '' : 'none';
+        if (match) visible++;
+      });
+      var c = document.getElementById('user-count');
+      if (c) c.textContent = visible + ' / ' + rows.length;
+    }
+
+    /* ======= Log arama ======= */
+    function filterLogs() {
+      var q = document.getElementById('log-search').value.toLowerCase();
+      var rows = document.querySelectorAll('.log-row');
+      var visible = 0;
+      rows.forEach(function(r) {
+        var match = r.dataset.rumuz.includes(q);
+        r.style.display = match ? '' : 'none';
+        if (match) visible++;
+      });
+      var c = document.getElementById('log-count');
+      if (c) c.textContent = visible + ' / ' + rows.length;
+    }
+  </script>
 </body>
 </html>

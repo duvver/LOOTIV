@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html class="light" lang="tr">
+<head>
+  <%- include('partials/theme-head', { pageTitle: 'Bloglar — LOOTIV' }) %>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col">
+
+  <%- include('partials/theme-nav', { active: 'bloglar', user: user, unreadCount: typeof unreadCount !== 'undefined' ? unreadCount : 0 }) %>
+
+  <main class="flex-grow max-w-container-max mx-auto w-full px-margin-mobile md:px-margin-desktop py-8">
+    <div class="flex items-center justify-between flex-wrap gap-4 mb-8">
+      <div>
+        <h1 class="font-headline-lg text-headline-lg text-primary">Bloglar</h1>
+        <p class="font-body-md text-outline">Topluluk yazilari ve senin gunlugun.</p>
+      </div>
+      <a href="/bloglar/yeni" class="px-5 py-2.5 bg-secondary-container text-white rounded-lg font-label-md text-label-md hover:opacity-90 transition-all flex items-center gap-2">
+        <span class="material-symbols-outlined text-sm">add</span> Yeni Yazi
+      </a>
+    </div>
+
+    <% if (typeof saved !== 'undefined' && saved) { %>
+      <div class="mb-6 p-4 bg-success-green/10 text-success-green rounded-lg font-body-sm">Yazin yayinlandi.</div>
+    <% } %>
+
+    <!-- Bloglarım -->
+    <section class="mb-10">
+      <h2 class="font-headline-md text-headline-md text-primary mb-4">Bloglarim</h2>
+      <% if (!myBlogs.length) { %>
+        <p class="text-body-sm text-outline">Henuz bir yazin yok. "Yeni Yazi" ile ilk yazini olustur.</p>
+      <% } else { %>
+        <div class="flex flex-col gap-3">
+          <% myBlogs.forEach(function (b) { %>
+            <div class="bg-white rounded-xl border border-outline-variant/30 shadow-sm p-4 flex items-center justify-between gap-3 flex-wrap">
+              <div class="flex items-baseline gap-3 flex-wrap min-w-0">
+                <a href="/bloglar/<%= b.id %>" class="font-headline-md text-base text-primary hover:underline truncate"><%= b.title %></a>
+                <span class="text-label-sm text-outline"><%= new Date(b.created_at).toLocaleDateString('tr-TR') %></span>
+              </div>
+              <div class="flex items-center gap-2">
+                <a href="/bloglar/<%= b.id %>/duzenle" class="px-3 py-1.5 border border-silver-light text-primary rounded-lg font-label-md text-label-sm hover:bg-surface-container-low transition-all">Duzenle</a>
+                <form method="POST" action="/bloglar/<%= b.id %>/sil" onsubmit="return confirm('Bu yazi silinsin mi?');">
+                  <button class="px-3 py-1.5 border border-error text-error rounded-lg font-label-md text-label-sm hover:bg-error hover:text-white transition-all">Sil</button>
+                </form>
+              </div>
+            </div>
+          <% }); %>
+        </div>
+      <% } %>
+    </section>
+
+    <!-- Son Yazılar -->
+    <section>
+      <h2 class="font-headline-md text-headline-md text-primary mb-4">Son Yazilar</h2>
+      <% if (!blogs.length) { %>
+        <p class="text-body-sm text-outline">Henuz hic blog yazisi yok.</p>
+      <% } else { %>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <% blogs.forEach(function (b) { %>
+            <a href="/bloglar/<%= b.id %>" class="bg-white rounded-xl border border-outline-variant/30 shadow-sm p-6 flex flex-col gap-3 hover:shadow-md hover:-translate-y-1 transition-all">
+              <div class="flex items-center gap-2">
+                <span class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm overflow-hidden">
+                  <% if (b.avatar_url) { %><img class="w-full h-full object-cover" src="<%= b.avatar_url %>" alt="" /><% } else { %><span><%= b.rumuz.charAt(0).toUpperCase() %></span><% } %>
+                </span>
+                <span class="font-label-md text-label-md text-primary"><%= b.rumuz %></span>
+                <span class="text-label-sm text-outline ml-auto"><%= new Date(b.created_at).toLocaleDateString('tr-TR') %></span>
+              </div>
+              <h3 class="font-headline-md text-headline-md text-primary"><%= b.title %></h3>
+              <p class="font-body-sm text-on-surface-variant leading-relaxed"><%= b.content.length > 180 ? b.content.slice(0,180) + '...' : b.content %></p>
+            </a>
+          <% }); %>
+        </div>
+      <% } %>
+    </section>
+  </main>
+
+  <%- include('partials/theme-foot', { user: user }) %>
+</body>
+</html>

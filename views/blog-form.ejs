@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html class="light" lang="tr">
+<head>
+  <%- include('partials/theme-head', { pageTitle: (blog ? 'Yaziyi Duzenle' : 'Yeni Yazi') + ' — LOOTIV' }) %>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col">
+
+  <%- include('partials/theme-nav', { active: 'bloglar', user: user, unreadCount: typeof unreadCount !== 'undefined' ? unreadCount : 0 }) %>
+
+  <main class="flex-grow max-w-3xl mx-auto w-full px-margin-mobile md:px-margin-desktop py-8">
+    <div class="flex items-center justify-between mb-6">
+      <h1 class="font-headline-lg text-headline-lg text-primary"><%= blog ? 'Yaziyi Duzenle' : 'Yeni Yazi' %></h1>
+      <a href="/bloglar" class="text-primary font-label-md hover:underline flex items-center gap-1"><span class="material-symbols-outlined text-sm">arrow_back</span> Bloglar</a>
+    </div>
+
+    <% if (typeof error !== 'undefined' && error) { %>
+      <div class="mb-4 p-3 bg-error-container text-on-error-container rounded-lg font-body-sm"><%= error %></div>
+    <% } %>
+
+    <form method="POST" action="<%= blog ? '/bloglar/' + blog.id + '/duzenle' : '/bloglar/yeni' %>" class="bg-white rounded-xl border border-outline-variant/30 shadow-sm p-8 space-y-5">
+      <div class="space-y-2">
+        <label class="block font-label-md text-on-surface-variant uppercase tracking-wider" for="title">Baslik</label>
+        <input id="title" name="title" maxlength="150" required value="<%= blog ? blog.title : '' %>" class="w-full px-4 py-3 bg-white border border-silver-light rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+      </div>
+      <div class="space-y-2">
+        <label class="block font-label-md text-on-surface-variant uppercase tracking-wider" for="content">Icerik</label>
+        <textarea id="content" name="content" rows="14" maxlength="20000" required class="w-full px-4 py-3 bg-white border border-silver-light rounded-lg focus:ring-2 focus:ring-primary outline-none leading-relaxed"><%= blog ? blog.content : '' %></textarea>
+      </div>
+      <button type="submit" class="px-6 py-3 bg-secondary-container text-white rounded-lg font-label-md text-label-md hover:opacity-90 transition-all"><%= blog ? 'Kaydet' : 'Yayinla' %></button>
+    </form>
+  </main>
+
+  <%- include('partials/theme-foot', { user: user }) %>
+</body>
+</html>

@@ -1,0 +1,51 @@
+<%
+  // Ortak ust menu. Parametreler:
+  //   user   -> giris yapmis kullanici (zorunlu)
+  //   active -> aktif menu anahtari (home/oyunlar/bloglar/arkadaslar/duyurular/pazar/ayarlar/admin)
+  var _active = typeof active !== 'undefined' ? active : '';
+  var _unread = typeof unreadCount !== 'undefined' ? unreadCount : 0;
+%>
+<header class="lobby-topbar">
+  <div class="lobby-topbar-left">
+    <a href="/" class="brand-logo"><img src="/images/lootivlogo.png" alt="LOOTIV" /></a>
+    <% if (user) { %>
+      <nav class="lobby-nav">
+        <a href="/" class="lobby-nav-link <%= _active === 'home' ? 'active' : '' %>">Ana Sayfa</a>
+        <a href="/#oyunlar" class="lobby-nav-link <%= _active === 'oyunlar' ? 'active' : '' %>">Oyunlar</a>
+        <a href="/bloglar" class="lobby-nav-link <%= _active === 'bloglar' ? 'active' : '' %>">Bloglar</a>
+        <a href="/arkadaslar" class="lobby-nav-link <%= _active === 'arkadaslar' ? 'active' : '' %>">Arkadaslar</a>
+        <a href="/duyurular" class="lobby-nav-link nav-with-badge <%= _active === 'duyurular' ? 'active' : '' %>">
+          Duyurular
+          <span class="nav-badge" id="nav-announce-badge" <%= _unread > 0 ? '' : 'hidden' %>><%= _unread %></span>
+        </a>
+        <a href="/pazar" class="lobby-nav-link <%= _active === 'pazar' ? 'active' : '' %>">Pazar</a>
+        <a href="/settings/profile" class="lobby-nav-link <%= _active === 'ayarlar' ? 'active' : '' %>">Ayarlar</a>
+        <% if (user.is_admin) { %><a href="/admin" class="lobby-nav-link <%= _active === 'admin' ? 'active' : '' %>">Admin</a><% } %>
+      </nav>
+    <% } %>
+  </div>
+
+  <div class="lobby-topbar-right">
+    <% if (!user) { %>
+      <form method="POST" action="/login" class="inline-login-form">
+        <input type="text" name="identifier" placeholder="Rumuz / E-Mail" value="<%= typeof loginIdentifier !== 'undefined' ? loginIdentifier : '' %>" required autocomplete="username" />
+        <input type="password" name="password" placeholder="Sifre" required autocomplete="current-password" />
+        <button type="submit" class="btn btn-primary btn-sm">Giris Yap</button>
+        <a href="/register" class="btn btn-ghost btn-sm">Uye Ol</a>
+      </form>
+    <% } else { %>
+      <span class="lt-badge"><span class="lt-badge-coin">&#9679;</span> <%= user.lt_balance.toLocaleString('tr-TR') %> LT</span>
+      <% if (user.vip_tier > 0) { %><span class="vip-badge">VIP <%= user.vip_tier %></span><% } %>
+      <a href="/settings/profile" class="user-avatar" title="<%= user.rumuz %>">
+        <% if (user.avatar_url) { %>
+          <img src="<%= user.avatar_url %>" alt="<%= user.rumuz %>" />
+        <% } else { %>
+          <span><%= user.rumuz.charAt(0).toUpperCase() %></span>
+        <% } %>
+      </a>
+      <form method="POST" action="/logout" class="lobby-logout-form">
+        <button type="submit" class="btn btn-ghost btn-sm">Cikis</button>
+      </form>
+    <% } %>
+  </div>
+</header>

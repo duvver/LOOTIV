@@ -1,106 +1,172 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html class="light" lang="tr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Profil Ayarlari - LOOTIV</title>
-  <link rel="stylesheet" href="/css/style.css" />
+  <%- include('partials/theme-head', { pageTitle: 'Profil Ayarlari — LOOTIV' }) %>
 </head>
-<body class="app-body">
-  <header class="topbar topbar-centered">
-    <div class="topbar-center">
-      <a href="/" class="brand-logo"><img src="/images/lootivlogo.png" alt="LOOTIV" /></a>
-      <div class="user-area">
-        <div class="user-stack">
-          <span class="user-name"><%= user.rumuz %></span>
-          <span class="user-points"><span class="coin">&#9679;</span> <%= user.lt_balance %> LT</span>
+<body class="bg-background text-on-background min-h-screen flex flex-col">
+
+  <%- include('partials/theme-nav', { active: 'ayarlar', user: user, unreadCount: typeof unreadCount !== 'undefined' ? unreadCount : 0 }) %>
+
+  <%
+    var CHAR_MAP = {
+      savasci: { name: 'Savasci', icon: '&#9876;' },
+      rahip:   { name: 'Rahip',   icon: '&#10015;' },
+      sura:    { name: 'Sura',    icon: '&#128481;' },
+      ninja:   { name: 'Ninja',   icon: '&#127885;' }
+    };
+    var myChar = user.character_class && CHAR_MAP[user.character_class] ? CHAR_MAP[user.character_class] : null;
+    var fullyVerified = user.email_verified && user.phone_verified;
+  %>
+
+  <main class="flex-grow max-w-4xl mx-auto w-full px-margin-mobile md:px-margin-desktop py-8">
+
+    <!-- Hero -->
+    <section class="relative rounded-xl overflow-hidden bg-primary text-white mb-8">
+      <div class="p-8 flex flex-col sm:flex-row items-center gap-6">
+        <div class="w-28 h-28 rounded-xl border-4 border-secondary-container overflow-hidden shadow-xl bg-primary-container flex items-center justify-center text-white text-5xl font-headline-lg">
+          <% if (user.avatar_url) { %><img class="w-full h-full object-cover" src="<%= user.avatar_url %>" alt="<%= user.rumuz %>" /><% } else { %><span><%= user.rumuz.charAt(0).toUpperCase() %></span><% } %>
         </div>
-        <a href="/" class="btn btn-ghost btn-sm">Lobiye Don</a>
+        <div class="text-center sm:text-left">
+          <h1 class="font-headline-lg text-headline-lg tracking-tight"><%= user.rumuz %></h1>
+          <div class="flex items-center gap-3 justify-center sm:justify-start mt-1 flex-wrap">
+            <span class="flex items-center gap-1.5 px-3 py-1 bg-white/10 rounded-full text-secondary-fixed-dim font-label-md text-label-sm"><span class="w-2 h-2 rounded-full bg-amber-gold"></span> <%= user.lt_balance.toLocaleString('tr-TR') %> LT</span>
+            <% if (user.vip_tier > 0) { %><span class="px-3 py-1 bg-energetic-purple/20 text-white rounded-full font-label-md text-label-sm">VIP <%= user.vip_tier %></span><% } %>
+            <% if (myChar) { %><span class="px-3 py-1 bg-white/10 rounded-full font-label-md text-label-sm"><%- myChar.icon %> <%= myChar.name %></span><% } %>
+            <span class="flex items-center gap-1.5 text-<%= fullyVerified ? 'success-green' : 'secondary-fixed-dim' %> text-body-sm"><span class="material-symbols-outlined text-sm"><%= fullyVerified ? 'verified' : 'gpp_maybe' %></span> <%= fullyVerified ? 'Dogrulandi' : 'Dogrulanmadi' %></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <% if (error) { %><div class="mb-4 p-4 bg-error-container text-on-error-container rounded-lg font-body-sm"><%= error %></div><% } %>
+    <% if (info) { %><div class="mb-4 p-4 bg-primary/5 text-primary rounded-lg font-body-sm border border-primary/10"><%= info %></div><% } %>
+    <% if (fullyVerified && user.verification_bonus_claimed) { %>
+      <div class="mb-4 p-4 bg-success-green/10 text-success-green rounded-lg font-body-sm">Hesabin tamamen dogrulandi ve +500 LT bonusunu kazandin!</div>
+    <% } %>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+      <!-- Profil resmi -->
+      <div class="bg-white rounded-xl border border-outline-variant/30 shadow-sm p-6">
+        <h2 class="font-headline-md text-headline-md text-primary mb-4">Profil Resmi</h2>
+        <div class="flex items-center gap-4 flex-wrap">
+          <span id="avatar-preview" class="w-20 h-20 rounded-full bg-primary text-white flex items-center justify-center text-3xl font-bold overflow-hidden">
+            <% if (user.avatar_url) { %><img class="w-full h-full object-cover" src="<%= user.avatar_url %>" alt="" /><% } else { %><span><%= user.rumuz.charAt(0).toUpperCase() %></span><% } %>
+          </span>
+          <form method="POST" action="/settings/profile/avatar" id="avatar-form" class="flex-1 min-w-[200px] space-y-2">
+            <input type="url" name="avatar_url" id="avatar-url" placeholder="Resim baglantisi (https://...)" value="<%= user.avatar_url && user.avatar_url.slice(0,5) !== 'data:' ? user.avatar_url : '' %>" class="w-full px-3 py-2 border border-silver-light rounded-lg focus:ring-2 focus:ring-primary outline-none text-body-sm" />
+            <input type="file" id="avatar-file" accept="image/png,image/jpeg,image/gif,image/webp" class="text-body-sm" />
+            <p class="text-label-sm text-outline">Baglanti yapistir ya da bilgisayardan sec (~500 KB).</p>
+            <div class="flex gap-2">
+              <button type="submit" class="px-4 py-2 bg-primary text-white rounded-lg font-label-md text-label-sm">Kaydet</button>
+              <% if (user.avatar_url) { %><button type="submit" id="avatar-remove" class="px-4 py-2 border border-silver-light text-on-surface-variant rounded-lg font-label-md text-label-sm">Kaldir</button><% } %>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Karakter -->
+      <div class="bg-white rounded-xl border border-outline-variant/30 shadow-sm p-6">
+        <h2 class="font-headline-md text-headline-md text-primary mb-4">Karakterim</h2>
+        <div class="flex items-center gap-4">
+          <span class="w-16 h-16 rounded-full bg-primary-fixed-dim text-primary flex items-center justify-center text-3xl"><%- myChar ? myChar.icon : '&#63;' %></span>
+          <div>
+            <p class="font-headline-md text-primary"><%= myChar ? myChar.name : 'Henuz secilmedi' %></p>
+            <a href="/karakter-sec" class="inline-block mt-2 px-4 py-2 border border-silver-light text-primary rounded-lg font-label-md text-label-sm hover:bg-surface-container-low transition-all">Karakteri Degistir</a>
+          </div>
+        </div>
       </div>
     </div>
-  </header>
 
-  <main class="profile-main">
-    <h1 class="lobby-title">Profil Ayarlari</h1>
-    <p class="lobby-subtitle">Hesabini dogrula, +500 LT bonus kazan.</p>
-
-    <div class="demo-banner">
-      Deneme surumu: e-posta ve SMS dogrulama kodlari gercekten gonderilmiyor, test amacli asagida ekranda gosteriliyor.
+    <!-- Doğrulama -->
+    <div class="bg-primary/5 border border-primary/10 rounded-lg p-4 my-4 flex gap-3">
+      <span class="material-symbols-outlined text-primary">info</span>
+      <p class="text-body-sm text-primary/80">Deneme surumu: e-posta ve SMS kodlari gercekten gonderilmiyor, test icin ekranda gosteriliyor.</p>
     </div>
 
-    <% if (error) { %>
-      <div class="alert alert-error"><%= error %></div>
-    <% } %>
-    <% if (info) { %>
-      <div class="alert alert-info"><%= info %></div>
-    <% } %>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <!-- E-posta -->
+      <div class="bg-white rounded-xl border border-outline-variant/30 shadow-sm p-6">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="material-symbols-outlined text-<%= user.email_verified ? 'success-green' : 'outline' %>"><%= user.email_verified ? 'mark_email_read' : 'mail' %></span>
+          <h2 class="font-headline-md text-headline-md text-primary">E-posta Dogrulama</h2>
+        </div>
+        <p class="text-body-sm text-on-surface-variant mb-3"><%= user.email %></p>
+        <% if (user.email_verified) { %>
+          <span class="inline-block px-3 py-1 bg-success-green/10 text-success-green rounded-full font-label-md text-label-sm">Dogrulandi</span>
+        <% } else { %>
+          <% if (emailCode) { %>
+            <div class="mb-3 p-3 bg-surface-container-low rounded-lg">
+              <p class="text-label-sm text-outline">Demo kodu:</p>
+              <p class="font-headline-md text-primary tracking-widest"><%= emailCode %></p>
+            </div>
+          <% } %>
+          <form method="POST" action="/settings/profile/email/verify" class="flex gap-2 mb-2 flex-wrap">
+            <input name="code" placeholder="6 haneli kod" maxlength="6" required class="flex-1 min-w-[120px] px-3 py-2 border border-silver-light rounded-lg outline-none focus:ring-2 focus:ring-primary" />
+            <button class="px-4 py-2 bg-primary text-white rounded-lg font-label-md text-label-sm">Dogrula</button>
+          </form>
+          <form method="POST" action="/settings/profile/email/send-code"><button class="text-primary font-label-md text-label-sm hover:underline">Kod Gonder</button></form>
+        <% } %>
+      </div>
 
-    <!-- E-posta dogrulama -->
-    <div class="profile-card">
-      <div class="checklist-row">
-        <div class="check-badge <%= user.email_verified ? 'check-done' : '' %>"><%= user.email_verified ? '&#10003;' : '1' %></div>
-        <div class="checklist-body">
-          <h4>E-posta Dogrulama</h4>
-          <p class="checklist-sub-static"><%= user.email %></p>
-
-          <% if (user.email_verified) { %>
-            <p class="checklist-sub">E-postan dogrulandi.</p>
-          <% } else { %>
-            <% if (emailCode) { %>
-              <div class="code-preview code-preview-compact">
-                <div class="code-preview-label">Demo kodu (gercek hayatta e-postana gelirdi):</div>
-                <div class="code-preview-value"><%= emailCode %></div>
+      <!-- Telefon -->
+      <div class="bg-white rounded-xl border border-outline-variant/30 shadow-sm p-6">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="material-symbols-outlined text-<%= user.phone_verified ? 'success-green' : 'outline' %>">smartphone</span>
+          <h2 class="font-headline-md text-headline-md text-primary">Telefon Dogrulama</h2>
+        </div>
+        <% if (user.phone_verified) { %>
+          <p class="text-body-sm text-on-surface-variant mb-3"><%= user.phone %></p>
+          <span class="inline-block px-3 py-1 bg-success-green/10 text-success-green rounded-full font-label-md text-label-sm">Dogrulandi</span>
+        <% } else { %>
+          <form method="POST" action="/settings/profile/phone" class="flex gap-2 mb-2 flex-wrap">
+            <input name="phone" type="tel" placeholder="05xx xxx xx xx" value="<%= user.phone || '' %>" required class="flex-1 min-w-[140px] px-3 py-2 border border-silver-light rounded-lg outline-none focus:ring-2 focus:ring-primary" />
+            <button class="px-4 py-2 border border-silver-light text-primary rounded-lg font-label-md text-label-sm">Kaydet</button>
+          </form>
+          <% if (user.phone) { %>
+            <% if (phoneCode) { %>
+              <div class="mb-3 p-3 bg-surface-container-low rounded-lg">
+                <p class="text-label-sm text-outline">Demo kodu:</p>
+                <p class="font-headline-md text-primary tracking-widest"><%= phoneCode %></p>
               </div>
             <% } %>
-            <form method="POST" action="/settings/profile/email/verify" class="inline-form">
-              <input type="text" name="code" placeholder="6 haneli kod" maxlength="6" required />
-              <button type="submit" class="btn btn-primary btn-sm">Dogrula</button>
+            <form method="POST" action="/settings/profile/phone/verify" class="flex gap-2 mb-2 flex-wrap">
+              <input name="code" placeholder="6 haneli kod" maxlength="6" required class="flex-1 min-w-[120px] px-3 py-2 border border-silver-light rounded-lg outline-none focus:ring-2 focus:ring-primary" />
+              <button class="px-4 py-2 bg-primary text-white rounded-lg font-label-md text-label-sm">Dogrula</button>
             </form>
-            <form method="POST" action="/settings/profile/email/send-code" class="resend-form">
-              <button type="submit" class="btn btn-ghost btn-sm">Kod Gonder</button>
-            </form>
+            <form method="POST" action="/settings/profile/phone/send-code"><button class="text-primary font-label-md text-label-sm hover:underline">Kod Gonder</button></form>
           <% } %>
-        </div>
-      </div>
-
-      <!-- Telefon dogrulama -->
-      <div class="checklist-row">
-        <div class="check-badge <%= user.phone_verified ? 'check-done' : '' %>"><%= user.phone_verified ? '&#10003;' : '2' %></div>
-        <div class="checklist-body">
-          <h4>Telefon Dogrulama</h4>
-
-          <% if (user.phone_verified) { %>
-            <p class="checklist-sub-static"><%= user.phone %></p>
-            <p class="checklist-sub">Telefonun dogrulandi.</p>
-          <% } else { %>
-            <form method="POST" action="/settings/profile/phone" class="inline-form">
-              <input type="tel" name="phone" placeholder="05xx xxx xx xx" value="<%= user.phone || '' %>" required />
-              <button type="submit" class="btn btn-ghost btn-sm">Kaydet</button>
-            </form>
-
-            <% if (user.phone) { %>
-              <% if (phoneCode) { %>
-                <div class="code-preview code-preview-compact">
-                  <div class="code-preview-label">Demo kodu (gercek hayatta SMS ile gelirdi):</div>
-                  <div class="code-preview-value"><%= phoneCode %></div>
-                </div>
-              <% } %>
-              <form method="POST" action="/settings/profile/phone/verify" class="inline-form">
-                <input type="text" name="code" placeholder="6 haneli kod" maxlength="6" required />
-                <button type="submit" class="btn btn-primary btn-sm">Dogrula</button>
-              </form>
-              <form method="POST" action="/settings/profile/phone/send-code" class="resend-form">
-                <button type="submit" class="btn btn-ghost btn-sm">Kod Gonder</button>
-              </form>
-            <% } %>
-          <% } %>
-        </div>
+        <% } %>
       </div>
     </div>
 
-    <% if (user.email_verified && user.phone_verified) { %>
-      <div class="alert alert-success">Hesabin tamamen dogrulandi<% if (user.verification_bonus_claimed) { %> ve +500 LT bonusunu kazandin!<% } %></div>
-    <% } %>
+    <div class="mt-6">
+      <form method="POST" action="/logout"><button class="px-5 py-2.5 border border-error text-error rounded-lg font-label-md text-label-md hover:bg-error hover:text-white transition-all">Cikis Yap</button></form>
+    </div>
   </main>
+
+  <%- include('partials/theme-foot', { user: user }) %>
+  <script>
+    (function () {
+      var fileInput = document.getElementById('avatar-file');
+      var urlInput = document.getElementById('avatar-url');
+      var preview = document.getElementById('avatar-preview');
+      var removeBtn = document.getElementById('avatar-remove');
+      if (fileInput) {
+        fileInput.addEventListener('change', function () {
+          var file = fileInput.files && fileInput.files[0];
+          if (!file) return;
+          if (file.size > 512 * 1024) { alert('Resim cok buyuk (~500 KB siniri).'); fileInput.value = ''; return; }
+          var reader = new FileReader();
+          reader.onload = function (e) {
+            urlInput.value = e.target.result;
+            preview.innerHTML = '<img class="w-full h-full object-cover" src="' + e.target.result + '" alt="" />';
+          };
+          reader.readAsDataURL(file);
+        });
+      }
+      if (removeBtn) { removeBtn.addEventListener('click', function () { urlInput.value = ''; }); }
+    })();
+  </script>
 </body>
 </html>

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html class="light" lang="tr">
+<head>
+  <%- include('partials/theme-head', { pageTitle: 'Siralama — LOOTIV' }) %>
+  <style>
+    .glass-card { background: rgba(255,255,255,0.7); backdrop-filter: blur(8px); border: 1px solid rgba(189,195,199,0.3); }
+  </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col">
+
+  <%- include('partials/theme-nav', { active: 'siralama', user: user, unreadCount: typeof unreadCount !== 'undefined' ? unreadCount : 0 }) %>
+
+  <main class="flex-grow w-full max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-8">
+    <section class="mb-10 text-center md:text-left">
+      <h1 class="font-headline-lg text-headline-lg text-primary mb-2">Oyuncu Siralamasi</h1>
+      <p class="text-body-md text-on-surface-variant max-w-2xl">LT bakiyesine gore en zengin oyuncular. Masaya otur, kazan, zirveye tirman.</p>
+    </section>
+
+    <% var top3 = players.slice(0, 3); var rest = players.slice(3);
+       function fmtLt(n){ return (Number(n)||0).toLocaleString('tr-TR'); }
+       var charLabels = {savasci:'Savasci',rahip:'Rahip',sura:'Sura',ninja:'Ninja'};
+       // Podyum sirasi: 2, 1, 3
+       var p1 = top3[0], p2 = top3[1], p3 = top3[2];
+    %>
+
+    <!-- Podyum -->
+    <% if (players.length) { %>
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end mb-16">
+      <!-- 2. -->
+      <div class="order-2 md:order-1 flex flex-col items-center transition-all duration-300 hover:-translate-y-2 <%= p2 ? '' : 'invisible' %>">
+        <% if (p2) { %>
+        <div class="relative mb-4">
+          <div class="w-24 h-24 rounded-full border-4 border-silver-light overflow-hidden shadow-lg bg-primary flex items-center justify-center text-white font-headline-lg text-2xl">
+            <% if (p2.avatar_url) { %><img class="w-full h-full object-cover" src="<%= p2.avatar_url %>" alt="" /><% } else { %><span><%= p2.rumuz.charAt(0).toUpperCase() %></span><% } %>
+          </div>
+          <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-silver-light text-primary font-bold w-8 h-8 rounded-full flex items-center justify-center shadow-md">2</div>
+        </div>
+        <div class="w-full glass-card p-6 rounded-xl text-center">
+          <h3 class="font-headline-md text-headline-md text-primary truncate"><%= p2.rumuz %></h3>
+          <div class="flex justify-center gap-4 mt-2">
+            <div class="text-center"><p class="text-label-sm text-outline uppercase tracking-wider">LT</p><p class="font-bold text-primary"><%= fmtLt(p2.lt_balance) %></p></div>
+            <div class="text-center"><p class="text-label-sm text-outline uppercase tracking-wider">Galibiyet</p><p class="font-bold text-success-green"><%= p2.wins %></p></div>
+          </div>
+        </div>
+        <% } %>
+      </div>
+
+      <!-- 1. -->
+      <div class="order-1 md:order-2 flex flex-col items-center transition-all duration-300 hover:-translate-y-4">
+        <div class="relative mb-6">
+          <div class="absolute -top-10 left-1/2 -translate-x-1/2">
+            <span class="material-symbols-outlined text-secondary-container text-[48px]" style="font-variation-settings: 'FILL' 1;">military_tech</span>
+          </div>
+          <div class="w-32 h-32 rounded-full border-4 border-secondary-container overflow-hidden shadow-2xl bg-primary flex items-center justify-center text-white font-headline-lg text-4xl">
+            <% if (p1.avatar_url) { %><img class="w-full h-full object-cover" src="<%= p1.avatar_url %>" alt="" /><% } else { %><span><%= p1.rumuz.charAt(0).toUpperCase() %></span><% } %>
+          </div>
+          <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-secondary-container text-white font-bold w-10 h-10 rounded-full flex items-center justify-center text-headline-md shadow-lg">1</div>
+        </div>
+        <div class="w-full bg-white shadow-xl p-8 rounded-2xl text-center border border-secondary-container/20">
+          <h3 class="font-headline-lg text-headline-lg text-slate-dark truncate"><%= p1.rumuz %></h3>
+          <div class="flex justify-center gap-8 mt-4">
+            <div class="text-center"><p class="text-label-sm text-outline uppercase tracking-wider">LT</p><p class="font-bold text-primary text-xl"><%= fmtLt(p1.lt_balance) %></p></div>
+            <div class="text-center"><p class="text-label-sm text-outline uppercase tracking-wider">Galibiyet</p><p class="font-bold text-success-green text-xl"><%= p1.wins %></p></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. -->
+      <div class="order-3 flex flex-col items-center transition-all duration-300 hover:-translate-y-2 <%= p3 ? '' : 'invisible' %>">
+        <% if (p3) { %>
+        <div class="relative mb-4">
+          <div class="w-24 h-24 rounded-full border-4 border-secondary-fixed-dim overflow-hidden shadow-lg bg-primary flex items-center justify-center text-white font-headline-lg text-2xl">
+            <% if (p3.avatar_url) { %><img class="w-full h-full object-cover" src="<%= p3.avatar_url %>" alt="" /><% } else { %><span><%= p3.rumuz.charAt(0).toUpperCase() %></span><% } %>
+          </div>
+          <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-secondary-fixed-dim text-primary font-bold w-8 h-8 rounded-full flex items-center justify-center shadow-md">3</div>
+        </div>
+        <div class="w-full glass-card p-6 rounded-xl text-center">
+          <h3 class="font-headline-md text-headline-md text-primary truncate"><%= p3.rumuz %></h3>
+          <div class="flex justify-center gap-4 mt-2">
+            <div class="text-center"><p class="text-label-sm text-outline uppercase tracking-wider">LT</p><p class="font-bold text-primary"><%= fmtLt(p3.lt_balance) %></p></div>
+            <div class="text-center"><p class="text-label-sm text-outline uppercase tracking-wider">Galibiyet</p><p class="font-bold text-success-green"><%= p3.wins %></p></div>
+          </div>
+        </div>
+        <% } %>
+      </div>
+    </section>
+    <% } %>
+
+    <!-- Tablo -->
+    <section class="bg-white rounded-2xl shadow-sm overflow-hidden border border-silver-light/30">
+      <div class="p-4 border-b border-surface-container flex flex-col lg:flex-row justify-between items-center gap-4">
+        <h2 class="font-headline-md text-headline-md text-primary">Tum Siralama</h2>
+        <div class="relative w-full lg:w-64">
+          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[20px]">search</span>
+          <input id="rank-search" oninput="filterRanks()" class="w-full bg-surface-container border-none rounded-lg py-2 pl-10 pr-4 text-body-sm focus:ring-primary" placeholder="Oyuncu ara..." type="text" />
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left">
+          <thead>
+            <tr class="bg-surface-container/50">
+              <th class="px-6 py-4 font-label-md text-outline uppercase tracking-widest text-[11px]">Sira</th>
+              <th class="px-6 py-4 font-label-md text-outline uppercase tracking-widest text-[11px]">Oyuncu</th>
+              <th class="px-6 py-4 font-label-md text-outline uppercase tracking-widest text-[11px]">Karakter</th>
+              <th class="px-6 py-4 font-label-md text-outline uppercase tracking-widest text-[11px] text-center">Oynanan</th>
+              <th class="px-6 py-4 font-label-md text-outline uppercase tracking-widest text-[11px] text-center">Galibiyet</th>
+              <th class="px-6 py-4 font-label-md text-outline uppercase tracking-widest text-[11px] text-right">LT (Skor)</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-surface-container">
+            <% players.forEach(function(p, i) { var me = p.id === user.id; %>
+              <tr class="rank-row transition-colors <%= me ? 'bg-primary-container/5 border-l-4 border-primary' : 'hover:bg-surface-container-low' %>" data-rumuz="<%= p.rumuz.toLowerCase() %>">
+                <td class="px-6 py-4 font-bold text-primary">#<%= i + 1 %></td>
+                <td class="px-6 py-4">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full overflow-hidden border <%= me ? 'border-primary' : 'border-silver-light' %> bg-primary flex items-center justify-center text-white font-bold">
+                      <% if (p.avatar_url) { %><img class="w-full h-full object-cover" src="<%= p.avatar_url %>" alt="" /><% } else { %><span><%= p.rumuz.charAt(0).toUpperCase() %></span><% } %>
+                    </div>
+                    <div>
+                      <p class="font-headline-md text-body-md text-primary"><%= p.rumuz %><%= me ? ' (Sen)' : '' %></p>
+                      <% if (p.vip_tier > 0) { %><p class="text-label-sm text-energetic-purple">VIP <%= p.vip_tier %></p><% } %>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-6 py-4">
+                  <% if (p.character_class) { %>
+                    <span class="text-label-sm text-on-surface-variant"><%= charLabels[p.character_class] || p.character_class %></span>
+                  <% } else { %><span class="text-outline">—</span><% } %>
+                </td>
+                <td class="px-6 py-4 text-center font-body-md text-primary"><%= p.played %></td>
+                <td class="px-6 py-4 text-center font-bold text-success-green"><%= p.wins %></td>
+                <td class="px-6 py-4 text-right font-headline-md text-primary"><%= fmtLt(p.lt_balance) %></td>
+              </tr>
+            <% }); %>
+            <% if (!players.length) { %>
+              <tr><td colspan="6" class="px-6 py-10 text-center text-outline">Henuz siralamada oyuncu yok.</td></tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <%- include('partials/theme-foot', { user: user }) %>
+  <script>
+    function filterRanks() {
+      var q = document.getElementById('rank-search').value.toLowerCase();
+      document.querySelectorAll('.rank-row').forEach(function (r) {
+        r.style.display = r.dataset.rumuz.includes(q) ? '' : 'none';
+      });
+    }
+  </script>
+</body>
+</html>

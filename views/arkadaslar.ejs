@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html class="light" lang="tr">
+<head>
+  <%- include('partials/theme-head', { pageTitle: 'Arkadaslar — LOOTIV' }) %>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col">
+
+  <%- include('partials/theme-nav', { active: 'arkadaslar', user: user, unreadCount: typeof unreadCount !== 'undefined' ? unreadCount : 0 }) %>
+
+  <main class="flex-grow max-w-3xl mx-auto w-full px-margin-mobile md:px-margin-desktop py-8">
+    <h1 class="font-headline-lg text-headline-lg text-primary mb-6">Arkadaslar</h1>
+
+    <% if (info) { %><div class="mb-4 p-4 bg-success-green/10 text-success-green rounded-lg font-body-sm"><%= info %></div><% } %>
+    <% if (error) { %><div class="mb-4 p-4 bg-error-container text-on-error-container rounded-lg font-body-sm"><%= error %></div><% } %>
+
+    <!-- Arkadaş ekle -->
+    <div class="bg-white rounded-xl border border-outline-variant/30 shadow-sm p-6 mb-6">
+      <h2 class="font-headline-md text-headline-md text-primary mb-3">Arkadas Ekle</h2>
+      <form method="POST" action="/arkadaslar/istek" class="flex gap-2 flex-wrap">
+        <input name="rumuz" placeholder="Rumuz" required class="flex-1 min-w-[180px] px-4 py-2.5 border border-silver-light rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+        <button class="px-5 py-2.5 bg-secondary-container text-white rounded-lg font-label-md text-label-md hover:opacity-90 transition-all">Istek Gonder</button>
+      </form>
+    </div>
+
+    <!-- Gelen istekler -->
+    <% if (requests.length) { %>
+      <div class="bg-white rounded-xl border border-outline-variant/30 shadow-sm p-6 mb-6">
+        <h2 class="font-headline-md text-headline-md text-primary mb-4 flex items-center gap-2">Gelen Istekler <span class="bg-secondary-container/20 text-on-secondary-container px-2 py-0.5 rounded-full text-label-sm"><%= requests.length %></span></h2>
+        <div class="flex flex-col gap-3">
+          <% requests.forEach(function (r) { %>
+            <div class="flex items-center gap-3 p-3 bg-surface-container-low rounded-lg">
+              <span class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold overflow-hidden">
+                <% if (r.avatar_url) { %><img class="w-full h-full object-cover" src="<%= r.avatar_url %>" alt="" /><% } else { %><span><%= r.rumuz.charAt(0).toUpperCase() %></span><% } %>
+              </span>
+              <span class="font-label-md text-primary flex-1"><%= r.rumuz %></span>
+              <form method="POST" action="/arkadaslar/<%= r.friendship_id %>/kabul"><button class="px-4 py-2 bg-success-green text-white rounded-lg font-label-md text-label-sm">Kabul</button></form>
+              <form method="POST" action="/arkadaslar/<%= r.friendship_id %>/sil"><button class="px-4 py-2 border border-silver-light text-on-surface-variant rounded-lg font-label-md text-label-sm hover:bg-surface-container">Reddet</button></form>
+            </div>
+          <% }); %>
+        </div>
+      </div>
+    <% } %>
+
+    <!-- Arkadaş listesi -->
+    <div class="bg-white rounded-xl border border-outline-variant/30 shadow-sm p-6">
+      <h2 class="font-headline-md text-headline-md text-primary mb-4 flex items-center gap-2">Arkadaslarim <span class="bg-surface-container px-2 py-0.5 rounded-full text-label-sm"><%= friends.length %></span></h2>
+      <% if (!friends.length) { %>
+        <p class="text-body-sm text-outline">Henuz arkadasin yok.</p>
+      <% } else { %>
+        <div class="flex flex-col gap-3">
+          <% friends.forEach(function (f) { %>
+            <div class="flex items-center gap-3 p-3 bg-surface-container-low rounded-lg">
+              <span class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold overflow-hidden">
+                <% if (f.avatar_url) { %><img class="w-full h-full object-cover" src="<%= f.avatar_url %>" alt="" /><% } else { %><span><%= f.rumuz.charAt(0).toUpperCase() %></span><% } %>
+              </span>
+              <span class="font-label-md text-primary flex-1 flex items-center gap-2">
+                <%= f.rumuz %>
+                <% if (f.vip_tier > 0) { %><span class="text-[10px] px-1.5 py-0.5 bg-energetic-purple/15 text-energetic-purple rounded-full font-label-md">VIP<%= f.vip_tier %></span><% } %>
+              </span>
+              <form method="POST" action="/arkadaslar/<%= f.friendship_id %>/sil" onsubmit="return confirm('Arkadaslıktan cikarilsin mi?');">
+                <button class="px-3 py-1.5 border border-error text-error rounded-lg font-label-md text-label-sm hover:bg-error hover:text-white transition-all">Cikar</button>
+              </form>
+            </div>
+          <% }); %>
+        </div>
+      <% } %>
+    </div>
+  </main>
+
+  <%- include('partials/theme-foot', { user: user }) %>
+</body>
+</html>

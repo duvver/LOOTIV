@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html class="light" lang="tr">
+<head>
+  <%- include('partials/theme-head', { pageTitle: 'Duyurular — LOOTIV' }) %>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col">
+
+  <%- include('partials/theme-nav', { active: 'duyurular', user: user, unreadCount: typeof unreadCount !== 'undefined' ? unreadCount : 0 }) %>
+
+  <main class="flex-grow max-w-3xl mx-auto w-full px-margin-mobile md:px-margin-desktop py-8">
+    <h1 class="font-headline-lg text-headline-lg text-primary mb-6">Duyurular</h1>
+
+    <% if (typeof saved !== 'undefined' && saved) { %>
+      <div class="mb-6 p-4 bg-success-green/10 text-success-green rounded-lg font-body-sm">Duyuru yayinlandi ve herkese iletildi.</div>
+    <% } %>
+
+    <!-- Admin: duyuru yayınla -->
+    <% if (user.is_admin) { %>
+      <div class="bg-white rounded-xl border border-outline-variant/30 shadow-sm p-6 mb-8">
+        <h2 class="font-headline-md text-headline-md text-primary mb-4 flex items-center gap-2"><span class="material-symbols-outlined text-secondary">campaign</span> Yeni Duyuru Yayinla</h2>
+        <form method="POST" action="/duyurular" class="space-y-4">
+          <div class="space-y-2">
+            <label class="block font-label-md text-on-surface-variant uppercase tracking-wider" for="title">Baslik</label>
+            <input id="title" name="title" maxlength="150" required class="w-full px-4 py-3 border border-silver-light rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+          </div>
+          <div class="space-y-2">
+            <label class="block font-label-md text-on-surface-variant uppercase tracking-wider" for="content">Mesaj</label>
+            <textarea id="content" name="content" rows="4" maxlength="5000" required class="w-full px-4 py-3 border border-silver-light rounded-lg focus:ring-2 focus:ring-primary outline-none"></textarea>
+          </div>
+          <button class="px-6 py-3 bg-secondary-container text-white rounded-lg font-label-md text-label-md hover:opacity-90 transition-all">Yayinla</button>
+        </form>
+      </div>
+    <% } %>
+
+    <!-- Duyuru listesi -->
+    <% if (!announcements.length) { %>
+      <p class="text-body-sm text-outline">Henuz duyuru yok.</p>
+    <% } else { %>
+      <div class="flex flex-col gap-4">
+        <% announcements.forEach(function (a) { %>
+          <div class="bg-white rounded-xl border border-outline-variant/30 border-l-4 border-l-secondary-container shadow-sm p-6">
+            <div class="flex items-center gap-3 flex-wrap mb-3">
+              <span class="material-symbols-outlined text-secondary">campaign</span>
+              <h3 class="font-headline-md text-headline-md text-primary"><%= a.title %></h3>
+              <span class="text-label-sm text-outline ml-auto"><%= a.admin_rumuz %> · <%= new Date(a.created_at).toLocaleString('tr-TR') %></span>
+            </div>
+            <p class="font-body-md text-on-surface-variant leading-relaxed" style="white-space: pre-wrap; word-break: break-word;"><%= a.content %></p>
+          </div>
+        <% }); %>
+      </div>
+    <% } %>
+  </main>
+
+  <%- include('partials/theme-foot', { user: user }) %>
+</body>
+</html>

@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS admin_yetkileri (
 );
 INSERT INTO admin_yetkileri (rumuz) VALUES ('Emir'), ('Umut') ON CONFLICT (rumuz) DO NOTHING;
 
--- Poker el sonuclari (admin panelinde goruntulenir)
+-- Oyun el sonuclari (Poker + Okey, admin panelinde goruntulenir)
 CREATE TABLE IF NOT EXISTS game_logs (
   id SERIAL PRIMARY KEY,
   user_id INT REFERENCES users(id),
@@ -47,6 +47,7 @@ CREATE TABLE IF NOT EXISTS game_logs (
   result VARCHAR(10) NOT NULL,
   lt_change INT NOT NULL,
   total_lt_snapshot INT NOT NULL,
+  game VARCHAR(20) NOT NULL DEFAULT 'poker',
   created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 

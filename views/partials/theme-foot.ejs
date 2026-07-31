@@ -1,0 +1,24 @@
+<%
+  // Nexus Play tema footer + ortak scriptler
+  var _footUser = typeof user !== 'undefined' ? user : null;
+%>
+<footer class="bg-surface-container mt-20 border-t border-silver-light/20">
+  <div class="flex flex-col md:flex-row justify-between items-center py-10 px-margin-mobile md:px-margin-desktop w-full max-w-container-max mx-auto">
+    <div class="mb-6 md:mb-0 text-center md:text-left">
+      <span class="font-headline-md text-headline-md text-slate-dark block mb-2">LOOTIV</span>
+      <p class="font-body-sm text-body-sm text-on-surface-variant max-w-xs">Turk oyunlarinin yeni adresi. Okey, 101 ve poker masalarinda arkadaslarinla bulus.</p>
+    </div>
+    <div class="flex flex-wrap justify-center gap-x-10 gap-y-3">
+      <a class="font-label-sm text-label-sm text-on-surface-variant hover:underline hover:text-primary transition-all" href="/bloglar">Bloglar</a>
+      <a class="font-label-sm text-label-sm text-on-surface-variant hover:underline hover:text-primary transition-all" href="/duyurular">Duyurular</a>
+      <a class="font-label-sm text-label-sm text-on-surface-variant hover:underline hover:text-primary transition-all" href="/pazar">Pazar</a>
+      <a class="font-label-sm text-label-sm text-on-surface-variant hover:underline hover:text-primary transition-all" href="/siralama">Sıralama</a>
+    </div>
+    <p class="font-body-sm text-body-sm text-outline mt-6 md:mt-0">© <%= new Date().getFullYear() %> LOOTIV</p>
+  </div>
+</footer>
+
+<% if (_footUser) { %>
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/notify.js?v=1"></script>
+<% } %>

@@ -1,0 +1,133 @@
+<%
+  // Nexus Play tema baslik/config partial'i.
+  // Parametre: pageTitle
+  var _title = typeof pageTitle !== 'undefined' ? pageTitle : 'LOOTIV';
+%>
+<meta charset="utf-8" />
+<meta content="width=device-width, initial-scale=1.0" name="viewport" />
+<title><%= _title %></title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+<script>
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          "on-primary-fixed-variant": "#34495e",
+          "surface-dim": "#d7dadb",
+          "on-background": "#181c1d",
+          "on-error": "#ffffff",
+          "secondary-container": "#fda222",
+          "on-error-container": "#93000a",
+          "surface-variant": "#e0e3e4",
+          "primary-fixed-dim": "#b3c9e2",
+          "error": "#ba1a1a",
+          "on-tertiary-fixed": "#1c0062",
+          "on-primary-container": "#a2b8d1",
+          "silver-light": "#BDC3C7",
+          "primary": "#1d3246",
+          "surface-tint": "#4b6076",
+          "background": "#f7fafb",
+          "success-green": "#27AE60",
+          "on-surface": "#181c1d",
+          "inverse-on-surface": "#eef1f2",
+          "on-surface-variant": "#43474c",
+          "on-secondary": "#ffffff",
+          "outline-variant": "#c3c7cd",
+          "secondary-fixed-dim": "#ffb867",
+          "on-tertiary": "#ffffff",
+          "on-secondary-fixed-variant": "#673d00",
+          "on-tertiary-fixed-variant": "#4719c9",
+          "tertiary-fixed": "#e6deff",
+          "surface-bright": "#f7fafb",
+          "outline": "#74777d",
+          "surface-container-lowest": "#ffffff",
+          "secondary": "#885200",
+          "inverse-primary": "#b3c9e2",
+          "white": "#FFFFFF",
+          "surface": "#f7fafb",
+          "tertiary-container": "#481ac9",
+          "tertiary": "#31009c",
+          "surface-container": "#ebeeef",
+          "on-primary-fixed": "#051d30",
+          "secondary-fixed": "#ffddbb",
+          "primary-container": "#34495e",
+          "error-container": "#ffdad6",
+          "primary-fixed": "#cfe5ff",
+          "inverse-surface": "#2d3132",
+          "tertiary-fixed-dim": "#cabeff",
+          "slate-dark": "#2C3E50",
+          "surface-container-high": "#e5e9ea",
+          "on-tertiary-container": "#b9abff",
+          "on-secondary-fixed": "#2b1700",
+          "surface-container-low": "#f1f4f5",
+          "on-primary": "#ffffff",
+          "surface-container-highest": "#e0e3e4",
+          "on-secondary-container": "#683e00",
+          "amber-gold": "#EB930C",
+          "energetic-purple": "#7D5FFF"
+        },
+        borderRadius: {
+          "DEFAULT": "0.25rem",
+          "lg": "0.5rem",
+          "xl": "0.75rem",
+          "full": "9999px"
+        },
+        spacing: {
+          "gutter": "16px",
+          "container-max": "1200px",
+          "margin-desktop": "32px",
+          "base": "8px",
+          "margin-mobile": "16px"
+        },
+        fontFamily: {
+          "label-sm": ["Hanken Grotesk"],
+          "headline-lg": ["Hanken Grotesk"],
+          "body-md": ["\"Source Sans 3\""],
+          "headline-lg-mobile": ["Hanken Grotesk"],
+          "body-sm": ["\"Source Sans 3\""],
+          "display-lg": ["Hanken Grotesk"],
+          "body-lg": ["\"Source Sans 3\""],
+          "label-md": ["Hanken Grotesk"],
+          "headline-md": ["Hanken Grotesk"]
+        },
+        fontSize: {
+          "label-sm": ["12px", {"lineHeight": "14px", "fontWeight": "500"}],
+          "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+          "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+          "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+          "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+          "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+          "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+          "label-md": ["14px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+          "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}]
+        }
+      }
+    }
+  };
+</script>
+<style>
+  body { font-family: 'Source Sans 3', sans-serif; background-color: #f7fafb; }
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
+  .game-card-hover { transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s ease; }
+  .game-card-hover:hover { transform: translateY(-8px); box-shadow: 0px 12px 24px rgba(52,73,94,0.12); }
+  .category-card { transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+  .bento-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
+
+  /* ---- Duyuru bildirim toast'i (notify.js icin, acik tema) ---- */
+  .announce-toast-wrap { position: fixed; top: 80px; right: 18px; z-index: 1000; display: flex; flex-direction: column; gap: 10px; max-width: 340px; }
+  .announce-toast { background: #ffffff; border: 1px solid #c3c7cd; border-left: 4px solid #EB930C; border-radius: 12px; padding: 14px 16px; box-shadow: 0 12px 34px rgba(52,73,94,0.18); cursor: pointer; opacity: 0; transform: translateX(20px); transition: opacity .28s ease, transform .28s ease; }
+  .announce-toast.visible { opacity: 1; transform: translateX(0); }
+  .announce-toast-title { font-family: 'Hanken Grotesk'; font-size: 14px; font-weight: 800; color: #1d3246; margin-bottom: 4px; }
+  .announce-toast-body { font-size: 13px; color: #43474c; line-height: 1.5; margin-bottom: 8px; }
+  .announce-toast-link { font-size: 12.5px; font-weight: 700; color: #EB930C; }
+  .announce-toast-link:hover { text-decoration: underline; }
+  @media (max-width: 560px) { .announce-toast-wrap { left: 12px; right: 12px; max-width: none; } }
+
+  /* ---- Tema sohbet baloncuklari ---- */
+  .theme-chat-msg { font-size: 14px; line-height: 1.5; }
+  .theme-chat-msg .who { font-weight: 700; color: #1d3246; }
+  .theme-chat-msg.sys .txt { color: #74777d; font-style: italic; }
+</style>

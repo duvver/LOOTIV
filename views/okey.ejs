@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Turk Pokeri - LOOTIV</title>
+  <title>Canak Okey - LOOTIV</title>
   <link rel="stylesheet" href="/css/style.css?v=6" />
 </head>
 <body class="app-body" data-user-id="<%= user.id %>">
@@ -23,17 +23,33 @@
     </div>
   </header>
 
-  <main class="poker-layout">
-    <section class="poker-table">
-      <div class="table-felt" id="table-felt">
-        <div class="table-title">Turk Pokeri</div>
-        <div class="table-status" id="table-status"></div>
-        <div class="table-pot" id="table-pot"></div>
-        <div class="table-community" id="table-community"></div>
-        <div class="table-seats" id="table-seats"></div>
-        <div class="table-banner" id="table-banner"></div>
+  <main class="okey-layout">
+    <section class="okey-table">
+      <div class="okey-felt" id="okey-felt">
+        <div class="okey-title">Canak Okey</div>
+        <div class="okey-status" id="okey-status"></div>
+        <div class="okey-seats" id="okey-seats"></div>
+        <div class="okey-middle">
+          <div class="okey-deck" id="okey-deck">
+            <div class="okey-deck-pile" id="okey-deck-pile" title="Desteden cek"></div>
+            <div class="okey-deck-count" id="okey-deck-count"></div>
+          </div>
+          <div class="okey-indicator" id="okey-indicator"></div>
+        </div>
+        <div class="okey-corner okey-corner-0" id="okey-corner-0"></div>
+        <div class="okey-corner okey-corner-1" id="okey-corner-1"></div>
+        <div class="okey-corner okey-corner-2" id="okey-corner-2"></div>
+        <div class="okey-corner okey-corner-3" id="okey-corner-3"></div>
+        <div class="okey-banner" id="okey-banner"></div>
       </div>
-      <div class="action-bar" id="action-bar"></div>
+      <div class="okey-rack-wrap">
+        <div class="okey-rack-area">
+          <button type="button" class="okey-diz-btn" id="okey-cift-diz"><span>&#199;&#304;FT</span><span>D&#304;Z</span></button>
+          <div class="okey-rack" id="okey-rack"></div>
+          <button type="button" class="okey-diz-btn" id="okey-seri-diz"><span>SER&#304;</span><span>D&#304;Z</span></button>
+        </div>
+        <div class="okey-action-bar" id="okey-action-bar"></div>
+      </div>
     </section>
 
     <aside class="players-panel">
@@ -44,7 +60,7 @@
     <section class="chat-panel">
       <div class="chat-tabs">
         <button class="chat-tab active" data-channel="genel">Genel Sohbet</button>
-        <button class="chat-tab" data-channel="oyun">Oyun Sohbet</button>
+        <button class="chat-tab" data-channel="okey">Oyun Sohbet</button>
         <button class="chat-tab" data-channel="sistem">Sistem Mesajlari</button>
       </div>
 
@@ -60,7 +76,7 @@
   </main>
 
   <script src="/socket.io/socket.io.js"></script>
-  <script src="/js/poker.js"></script>
+  <script src="/js/okey.js?v=3"></script>
   <script src="/js/notify.js?v=1"></script>
 </body>
 </html>
