@@ -7,70 +7,56 @@
 
   <%- include('partials/theme-nav', { active: 'home', user: user, unreadCount: typeof unreadCount !== 'undefined' ? unreadCount : 0 }) %>
 
-  <% if (!user) { %>
-    <!-- ================= GIRIS YAPMAMIS: Hero + oyun onizleme ================= -->
-    <main class="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-10">
-      <% if (loginError) { %>
-        <div class="mb-6 p-4 bg-error-container text-on-error-container rounded-lg font-body-sm"><%= loginError %></div>
-      <% } %>
-      <section class="grid grid-cols-12 gap-8 items-center mb-16">
-        <div class="col-span-12 md:col-span-7">
-          <h1 class="font-display-lg text-display-lg text-primary mb-4">Turk oyunlarinin<br/>yeni adresi.</h1>
-          <p class="font-body-lg text-body-lg text-on-surface-variant mb-8 max-w-lg">Okey, 101 Okey ve Turk Pokeri masalarinda arkadaslarinla bulus. Uye ol, 500 LT ile basla.</p>
-          <div class="flex gap-3">
-            <a href="/register" class="px-6 py-3 bg-secondary text-white rounded-lg font-label-md text-label-md hover:opacity-90 transition-all">Hemen Uye Ol</a>
-          </div>
+  <main class="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-8">
+
+    <!-- ===== Misafir karsilama (sadece giris yapmamis) ===== -->
+    <% if (!user) { %>
+      <section class="mb-10 bg-gradient-to-r from-primary to-primary-container rounded-2xl p-8 md:p-10 text-white flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-md">
+        <div>
+          <h1 class="font-display-lg text-headline-lg md:text-display-lg mb-2">Türk oyunlarının yeni adresi.</h1>
+          <p class="font-body-lg text-white/80 max-w-xl">Okey, 101 Okey ve Türk Pokeri masaları seni bekliyor. Siteyi dilediğin gibi gez; oynamak, satmak ya da envanterine ulaşmak için üye ol — başlangıçta 500 LT hediye.</p>
         </div>
-        <div class="col-span-12 md:col-span-5">
-          <div class="bg-white rounded-xl shadow-sm border border-outline-variant p-6">
-            <h2 class="font-headline-md text-headline-md text-primary mb-4">Giris Yap</h2>
-            <form method="POST" action="/login" class="flex flex-col gap-3">
-              <input type="text" name="identifier" placeholder="Rumuz veya E-posta" required class="w-full px-4 py-2.5 border border-silver-light rounded-lg focus:border-primary outline-none font-body-md" value="<%= typeof loginIdentifier !== 'undefined' ? loginIdentifier : '' %>" />
-              <input type="password" name="password" placeholder="Sifre" required class="w-full px-4 py-2.5 border border-silver-light rounded-lg focus:border-primary outline-none font-body-md" />
-              <button type="submit" class="w-full py-2.5 bg-primary text-white rounded-lg font-label-md text-label-md hover:bg-primary-container transition-all">Giris Yap</button>
-            </form>
-            <p class="mt-4 text-center font-body-sm text-outline">Hesabin yok mu? <a href="/register" class="text-primary font-semibold hover:underline">Uye Ol</a></p>
-          </div>
+        <div class="flex gap-3 shrink-0">
+          <a href="/register" class="px-6 py-3 bg-secondary text-white rounded-lg font-label-md text-label-md hover:opacity-90 transition-all whitespace-nowrap">Hemen Üye Ol</a>
+          <a href="/giris" class="px-6 py-3 bg-white/10 border border-white/30 text-white rounded-lg font-label-md text-label-md hover:bg-white/20 transition-all whitespace-nowrap">Giriş Yap</a>
         </div>
       </section>
-    </main>
-  <% } else { %>
-    <!-- ================= GIRIS YAPMIS: Nexus Play ana sayfa ================= -->
-    <main class="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-8">
+    <% } %>
 
-      <!-- Kompakt kategori + gorevler -->
-      <section class="grid grid-cols-12 gap-6 mb-12">
-        <div class="col-span-12 md:col-span-8 bg-white rounded-xl shadow-sm border border-outline-variant p-4 flex items-center justify-around">
-          <a class="flex flex-col items-center gap-2 group hover:text-primary transition-colors" href="/karakter-sec">
-            <div class="w-12 h-12 bg-primary-fixed-dim text-primary rounded-lg flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
-              <span class="material-symbols-outlined text-2xl">account_circle</span>
-            </div>
-            <span class="font-label-md text-label-md">Karakter</span>
-          </a>
-          <div class="w-px h-12 bg-outline-variant"></div>
-          <a class="flex flex-col items-center gap-2 group hover:text-primary transition-colors" href="/envanter">
-            <div class="w-12 h-12 bg-primary-fixed-dim text-primary rounded-lg flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
-              <span class="material-symbols-outlined text-2xl">inventory_2</span>
-            </div>
-            <span class="font-label-md text-label-md">Envanter</span>
-          </a>
-          <div class="w-px h-12 bg-outline-variant"></div>
-          <a class="flex flex-col items-center gap-2 group hover:text-primary transition-colors" href="/pazar">
-            <div class="w-12 h-12 bg-primary-fixed-dim text-primary rounded-lg flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
-              <span class="material-symbols-outlined text-2xl">storefront</span>
-            </div>
-            <span class="font-label-md text-label-md">Pazar</span>
-          </a>
-          <div class="w-px h-12 bg-outline-variant"></div>
-          <a class="flex flex-col items-center gap-2 group hover:text-primary transition-colors" href="/siralama">
-            <div class="w-12 h-12 bg-primary-fixed-dim text-primary rounded-lg flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
-              <span class="material-symbols-outlined text-2xl">leaderboard</span>
-            </div>
-            <span class="font-label-md text-label-md">Siralama</span>
-          </a>
-        </div>
+    <!-- ===== Kompakt kategori + gorevler ===== -->
+    <section class="grid grid-cols-12 gap-6 mb-12">
+      <div class="col-span-12 <%= user ? 'md:col-span-8' : '' %> bg-white rounded-xl shadow-sm border border-outline-variant p-4 flex items-center justify-around">
+        <a class="flex flex-col items-center gap-2 group hover:text-primary transition-colors" href="/karakter-sec">
+          <div class="w-12 h-12 bg-primary-fixed-dim text-primary rounded-lg flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
+            <span class="material-symbols-outlined text-2xl">account_circle</span>
+          </div>
+          <span class="font-label-md text-label-md">Karakter</span>
+        </a>
+        <div class="w-px h-12 bg-outline-variant"></div>
+        <a class="flex flex-col items-center gap-2 group hover:text-primary transition-colors" href="/envanter">
+          <div class="w-12 h-12 bg-primary-fixed-dim text-primary rounded-lg flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
+            <span class="material-symbols-outlined text-2xl">inventory_2</span>
+          </div>
+          <span class="font-label-md text-label-md">Envanter</span>
+        </a>
+        <div class="w-px h-12 bg-outline-variant"></div>
+        <a class="flex flex-col items-center gap-2 group hover:text-primary transition-colors" href="/pazar">
+          <div class="w-12 h-12 bg-primary-fixed-dim text-primary rounded-lg flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
+            <span class="material-symbols-outlined text-2xl">storefront</span>
+          </div>
+          <span class="font-label-md text-label-md">Pazar</span>
+        </a>
+        <div class="w-px h-12 bg-outline-variant"></div>
+        <a class="flex flex-col items-center gap-2 group hover:text-primary transition-colors" href="/siralama">
+          <div class="w-12 h-12 bg-primary-fixed-dim text-primary rounded-lg flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
+            <span class="material-symbols-outlined text-2xl">leaderboard</span>
+          </div>
+          <span class="font-label-md text-label-md">Siralama</span>
+        </a>
+      </div>
 
-        <!-- Gorevler / Gunluk oduller -->
+      <!-- Gorevler / Gunluk oduller (sadece giris yapmis) -->
+      <% if (user) { %>
         <% var questsDone = (dailyAnswer ? 1 : 0) + (scratchToday ? 1 : 0); %>
         <div class="col-span-12 md:col-span-4 bg-white rounded-xl shadow-sm border border-outline-variant p-4 flex flex-col justify-between">
           <div class="flex items-center justify-between mb-2">
@@ -84,123 +70,125 @@
           </div>
           <a href="#gunluk" class="w-full py-1.5 text-center border border-primary/10 rounded-lg font-label-sm text-label-sm text-primary hover:bg-surface-container transition-all">Gorevleri Incele</a>
         </div>
-      </section>
+      <% } %>
+    </section>
 
-      <!-- Populer Oyunlar -->
-      <section id="oyunlar">
-        <div class="flex justify-between items-end mb-8">
-          <div>
-            <h2 class="font-headline-lg text-headline-lg text-primary">Populer Oyunlar</h2>
-            <p class="font-body-md text-body-md text-outline">Masaya otur, sohbet et, LT kazan.</p>
+    <!-- ===== Populer Oyunlar (herkes gorur) ===== -->
+    <section id="oyunlar">
+      <div class="flex justify-between items-end mb-8">
+        <div>
+          <h2 class="font-headline-lg text-headline-lg text-primary">Populer Oyunlar</h2>
+          <p class="font-body-md text-body-md text-outline">Masaya otur, sohbet et, LT kazan.</p>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-6">
+        <!-- 101 Okey (aktif) -->
+        <a href="/oyun/okey101" class="game-card-hover bg-white rounded-xl overflow-hidden shadow-sm flex flex-col">
+          <div class="relative h-48 group/img bg-primary-container">
+            <img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD3IRAWvK-mmHFBucdVV8OGEhScS0BOJ99qSDXdr_Nzm_waM-8xPrE9CP1fDpZZjyZFWb6Cjzg2nwYCs2V4xgC9EOIFxcxDe-UEkoOORCcb9BF54_p_yZ2gUivWPNynr7znJLFfT3eKdGsN8H11v6xKTMSpAV2WqnuB3K8bsmFd-YhJCjLC-nJhaYbsEzuXAc7ArGlf149Ac3U6TS6XePsaSfD5DYE0ScGf-S2gQAMsjM4gJc1tE4W7" alt="101 Okey" />
+            <div class="absolute inset-0 bg-primary/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+              <span class="px-6 py-2 bg-secondary text-white rounded-full font-label-md text-label-md">Oyna</span>
+            </div>
+          </div>
+          <div class="p-4">
+            <h3 class="font-headline-md text-headline-md text-primary mb-1">101 Okey</h3>
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-success-green"></span>
+              <span class="font-label-sm text-label-sm text-outline"><span class="lobby-online-count-badge">0</span> Oyuncu Aktif</span>
+            </div>
+          </div>
+        </a>
+
+        <!-- Canak Okey (aktif) -->
+        <a href="/oyun/okey" class="game-card-hover bg-white rounded-xl overflow-hidden shadow-sm flex flex-col">
+          <div class="relative h-48 group/img bg-primary-container">
+            <img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCUibdf8xrKOQOY4NOcs-qteEgQzDt0b5p4HNLPQUl1hc270TKSdKM_qN6zsGyd-vJv4Imn50YwfFw5glfM4kcjPeK7UApFaCqa0hd5JWZU0lZ_JPJWJ6Or_pD5xXR4keo1bgVdhqqc0m7wDXMC17x69SzZhqou9VQcd8krUKCpp3Bc57Czn1Mi8w97DrELGAKJD9qwH5_x_I9vKUKM4Tws1GSQGA7HOwsY0LAG6NQy3oGo2_hk_7Ny" alt="Canak Okey" />
+            <div class="absolute inset-0 bg-primary/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+              <span class="px-6 py-2 bg-secondary text-white rounded-full font-label-md text-label-md">Oyna</span>
+            </div>
+          </div>
+          <div class="p-4">
+            <h3 class="font-headline-md text-headline-md text-primary mb-1">Canak Okey</h3>
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-success-green"></span>
+              <span class="font-label-sm text-label-sm text-outline">Aktif</span>
+            </div>
+          </div>
+        </a>
+
+        <!-- Turk Pokeri (aktif) -->
+        <a href="/oyun/poker" class="game-card-hover bg-white rounded-xl overflow-hidden shadow-sm flex flex-col">
+          <div class="relative h-48 group/img bg-primary-container">
+            <img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBvi8X7sIDnTAIHHxVuCDVevoAY51kJdmnWtYtuiRkT8yOSjr8RP9dDHm9JM9szJJosFjk0QZFgfS909RSgmh4EQqKhGM8MHEkqwXmda4Ivxi5Dzi44EDjlkwHlra4HWsP6WYfy-S0pkMSvwZ4fvSbwBrCmRtpsgNQdcEEP6kwHEQug3BdeewVVfJzhvqCXsRnjWnprXKvrN7d4tAtwUC_oI3ut2zWN2RmsFr-zaQ7xczc3ZIdxL_0z" alt="Turk Pokeri" />
+            <div class="absolute inset-0 bg-primary/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+              <span class="px-6 py-2 bg-secondary text-white rounded-full font-label-md text-label-md">Oyna</span>
+            </div>
+          </div>
+          <div class="p-4">
+            <h3 class="font-headline-md text-headline-md text-primary mb-1">Turk Pokeri</h3>
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-success-green"></span>
+              <span class="font-label-sm text-label-sm text-outline">Aktif</span>
+            </div>
+          </div>
+        </a>
+
+        <!-- Tavla (yakinda) -->
+        <div class="bg-white rounded-xl overflow-hidden shadow-sm flex flex-col opacity-70">
+          <div class="relative h-48 grayscale">
+            <img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAktesiC0-SshV64nmg72I7_7v0Z0wwnnvV0iwwMSLVN2JfF_AoojbkGH7cdPpTo3eo3vmhlJWHMwIMuIa1cnBPgrOQeFo7Z7ondxf_ycb7nJLIKJt8DCi9IIDjqnWSwRSw-Fera3qKd_fzP9DrNMIbg0pmdlYvMQsLExi36jOTADBDglAppDn6gljHc77dQIahCGR5ZY9UhVAivHDc_t9wLjE3p2lBMcX7t5K51XTlQmuJpGJe9M8X" alt="Tavla" />
+            <div class="absolute inset-0 flex items-center justify-center"><span class="px-4 py-1 bg-slate-dark/80 text-white rounded-full font-label-sm text-label-sm">Yakinda</span></div>
+          </div>
+          <div class="p-4">
+            <h3 class="font-headline-md text-headline-md text-primary mb-1">Tavla</h3>
+            <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-outline"></span><span class="font-label-sm text-label-sm text-outline">Yakinda</span></div>
           </div>
         </div>
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-6">
-          <!-- 101 Okey (aktif) -->
-          <a href="/oyun/okey101" class="game-card-hover bg-white rounded-xl overflow-hidden shadow-sm flex flex-col">
-            <div class="relative h-48 group/img bg-primary-container">
-              <img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD3IRAWvK-mmHFBucdVV8OGEhScS0BOJ99qSDXdr_Nzm_waM-8xPrE9CP1fDpZZjyZFWb6Cjzg2nwYCs2V4xgC9EOIFxcxDe-UEkoOORCcb9BF54_p_yZ2gUivWPNynr7znJLFfT3eKdGsN8H11v6xKTMSpAV2WqnuB3K8bsmFd-YhJCjLC-nJhaYbsEzuXAc7ArGlf149Ac3U6TS6XePsaSfD5DYE0ScGf-S2gQAMsjM4gJc1tE4W7" alt="101 Okey" />
-              <div class="absolute inset-0 bg-primary/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
-                <span class="px-6 py-2 bg-secondary text-white rounded-full font-label-md text-label-md">Oyna</span>
-              </div>
-            </div>
-            <div class="p-4">
-              <h3 class="font-headline-md text-headline-md text-primary mb-1">101 Okey</h3>
-              <div class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-success-green"></span>
-                <span class="font-label-sm text-label-sm text-outline"><span class="lobby-online-count-badge">0</span> Oyuncu Aktif</span>
-              </div>
-            </div>
-          </a>
 
-          <!-- Canak Okey (aktif) -->
-          <a href="/oyun/okey" class="game-card-hover bg-white rounded-xl overflow-hidden shadow-sm flex flex-col">
-            <div class="relative h-48 group/img bg-primary-container">
-              <img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCUibdf8xrKOQOY4NOcs-qteEgQzDt0b5p4HNLPQUl1hc270TKSdKM_qN6zsGyd-vJv4Imn50YwfFw5glfM4kcjPeK7UApFaCqa0hd5JWZU0lZ_JPJWJ6Or_pD5xXR4keo1bgVdhqqc0m7wDXMC17x69SzZhqou9VQcd8krUKCpp3Bc57Czn1Mi8w97DrELGAKJD9qwH5_x_I9vKUKM4Tws1GSQGA7HOwsY0LAG6NQy3oGo2_hk_7Ny" alt="Canak Okey" />
-              <div class="absolute inset-0 bg-primary/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
-                <span class="px-6 py-2 bg-secondary text-white rounded-full font-label-md text-label-md">Oyna</span>
-              </div>
-            </div>
-            <div class="p-4">
-              <h3 class="font-headline-md text-headline-md text-primary mb-1">Canak Okey</h3>
-              <div class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-success-green"></span>
-                <span class="font-label-sm text-label-sm text-outline">Aktif</span>
-              </div>
-            </div>
-          </a>
-
-          <!-- Turk Pokeri (aktif) -->
-          <a href="/oyun/poker" class="game-card-hover bg-white rounded-xl overflow-hidden shadow-sm flex flex-col">
-            <div class="relative h-48 group/img bg-primary-container">
-              <img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBvi8X7sIDnTAIHHxVuCDVevoAY51kJdmnWtYtuiRkT8yOSjr8RP9dDHm9JM9szJJosFjk0QZFgfS909RSgmh4EQqKhGM8MHEkqwXmda4Ivxi5Dzi44EDjlkwHlra4HWsP6WYfy-S0pkMSvwZ4fvSbwBrCmRtpsgNQdcEEP6kwHEQug3BdeewVVfJzhvqCXsRnjWnprXKvrN7d4tAtwUC_oI3ut2zWN2RmsFr-zaQ7xczc3ZIdxL_0z" alt="Turk Pokeri" />
-              <div class="absolute inset-0 bg-primary/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
-                <span class="px-6 py-2 bg-secondary text-white rounded-full font-label-md text-label-md">Oyna</span>
-              </div>
-            </div>
-            <div class="p-4">
-              <h3 class="font-headline-md text-headline-md text-primary mb-1">Turk Pokeri</h3>
-              <div class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-success-green"></span>
-                <span class="font-label-sm text-label-sm text-outline">Aktif</span>
-              </div>
-            </div>
-          </a>
-
-          <!-- Tavla (yakinda) -->
-          <div class="bg-white rounded-xl overflow-hidden shadow-sm flex flex-col opacity-70">
-            <div class="relative h-48 grayscale">
-              <img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAktesiC0-SshV64nmg72I7_7v0Z0wwnnvV0iwwMSLVN2JfF_AoojbkGH7cdPpTo3eo3vmhlJWHMwIMuIa1cnBPgrOQeFo7Z7ondxf_ycb7nJLIKJt8DCi9IIDjqnWSwRSw-Fera3qKd_fzP9DrNMIbg0pmdlYvMQsLExi36jOTADBDglAppDn6gljHc77dQIahCGR5ZY9UhVAivHDc_t9wLjE3p2lBMcX7t5K51XTlQmuJpGJe9M8X" alt="Tavla" />
-              <div class="absolute inset-0 flex items-center justify-center"><span class="px-4 py-1 bg-slate-dark/80 text-white rounded-full font-label-sm text-label-sm">Yakinda</span></div>
-            </div>
-            <div class="p-4">
-              <h3 class="font-headline-md text-headline-md text-primary mb-1">Tavla</h3>
-              <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-outline"></span><span class="font-label-sm text-label-sm text-outline">Yakinda</span></div>
-            </div>
+        <!-- King (yakinda) -->
+        <div class="bg-white rounded-xl overflow-hidden shadow-sm flex flex-col opacity-70">
+          <div class="relative h-48 grayscale">
+            <img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCy4ehnAgPBuk5MvtZMDzrEvvFRUtjMbS4WbBQwLx3t2mxKnCjkWO5kYeFlxmhI1viUt8o1hpT28NE2o7ysGQIzgy5iJOZBs1KQsEmGMw9aU2HVX807ua3M5Z89HB21kqq28B3pLuEf9EhflCEhgh0VLa--vkKRwUMzWP7AqtGiyNXGTEg34U0L-IIqxTWw2qLUZf7R6HfMqyfdxXtMG7T6-GnZVONwwefVMwcwIRGS0defvvKlVyof" alt="King" />
+            <div class="absolute inset-0 flex items-center justify-center"><span class="px-4 py-1 bg-slate-dark/80 text-white rounded-full font-label-sm text-label-sm">Yakinda</span></div>
           </div>
-
-          <!-- King (yakinda) -->
-          <div class="bg-white rounded-xl overflow-hidden shadow-sm flex flex-col opacity-70">
-            <div class="relative h-48 grayscale">
-              <img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCy4ehnAgPBuk5MvtZMDzrEvvFRUtjMbS4WbBQwLx3t2mxKnCjkWO5kYeFlxmhI1viUt8o1hpT28NE2o7ysGQIzgy5iJOZBs1KQsEmGMw9aU2HVX807ua3M5Z89HB21kqq28B3pLuEf9EhflCEhgh0VLa--vkKRwUMzWP7AqtGiyNXGTEg34U0L-IIqxTWw2qLUZf7R6HfMqyfdxXtMG7T6-GnZVONwwefVMwcwIRGS0defvvKlVyof" alt="King" />
-              <div class="absolute inset-0 flex items-center justify-center"><span class="px-4 py-1 bg-slate-dark/80 text-white rounded-full font-label-sm text-label-sm">Yakinda</span></div>
-            </div>
-            <div class="p-4">
-              <h3 class="font-headline-md text-headline-md text-primary mb-1">King</h3>
-              <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-outline"></span><span class="font-label-sm text-label-sm text-outline">Yakinda</span></div>
-            </div>
+          <div class="p-4">
+            <h3 class="font-headline-md text-headline-md text-primary mb-1">King</h3>
+            <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-outline"></span><span class="font-label-sm text-label-sm text-outline">Yakinda</span></div>
           </div>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <!-- Bento: Duyurular + Arkadaslar -->
-      <section class="mt-16 bento-grid">
-        <!-- Duyurular -->
-        <div class="col-span-12 md:col-span-8 bg-white rounded-xl p-8 shadow-sm flex flex-col justify-between">
-          <div>
-            <h2 class="font-headline-md text-headline-md text-primary mb-6">Duyurular</h2>
-            <div class="space-y-4">
-              <% if (!announcements || !announcements.length) { %>
-                <p class="font-body-sm text-outline">Henuz duyuru yok.</p>
-              <% } else { %>
-                <% announcements.forEach(function(a) { %>
-                  <div class="flex items-start gap-4 p-4 bg-surface-container-low rounded-lg border border-primary/5">
-                    <div class="flex-shrink-0 mt-1"><span class="material-symbols-outlined text-primary">campaign</span></div>
-                    <div>
-                      <div class="flex items-center gap-2 mb-1">
-                        <span class="font-label-sm text-primary font-semibold"><%= a.title %></span>
-                        <span class="text-[10px] text-outline"><%= new Date(a.created_at).toLocaleString('tr-TR') %></span>
-                      </div>
-                      <p class="font-body-sm text-on-surface"><%= a.content.length > 160 ? a.content.slice(0,160) + '...' : a.content %></p>
+    <!-- ===== Bento: Duyurular + Arkadaslar ===== -->
+    <section class="mt-16 bento-grid">
+      <!-- Duyurular (herkes gorur) -->
+      <div class="col-span-12 <%= user ? 'md:col-span-8' : 'md:col-span-12' %> bg-white rounded-xl p-8 shadow-sm flex flex-col justify-between">
+        <div>
+          <h2 class="font-headline-md text-headline-md text-primary mb-6">Duyurular</h2>
+          <div class="space-y-4">
+            <% if (!announcements || !announcements.length) { %>
+              <p class="font-body-sm text-outline">Henuz duyuru yok.</p>
+            <% } else { %>
+              <% announcements.forEach(function(a) { %>
+                <div class="flex items-start gap-4 p-4 bg-surface-container-low rounded-lg border border-primary/5">
+                  <div class="flex-shrink-0 mt-1"><span class="material-symbols-outlined text-primary">campaign</span></div>
+                  <div>
+                    <div class="flex items-center gap-2 mb-1">
+                      <span class="font-label-sm text-primary font-semibold"><%= a.title %></span>
+                      <span class="text-[10px] text-outline"><%= new Date(a.created_at).toLocaleString('tr-TR') %></span>
                     </div>
+                    <p class="font-body-sm text-on-surface"><%= a.content.length > 160 ? a.content.slice(0,160) + '...' : a.content %></p>
                   </div>
-                <% }); %>
-              <% } %>
-            </div>
+                </div>
+              <% }); %>
+            <% } %>
           </div>
-          <a href="/duyurular" class="mt-8 px-6 py-2 border border-primary text-primary font-label-md text-label-md rounded-lg w-fit hover:bg-primary hover:text-white transition-all">Tum Duyurulari Gor</a>
         </div>
+        <a href="/duyurular" class="mt-8 px-6 py-2 border border-primary text-primary font-label-md text-label-md rounded-lg w-fit hover:bg-primary hover:text-white transition-all">Tum Duyurulari Gor</a>
+      </div>
 
-        <!-- Arkadaslar -->
+      <!-- Arkadaslar (sadece giris yapmis) -->
+      <% if (user) { %>
         <div class="col-span-12 md:col-span-4 bg-slate-dark text-white rounded-xl p-8 shadow-md">
           <h2 class="font-headline-md text-headline-md mb-6 flex items-center justify-between">
             Arkadaslar
@@ -229,9 +217,11 @@
           </div>
           <a href="/arkadaslar" class="block text-center w-full mt-6 py-2 bg-white/10 rounded-lg font-label-md text-label-sm hover:bg-white/20 transition-all">Tum Arkadaslari Gor</a>
         </div>
-      </section>
+      <% } %>
+    </section>
 
-      <!-- Aktif oyuncular + genel sohbet -->
+    <!-- ===== Aktif oyuncular + genel sohbet (sadece giris yapmis) ===== -->
+    <% if (user) { %>
       <section class="mt-16 bento-grid">
         <!-- Genel sohbet -->
         <div class="col-span-12 md:col-span-8 bg-white rounded-xl shadow-sm border border-outline-variant flex flex-col overflow-hidden" style="height: 380px;">
@@ -310,9 +300,9 @@
           <% } %>
         </div>
       </section>
+    <% } %>
 
-    </main>
-  <% } %>
+  </main>
 
   <%- include('partials/theme-foot', { user: user }) %>
   <% if (user) { %><script src="/js/lobby.js?v=2"></script><% } %>

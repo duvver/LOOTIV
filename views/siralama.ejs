@@ -109,7 +109,7 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-surface-container">
-            <% players.forEach(function(p, i) { var me = p.id === user.id; %>
+            <% players.forEach(function(p, i) { var me = user && p.id === user.id; %>
               <tr class="rank-row transition-colors <%= me ? 'bg-primary-container/5 border-l-4 border-primary' : 'hover:bg-surface-container-low' %>" data-rumuz="<%= p.rumuz.toLowerCase() %>">
                 <td class="px-6 py-4 font-bold text-primary">#<%= i + 1 %></td>
                 <td class="px-6 py-4">

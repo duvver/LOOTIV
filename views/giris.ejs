@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html class="light" lang="tr">
+<head>
+  <%- include('partials/theme-head', { pageTitle: 'Giriş Yap — LOOTIV' }) %>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col">
+
+  <%- include('partials/theme-nav', { active: '', user: null, unreadCount: 0 }) %>
+
+  <main class="flex-grow flex items-center justify-center px-margin-mobile py-12">
+    <div class="w-full max-w-md">
+      <div class="text-center mb-6">
+        <h1 class="font-headline-lg text-headline-lg text-primary">Giriş Yap</h1>
+        <p class="font-body-md text-outline">Oynamak, satmak ve envanterine ulaşmak için giriş yap.</p>
+      </div>
+
+      <div class="bg-white rounded-xl shadow-sm border border-outline-variant/30 p-6 md:p-8">
+        <% if (typeof loginError !== 'undefined' && loginError) { %>
+          <div class="mb-4 p-3 bg-error-container text-on-error-container rounded-lg font-body-sm"><%= loginError %></div>
+        <% } %>
+
+        <form method="POST" action="/login" class="flex flex-col gap-4">
+          <div>
+            <label class="block font-label-md text-label-md text-primary mb-1" for="identifier">Rumuz veya E-posta</label>
+            <input type="text" id="identifier" name="identifier" required
+                   value="<%= typeof loginIdentifier !== 'undefined' ? loginIdentifier : '' %>"
+                   class="w-full px-4 py-2.5 border border-silver-light rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none font-body-md" />
+          </div>
+          <div>
+            <label class="block font-label-md text-label-md text-primary mb-1" for="password">Şifre</label>
+            <input type="password" id="password" name="password" required
+                   class="w-full px-4 py-2.5 border border-silver-light rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none font-body-md" />
+          </div>
+          <button type="submit" class="w-full py-3 bg-primary text-white rounded-lg font-label-md text-label-md hover:bg-primary-container transition-all">Giriş Yap</button>
+        </form>
+
+        <p class="mt-6 text-center font-body-sm text-outline">
+          Hesabın yok mu?
+          <a href="/register" class="text-secondary font-semibold hover:underline">Üye Ol</a>
+        </p>
+      </div>
+
+      <p class="mt-4 text-center">
+        <a href="/" class="font-label-md text-label-sm text-outline hover:text-primary hover:underline">← Siteyi gezmeye devam et</a>
+      </p>
+    </div>
+  </main>
+
+  <%- include('partials/theme-foot', { user: null }) %>
+</body>
+</html>

@@ -144,7 +144,7 @@
           </div>
         <% } else { %>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            <% listings.forEach(function(l){ var mine = l.seller_id === user.id; %>
+            <% listings.forEach(function(l){ var mine = user && l.seller_id === user.id; %>
               <div class="bg-white rounded-xl shadow-sm border border-outline-variant/30 overflow-hidden hover:shadow-md transition-shadow group rarity-<%= l.rarity %>">
                 <div class="relative h-40 bg-surface-container-low flex items-center justify-center">
                   <% if (l.image_url) { %>
@@ -165,6 +165,10 @@
                     <span class="text-primary font-bold text-lg"><%= fmt(l.price_lt) %> LT</span>
                     <% if (mine) { %>
                       <span class="text-label-sm text-outline italic">Senin</span>
+                    <% } else if (!user) { %>
+                      <a href="/giris" class="bg-primary text-white p-2 rounded-lg hover:bg-secondary-container transition-colors inline-flex" title="Satin almak icin giris yap">
+                        <span class="material-symbols-outlined text-sm">shopping_cart</span>
+                      </a>
                     <% } else { %>
                       <form method="POST" action="/pazar/<%= l.id %>/satinal" onsubmit="return confirm('<%= l.title.replace(/'/g, '') %> — <%= fmt(l.price_lt) %> LT ile satin alinsin mi?');">
                         <button class="bg-primary text-white p-2 rounded-lg hover:bg-secondary-container transition-colors" title="Satin al">

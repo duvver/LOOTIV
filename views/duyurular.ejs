@@ -15,7 +15,7 @@
     <% } %>
 
     <!-- Admin: duyuru yayınla -->
-    <% if (user.is_admin) { %>
+    <% if (user && user.is_admin) { %>
       <div class="bg-white rounded-xl border border-outline-variant/30 shadow-sm p-6 mb-8">
         <h2 class="font-headline-md text-headline-md text-primary mb-4 flex items-center gap-2"><span class="material-symbols-outlined text-secondary">campaign</span> Yeni Duyuru Yayinla</h2>
         <form method="POST" action="/duyurular" class="space-y-4">

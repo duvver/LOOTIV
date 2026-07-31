@@ -99,7 +99,7 @@ const attachUser = asyncHandler(async (req, res, next) => {
 });
 
 const requireAuth = (req, res, next) => {
-  if (!req.user) return res.redirect('/');
+  if (!req.user) return res.redirect('/giris');
   next();
 };
 
@@ -161,7 +161,7 @@ app.post(
     if (!user || !bcrypt.compareSync(password || '', user.password_hash)) {
       req.session.loginError = 'Rumuz/E-posta veya sifre hatali.';
       req.session.loginIdentifier = identifier || '';
-      return res.redirect('/');
+      return res.redirect('/giris');
     }
 
     if (user.is_banned) {
@@ -169,7 +169,7 @@ app.post(
         ? `Hesabiniz yasaklandi: ${user.ban_reason}`
         : 'Hesabiniz yasaklandi.';
       req.session.loginIdentifier = identifier || '';
-      return res.redirect('/');
+      return res.redirect('/giris');
     }
 
     req.session.userId = user.id;
@@ -179,6 +179,15 @@ app.post(
 
 app.post('/logout', (req, res) => {
   req.session.destroy(() => res.redirect('/'));
+});
+
+// ---- Giris sayfasi (misafirler icin) ----
+app.get('/giris', requireGuest, (req, res) => {
+  const loginError = req.session.loginError || null;
+  const loginIdentifier = req.session.loginIdentifier || '';
+  delete req.session.loginError;
+  delete req.session.loginIdentifier;
+  res.render('giris', { loginError, loginIdentifier });
 });
 
 // ---- Kayit ----
@@ -431,11 +440,10 @@ app.post(
 app.get(
   '/bloglar',
   attachUser,
-  requireAuth,
   asyncHandler(async (req, res) => {
     const blogs = await db.getAllBlogs(60);
-    const myBlogs = await db.getBlogsByUser(req.user.id);
-    res.render('bloglar', { user: req.user, blogs, myBlogs, saved: req.query.saved || null });
+    const myBlogs = req.user ? await db.getBlogsByUser(req.user.id) : [];
+    res.render('bloglar', { user: req.user || null, blogs, myBlogs, saved: req.query.saved || null });
   })
 );
 
@@ -466,11 +474,10 @@ app.post(
 app.get(
   '/bloglar/:id',
   attachUser,
-  requireAuth,
   asyncHandler(async (req, res) => {
     const blog = await db.getBlogById(Number(req.params.id));
     if (!blog) return res.redirect('/bloglar');
-    res.render('blog-detay', { user: req.user, blog });
+    res.render('blog-detay', { user: req.user || null, blog });
   })
 );
 
@@ -570,12 +577,13 @@ app.post(
 app.get(
   '/duyurular',
   attachUser,
-  requireAuth,
   asyncHandler(async (req, res) => {
     const announcements = await db.getAnnouncements(50);
-    await db.markAnnouncementsSeen(req.user.id);
-    res.locals.unreadCount = 0; // bu sayfada okundu sayildi
-    res.render('duyurular', { user: req.user, announcements, saved: req.query.saved || null });
+    if (req.user) {
+      await db.markAnnouncementsSeen(req.user.id);
+      res.locals.unreadCount = 0; // bu sayfada okundu sayildi
+    }
+    res.render('duyurular', { user: req.user || null, announcements, saved: req.query.saved || null });
   })
 );
 
@@ -604,7 +612,6 @@ app.post(
 app.get(
   '/pazar',
   attachUser,
-  requireAuth,
   asyncHandler(async (req, res) => {
     const filters = {
       category: req.query.kategori || null,
@@ -613,15 +620,15 @@ app.get(
       minPrice: req.query.min ? Number(req.query.min) : null,
       maxPrice: req.query.max ? Number(req.query.max) : null,
     };
-    const [listings, stats, recentSales, myListings, cfg] = await Promise.all([
+    const [listings, stats, recentSales, cfg] = await Promise.all([
       db.getActiveListings(filters),
       db.getMarketStats(),
       db.getRecentSales(8),
-      db.getMyListings(req.user.id),
       db.getMarketConfig(),
     ]);
+    const myListings = req.user ? await db.getMyListings(req.user.id) : [];
     res.render('pazar', {
-      user: req.user,
+      user: req.user || null,
       listings,
       stats,
       recentSales,
@@ -774,10 +781,9 @@ app.post(
 app.get(
   '/siralama',
   attachUser,
-  requireAuth,
   asyncHandler(async (req, res) => {
     const players = await db.getLeaderboard(50);
-    res.render('siralama', { user: req.user, players });
+    res.render('siralama', { user: req.user || null, players });
   })
 );
 

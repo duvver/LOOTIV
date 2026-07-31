@@ -13,16 +13,23 @@
         <h1 class="font-headline-lg text-headline-lg text-primary">Bloglar</h1>
         <p class="font-body-md text-outline">Topluluk yazilari ve senin gunlugun.</p>
       </div>
+      <% if (user) { %>
       <a href="/bloglar/yeni" class="px-5 py-2.5 bg-secondary-container text-white rounded-lg font-label-md text-label-md hover:opacity-90 transition-all flex items-center gap-2">
         <span class="material-symbols-outlined text-sm">add</span> Yeni Yazi
       </a>
+      <% } else { %>
+      <a href="/giris" class="px-5 py-2.5 bg-secondary-container text-white rounded-lg font-label-md text-label-md hover:opacity-90 transition-all flex items-center gap-2">
+        <span class="material-symbols-outlined text-sm">login</span> Yazmak icin giris yap
+      </a>
+      <% } %>
     </div>
 
     <% if (typeof saved !== 'undefined' && saved) { %>
       <div class="mb-6 p-4 bg-success-green/10 text-success-green rounded-lg font-body-sm">Yazin yayinlandi.</div>
     <% } %>
 
-    <!-- Bloglarım -->
+    <!-- Bloglarım (sadece giris yapmis kullanici) -->
+    <% if (user) { %>
     <section class="mb-10">
       <h2 class="font-headline-md text-headline-md text-primary mb-4">Bloglarim</h2>
       <% if (!myBlogs.length) { %>
@@ -46,6 +53,7 @@
         </div>
       <% } %>
     </section>
+    <% } %>
 
     <!-- Son Yazılar -->
     <section>
