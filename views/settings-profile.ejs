@@ -138,6 +138,19 @@
           <% } %>
         <% } %>
       </div>
+
+      <!-- VIP Kodu -->
+      <div class="bg-white rounded-xl border border-outline-variant/30 shadow-sm p-6 lg:col-span-2">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="material-symbols-outlined text-energetic-purple">diamond</span>
+          <h2 class="font-headline-md text-headline-md text-primary">VIP Aktifleştir</h2>
+        </div>
+        <p class="text-body-sm text-on-surface-variant mb-4">ByNoGame veya Kopazar'dan aldığınız VIP (E-Pin) kodunuzu buraya girerek anında VIP statüsüne sahip olabilirsiniz.</p>
+        <form method="POST" action="/settings/profile/vip" class="flex gap-2 mb-2 flex-wrap max-w-sm">
+          <input name="vip_code" placeholder="Örn: VIP1-ABCD-EFGH" required class="flex-1 px-3 py-2 border border-silver-light rounded-lg outline-none focus:ring-2 focus:ring-energetic-purple uppercase" />
+          <button class="px-5 py-2 bg-energetic-purple text-white rounded-lg font-label-md text-label-sm hover:bg-opacity-90 transition-all">Aktifleştir</button>
+        </form>
+      </div>
     </div>
 
     <div class="mt-6">

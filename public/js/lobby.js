@@ -2,7 +2,9 @@
 (function () {
   if (typeof io === 'undefined') return;
 
-  var socket = io({ query: { game: 'lobby' }, forceNew: true });
+  var gameId = window.LOBBY_GAME_ID || 'lobby';
+  var socket = io({ query: { game: gameId }, forceNew: true });
+  window.lobbySocket = socket;
 
   var onlineList = document.getElementById('lobby-online-list');
   var onlineCount = document.getElementById('lobby-online-count');

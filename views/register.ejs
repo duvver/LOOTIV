@@ -1,52 +1,72 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html class="light" lang="tr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Uye Ol - LOOTIV</title>
-  <link rel="stylesheet" href="/css/style.css" />
+  <%- include('partials/theme-head', { pageTitle: 'Üye Ol — LOOTIV' }) %>
 </head>
-<body class="auth-body">
-  <div class="auth-card">
-    <a href="/" class="brand-logo"><img src="/images/lootivlogo.png" alt="LOOTIV" /></a>
-    <h1>Uye Ol</h1>
-    <p class="subtitle">Hesap olustur, 500 LT ile basla.</p>
+<body class="bg-background text-on-background min-h-screen flex flex-col">
 
-    <% if (error) { %>
-      <div class="alert alert-error"><%= error %></div>
-    <% } %>
+  <%- include('partials/theme-nav', { active: '', user: null, unreadCount: 0 }) %>
 
-    <form method="POST" action="/register" class="form">
-      <div class="form-group">
-        <label for="rumuz">Rumuz</label>
-        <input type="text" id="rumuz" name="rumuz" value="<%= form.rumuz || '' %>" minlength="3" maxlength="20" pattern="[a-zA-Z0-9_]+" title="Sadece harf, rakam ve alt cizgi kullanabilirsiniz." required autofocus />
+  <main class="flex-grow flex items-center justify-center px-margin-mobile py-12">
+    <div class="w-full max-w-md">
+      <div class="text-center mb-6">
+        <h1 class="font-headline-lg text-headline-lg text-primary">Üye Ol</h1>
+        <p class="font-body-md text-outline">Lootiv dünyasına katıl ve hemen oynamaya başla.</p>
       </div>
 
-      <div class="form-group">
-        <label for="email">E-mail</label>
-        <input type="email" id="email" name="email" value="<%= form.email || '' %>" required />
+      <div class="bg-white rounded-xl shadow-sm border border-outline-variant/30 p-6 md:p-8">
+        <% if (typeof error !== 'undefined' && error) { %>
+          <div class="mb-4 p-3 bg-error-container text-on-error-container rounded-lg font-body-sm"><%= error %></div>
+        <% } %>
+
+        <form method="POST" action="/register" class="flex flex-col gap-4">
+          <div>
+            <label class="block font-label-md text-label-md text-primary mb-1" for="rumuz">Rumuz</label>
+            <input type="text" id="rumuz" name="rumuz" required minlength="3" maxlength="20" pattern="[a-zA-Z0-9_]+" title="Sadece harf, rakam ve alt çizgi kullanabilirsiniz."
+                   value="<%= (typeof form !== 'undefined' && form.rumuz) ? form.rumuz : '' %>"
+                   class="w-full px-4 py-2.5 border border-silver-light rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none font-body-md" autofocus />
+          </div>
+          
+          <div>
+            <label class="block font-label-md text-label-md text-primary mb-1" for="email">E-mail</label>
+            <input type="email" id="email" name="email" required
+                   value="<%= (typeof form !== 'undefined' && form.email) ? form.email : '' %>"
+                   class="w-full px-4 py-2.5 border border-silver-light rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none font-body-md" />
+          </div>
+
+          <div class="flex flex-col md:flex-row gap-4">
+            <div class="w-full">
+              <label class="block font-label-md text-label-md text-primary mb-1" for="password">Şifre</label>
+              <input type="password" id="password" name="password" required minlength="6"
+                     class="w-full px-4 py-2.5 border border-silver-light rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none font-body-md" />
+            </div>
+            <div class="w-full">
+              <label class="block font-label-md text-label-md text-primary mb-1" for="password2">Şifre Tekrar</label>
+              <input type="password" id="password2" name="password2" required minlength="6"
+                     class="w-full px-4 py-2.5 border border-silver-light rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none font-body-md" />
+            </div>
+          </div>
+
+          <label class="flex items-start gap-2 mt-2 cursor-pointer">
+            <input type="checkbox" name="terms" value="1" required class="mt-1 w-4 h-4 text-primary bg-silver-light border-silver-light rounded focus:ring-primary focus:ring-2" />
+            <span class="font-body-sm text-outline">Üyelik şartlarını ve gizlilik politikasını okudum, kabul ediyorum.</span>
+          </label>
+
+          <button type="submit" class="mt-2 w-full py-3 bg-primary text-white rounded-lg font-label-md text-label-md hover:bg-primary-container transition-all">Üye Ol</button>
+        </form>
+
+        <p class="mt-6 text-center font-body-sm text-outline">
+          Zaten hesabın var mı?
+          <a href="/login" class="text-secondary font-semibold hover:underline">Giriş Yap</a>
+        </p>
       </div>
 
-      <div class="form-row">
-        <div class="form-group">
-          <label for="password">Sifre</label>
-          <input type="password" id="password" name="password" required minlength="6" />
-        </div>
-        <div class="form-group">
-          <label for="password2">Sifre Tekrar</label>
-          <input type="password" id="password2" name="password2" required minlength="6" />
-        </div>
-      </div>
+      <p class="mt-4 text-center">
+        <a href="/" class="font-label-md text-label-sm text-outline hover:text-primary hover:underline">← Siteyi gezmeye devam et</a>
+      </p>
+    </div>
+  </main>
 
-      <label class="checkbox-row">
-        <input type="checkbox" name="terms" value="1" required />
-        <span>Uyelik sartlarini ve gizlilik politikasini okudum, kabul ediyorum.</span>
-      </label>
-
-      <button type="submit" class="btn btn-primary btn-block">Uye Ol</button>
-    </form>
-
-    <p class="auth-switch">Zaten hesabin var mi? <a href="/">Giris yap</a></p>
-  </div>
+  <%- include('partials/theme-foot', { user: null }) %>
 </body>
 </html>

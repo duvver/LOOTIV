@@ -1102,12 +1102,96 @@
                 <% }); %>
               </tbody>
             </table>
+        </div>
+      </div>
+      </div>
+      <!-- End of first section -->
+
+    <!-- VIP E-Pin / Token Olusturma -->
+      <div class="adm-section open">
+        <div class="adm-section-head" onclick="toggleSection(this)">
+          <span class="adm-section-head-icon">&#128273;</span>
+          <div class="adm-section-head-text">
+            <div class="adm-section-head-title">VIP Token (E-Pin) Uret</div>
+            <div class="adm-section-head-sub">Bynogame, Kopazar vs. icin satilabilir kod olustur</div>
+          </div>
+          <span class="adm-chevron">&#9660;</span>
+        </div>
+        <div class="adm-section-body">
+          <form class="adm-form" method="POST" action="/admin/vip-codes/generate">
+            <div class="adm-form-row adm-form-row-2">
+              <div class="adm-field">
+                <label>VIP Seviyesi</label>
+                <select name="tier" class="adm-select" required>
+                  <option value="1">VIP 1</option>
+                  <option value="2">VIP 2</option>
+                  <option value="3">VIP 3</option>
+                </select>
+              </div>
+              <div class="adm-field">
+                <label>Miktar (Kac Adet)</label>
+                <input type="number" name="count" value="1" min="1" max="50" required class="adm-input" />
+              </div>
+            </div>
+            <div class="adm-form-footer">
+              <button class="adm-save-btn">Kod Uret</button>
+            </div>
+          </form>
+
+          <div class="adm-table-scroll mt-4" style="margin-top:20px;">
+            <table class="adm-table">
+              <thead>
+                <tr>
+                  <th>Kod</th>
+                  <th>Seviye</th>
+                  <th>Durum</th>
+                  <th>Kullanan</th>
+                  <th>Olusturulma</th>
+                  <th>Islem</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (typeof vipCodes !== 'undefined' && vipCodes.length > 0) { %>
+                  <% vipCodes.forEach(function(code) { %>
+                    <tr>
+                      <td><strong style="color:var(--green-bright);letter-spacing:1px;"><%= code.code %></strong></td>
+                      <td><span class="adm-tag adm-tag-purple">VIP <%= code.tier %></span></td>
+                      <td>
+                        <% if (code.is_used) { %>
+                          <span class="adm-tag adm-tag-red">Kullanildi</span>
+                        <% } else { %>
+                          <span class="adm-tag adm-tag-green">Aktif</span>
+                        <% } %>
+                      </td>
+                      <td>
+                        <% if (code.is_used) { %>
+                          <% const usedUser = users.find(u => u.id === code.used_by); %>
+                          <span style="color:#e6edf3"><%= usedUser ? usedUser.rumuz : 'ID: ' + code.used_by %></span>
+                          <div style="font-size:11px;color:#8b949e"><%= new Date(code.used_at).toLocaleDateString('tr-TR') %></div>
+                        <% } else { %>
+                          <span style="color:#8b949e">—</span>
+                        <% } %>
+                      </td>
+                      <td style="color:#8b949e;font-size:12px;"><%= new Date(code.created_at).toLocaleDateString('tr-TR') %></td>
+                      <td>
+                        <form action="/admin/vip-codes/delete" method="POST" style="display:inline;" onsubmit="return confirm('Bu kodu silmek istediginize emin misiniz?');">
+                          <input type="hidden" name="code" value="<%= code.code %>">
+                          <button type="submit" class="adm-btn red" style="padding:4px 8px;font-size:12px;" title="Sil">&#128465;</button>
+                        </form>
+                      </td>
+                    </tr>
+                  <% }); %>
+                <% } else { %>
+                  <tr><td colspan="6" style="text-align:center;color:#8b949e;padding:16px;">Hic kod uretilmedi.</td></tr>
+                <% } %>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
 
       <!-- VIP plan bilgileri -->
-      <div class="adm-section">
+      <div class="adm-section open">
         <div class="adm-section-head" onclick="toggleSection(this)">
           <span class="adm-section-head-icon">&#128196;</span>
           <div class="adm-section-head-text">

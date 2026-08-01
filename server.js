@@ -532,6 +532,24 @@ app.post(
   })
 );
 
+// ================= VIP Kodu Kullanimi =================
+app.post(
+  '/settings/profile/vip',
+  attachUser,
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const code = (req.body.vip_code || '').trim();
+    if (!code) {
+      return renderProfileSettings(req, res, { error: 'Lütfen bir VIP kodu girin.' });
+    }
+    const tier = await db.redeemVipCode(req.user.id, code);
+    if (!tier) {
+      return renderProfileSettings(req, res, { error: 'Geçersiz veya kullanılmış VIP kodu.' });
+    }
+    await renderProfileSettings(req, res, { info: `Tebrikler! VIP${tier} aktif edildi.` });
+  })
+);
+
 // ================= Bloglar =================
 app.get(
   '/bloglar',
@@ -1010,6 +1028,7 @@ app.get(
     const activeListings = await db.getAllActiveListings(200);
     const marketConfig = await db.getMarketConfig();
     const dailyTasks = await db.getDailyTasks(true);
+    const vipCodes = await db.getAllVipCodes();
     res.render('admin', {
       user: req.user,
       users,
@@ -1021,6 +1040,7 @@ app.get(
       activeListings,
       marketConfig,
       dailyTasks,
+      vipCodes,
       categories: db.MARKET_CATEGORIES,
       rarities: db.MARKET_RARITIES,
       vipPlans: db.getVipPlans(),
@@ -1035,7 +1055,7 @@ app.post(
   requireAdmin,
   asyncHandler(async (req, res) => {
     await db.toggleMute(Number(req.params.id));
-    res.redirect('/admin');
+    res.redirect('/admin#users');
   })
 );
 
@@ -1045,7 +1065,7 @@ app.post(
   requireAdmin,
   asyncHandler(async (req, res) => {
     await db.toggleAdmin(Number(req.params.id));
-    res.redirect('/admin');
+    res.redirect('/admin#users');
   })
 );
 
@@ -1055,7 +1075,7 @@ app.post(
   requireAdmin,
   asyncHandler(async (req, res) => {
     await db.toggleBan(Number(req.params.id), req.body.reason);
-    res.redirect('/admin');
+    res.redirect('/admin#users');
   })
 );
 
@@ -1068,7 +1088,7 @@ app.post(
     if (Number.isFinite(amount) && amount !== 0) {
       await db.adjustLt(Number(req.params.id), amount);
     }
-    res.redirect('/admin');
+    res.redirect('/admin#users');
   })
 );
 
@@ -1078,7 +1098,34 @@ app.post(
   requireAdmin,
   asyncHandler(async (req, res) => {
     await db.setVip(Number(req.params.id), Number(req.body.tier));
-    res.redirect('/admin');
+    res.redirect('/admin#vip');
+  })
+);
+
+app.post(
+  '/admin/vip-codes/generate',
+  attachUser,
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const tier = Number(req.body.tier);
+    const count = Number(req.body.count) || 1;
+    if (tier >= 1 && tier <= 3 && count > 0 && count <= 50) {
+      await db.generateVipCodes(tier, count);
+    }
+    res.redirect('/admin#vip');
+  })
+);
+
+app.post(
+  '/admin/vip-codes/delete',
+  attachUser,
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const code = req.body.code;
+    if (code) {
+      await db.deleteVipCode(code);
+    }
+    res.redirect('/admin#vip');
   })
 );
 
@@ -1098,7 +1145,7 @@ app.post(
       rewardLt: Math.max(0, Math.trunc(Number(rewardLt)) || 0),
       active: active === 'on' || active === '1' || active === 'true',
     });
-    res.redirect('/admin?saved=gunun-sorusu');
+    res.redirect('/admin?saved=gunun-sorusu#dailyq');
   })
 );
 
@@ -1119,7 +1166,7 @@ app.post(
       daily_limit: Number(daily_limit) || 1,
       active: active === 'on' || active === '1' || active === 'true',
     });
-    res.redirect('/admin?saved=kazikazan');
+    res.redirect('/admin?saved=kazikazan#scratch');
   })
 );
 
@@ -1150,7 +1197,7 @@ app.post(
         active: active === 'on' || active === 'true'
       });
     }
-    res.redirect('/admin?saved=dailytasks');
+    res.redirect('/admin?saved=dailytasks#dailytasks');
   })
 );
 
@@ -1168,7 +1215,7 @@ app.post(
     if (name) {
       await db.createCatalogItem({ name: name.slice(0, 120), category, rarity, imageUrl });
     }
-    res.redirect('/admin?saved=market');
+    res.redirect('/admin?saved=market#market');
   })
 );
 
@@ -1178,7 +1225,7 @@ app.post(
   requireAdmin,
   asyncHandler(async (req, res) => {
     await db.deleteCatalogItem(Number(req.params.id));
-    res.redirect('/admin?saved=market');
+    res.redirect('/admin?saved=market#market');
   })
 );
 
@@ -1194,7 +1241,7 @@ app.post(
     if (target && item) {
       await db.grantItemToUser(target.id, catalogId);
     }
-    res.redirect('/admin?saved=market');
+    res.redirect('/admin?saved=market#market');
   })
 );
 
@@ -1204,7 +1251,7 @@ app.post(
   requireAdmin,
   asyncHandler(async (req, res) => {
     await db.adminRemoveListing(Number(req.params.id));
-    res.redirect('/admin?saved=market');
+    res.redirect('/admin?saved=market#market');
   })
 );
 
@@ -1214,7 +1261,7 @@ app.post(
   requireAdmin,
   asyncHandler(async (req, res) => {
     await db.setCommission(req.body.commission);
-    res.redirect('/admin?saved=market');
+    res.redirect('/admin?saved=market#market');
   })
 );
 
@@ -1226,7 +1273,7 @@ app.use((err, req, res, next) => {
 
 // ================= Socket.IO (Turk Pokeri + 101 Okey) =================
 const onlinePlayers = new Map(); // socket.id -> { userId, name }
-const CHANNELS = ['genel', 'oyun', 'okey', 'okey101', 'sistem'];
+const CHANNELS = ['genel', 'oyun', 'okey', 'okey101', 'poker', 'sistem', 'salon_okey', 'salon_okey101', 'salon_poker'];
 
 function broadcastPlayers() {
   const uniqueByUser = new Map();
@@ -1236,7 +1283,13 @@ function broadcastPlayers() {
 
 // Lobi sag panelindeki aktif kullanicilar + LT listesi.
 async function broadcastLobbyPlayers() {
-  const ids = Array.from(new Set(Array.from(onlinePlayers.values()).map((p) => p.userId)));
+  const allPlayers = Array.from(onlinePlayers.values());
+  const ids = Array.from(new Set(allPlayers.map((p) => p.userId)));
+  if (ids.length === 0) {
+    io.to('lobby').emit('lobby:players', []);
+    return;
+  }
+
   let brief = [];
   try {
     brief = await db.getUsersBrief(ids);
@@ -1244,8 +1297,9 @@ async function broadcastLobbyPlayers() {
     brief = [];
   }
   const byId = new Map(brief.map((u) => [u.id, u]));
-  const list = ids
-    .map((id) => {
+
+  const mapIds = (userList) => {
+    return userList.map((id) => {
       const u = byId.get(id);
       if (!u) return null;
       return {
@@ -1255,10 +1309,22 @@ async function broadcastLobbyPlayers() {
         vip: u.vip_tier,
         character: u.character_class,
       };
-    })
-    .filter(Boolean)
-    .sort((a, b) => b.lt - a.lt);
-  io.to('lobby').emit('lobby:players', list);
+    }).filter(Boolean).sort((a, b) => b.lt - a.lt);
+  };
+
+  // Global lobby yayını
+  io.to('lobby').emit('lobby:players', mapIds(ids));
+
+  // Oyun özel lobileri için yayın
+  const games = ['okey', 'okey101', 'poker'];
+  for (const g of games) {
+    const gameUserIds = Array.from(new Set(
+      allPlayers.filter(p => p.game === g || p.game === 'salon_' + g).map(p => p.userId)
+    ));
+    const gameList = mapIds(gameUserIds);
+    io.to('salon_' + g).emit('lobby:players', gameList);
+    io.to(g).emit('lobby:players', gameList);
+  }
 }
 
 async function systemMessage(text, room = null) {
@@ -1427,13 +1493,18 @@ io.on('connection', (socket) => {
 
     const name = user.rumuz;
     const rawGame = socket.handshake.query.game;
-    const game = ['okey', 'okey101', 'lobby', 'notify'].includes(rawGame) ? rawGame : 'poker';
+    const validGames = ['okey', 'okey101', 'poker', 'lobby', 'notify'];
+    const validSalonGames = ['salon_okey', 'salon_okey101', 'salon_poker'];
+    let game = 'poker';
+    if (validGames.includes(rawGame) || validSalonGames.includes(rawGame)) {
+      game = rawGame;
+    }
     socket.join(game);
 
     // Bildirim soketi: sadece duyurulari dinler; oyuncu listesine/sohbete katilmaz.
     if (game === 'notify') return;
 
-    onlinePlayers.set(socket.id, { userId: user.id, name });
+    onlinePlayers.set(socket.id, { userId: user.id, name, game });
 
     const pendingStand = pendingStandTimers.get(user.id);
     if (pendingStand) {
@@ -1618,7 +1689,8 @@ io.on('connection', (socket) => {
     socket.on('chat:message', async (payload) => {
       if (!payload || typeof payload.text !== 'string') return;
       const channel = payload.channel;
-      if (channel !== 'genel' && channel !== 'oyun' && channel !== 'okey' && channel !== 'okey101' && channel !== 'poker') return;
+      const validChannels = ['genel', 'oyun', 'okey', 'okey101', 'poker', 'salon_okey', 'salon_okey101', 'salon_poker'];
+      if (!validChannels.includes(channel)) return;
       const text = payload.text.trim().slice(0, 500);
       if (!text) return;
 

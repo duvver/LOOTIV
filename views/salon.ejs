@@ -7,7 +7,7 @@
 
   <%- include('partials/theme-nav', { active: 'oyunlar', user: user, unreadCount: typeof unreadCount !== 'undefined' ? unreadCount : 0 }) %>
 
-  <main class="flex-grow max-w-container-max mx-auto w-full px-margin-mobile md:px-margin-desktop py-8">
+  <main class="flex-grow max-w-container-max mx-auto w-full px-margin-mobile md:px-margin-desktop py-8 pb-[270px]">
 
     <a href="/" class="text-primary font-label-md hover:underline flex items-center gap-1 mb-4"><span class="material-symbols-outlined text-sm">arrow_back</span> Ana Sayfa</a>
 
@@ -24,78 +24,103 @@
     </section>
 
     <!-- GÖRÜNÜM: MASALAR -->
-    <div id="tables-view">
-      <!-- Liste başlığı + masa oluştur -->
-      <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
-        <h2 class="font-headline-lg text-headline-lg text-primary">Acik Masalar</h2>
-        <button type="button" id="create-table-btn" class="px-5 py-2.5 bg-secondary-container text-white rounded-lg font-label-md text-label-md hover:opacity-90 transition-all flex items-center gap-2">
-          <span class="material-symbols-outlined text-sm">add_circle</span> Masa Olustur
-        </button>
-      </div>
-
-      <!-- Masa kartları (temsili) -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        <!-- Masa 1 -->
-        <div class="bg-white rounded-xl border border-outline-variant/30 shadow-sm p-5 flex flex-col gap-4">
-          <div class="flex items-center justify-between">
-            <span class="font-headline-md text-primary">Masa #12</span>
-            <span class="px-2 py-1 bg-secondary-container/20 text-on-secondary-container rounded font-label-md text-label-sm">20 LT</span>
-          </div>
-          <div class="flex gap-2">
-            <span class="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm">A</span>
-            <span class="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm">M</span>
-            <span class="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm">K</span>
-            <span class="w-9 h-9 rounded-full border-2 border-dashed border-outline-variant"></span>
-          </div>
-          <div class="flex items-center justify-between pt-3 border-t border-outline-variant/20">
-            <span class="text-label-sm text-outline">3/4 oyuncu</span>
-            <a href="<%= meta.playUrl %>" class="px-4 py-1.5 bg-primary text-white rounded-lg font-label-md text-label-sm hover:bg-secondary-container transition-colors">Otur</a>
-          </div>
+    <div id="tables-view" class="flex flex-col lg:flex-row gap-6">
+      
+      <!-- Sol: Masalar -->
+      <div class="flex-1">
+        <!-- Liste başlığı + masa oluştur -->
+        <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+          <h2 class="font-headline-lg text-headline-lg text-primary">Acik Masalar</h2>
+          <button type="button" id="create-table-btn" class="px-5 py-2.5 bg-secondary-container text-white rounded-lg font-label-md text-label-md hover:opacity-90 transition-all flex items-center gap-2">
+            <span class="material-symbols-outlined text-sm">add_circle</span> Masa Olustur
+          </button>
         </div>
 
-        <!-- Masa 2 -->
-        <div class="bg-white rounded-xl border border-outline-variant/30 shadow-sm p-5 flex flex-col gap-4">
-          <div class="flex items-center justify-between">
-            <span class="font-headline-md text-primary">Masa #13</span>
-            <span class="px-2 py-1 bg-secondary-container/20 text-on-secondary-container rounded font-label-md text-label-sm">20 LT</span>
+        <!-- Masa kartları (temsili) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+          <!-- Masa 1 -->
+          <div class="bg-white rounded-xl border border-outline-variant/30 shadow-sm p-5 flex flex-col gap-4">
+            <div class="flex items-center justify-between">
+              <span class="font-headline-md text-primary">Masa #12</span>
+              <span class="px-2 py-1 bg-secondary-container/20 text-on-secondary-container rounded font-label-md text-label-sm">20 LT</span>
+            </div>
+            <div class="flex gap-2">
+              <span class="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm">A</span>
+              <span class="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm">M</span>
+              <span class="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm">K</span>
+              <span class="w-9 h-9 rounded-full border-2 border-dashed border-outline-variant"></span>
+            </div>
+            <div class="flex items-center justify-between pt-3 border-t border-outline-variant/20">
+              <span class="text-label-sm text-outline">3/4 oyuncu</span>
+              <a href="<%= meta.playUrl %>" class="px-4 py-1.5 bg-primary text-white rounded-lg font-label-md text-label-sm hover:bg-secondary-container transition-colors">Otur</a>
+            </div>
           </div>
-          <div class="flex gap-2">
-            <span class="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm">S</span>
-            <span class="w-9 h-9 rounded-full border-2 border-dashed border-outline-variant"></span>
-            <span class="w-9 h-9 rounded-full border-2 border-dashed border-outline-variant"></span>
-            <span class="w-9 h-9 rounded-full border-2 border-dashed border-outline-variant"></span>
-          </div>
-          <div class="flex items-center justify-between pt-3 border-t border-outline-variant/20">
-            <span class="text-label-sm text-outline">1/4 oyuncu</span>
-            <a href="<%= meta.playUrl %>" class="px-4 py-1.5 bg-primary text-white rounded-lg font-label-md text-label-sm hover:bg-secondary-container transition-colors">Otur</a>
-          </div>
-        </div>
 
-        <!-- Masa 3: dolu -->
-        <div class="bg-white rounded-xl border border-outline-variant/30 shadow-sm p-5 flex flex-col gap-4 opacity-80">
-          <div class="flex items-center justify-between">
-            <span class="font-headline-md text-primary">Masa #14</span>
-            <span class="px-2 py-1 bg-secondary-container text-white rounded font-label-md text-label-sm">100 LT</span>
+          <!-- Masa 2 -->
+          <div class="bg-white rounded-xl border border-outline-variant/30 shadow-sm p-5 flex flex-col gap-4">
+            <div class="flex items-center justify-between">
+              <span class="font-headline-md text-primary">Masa #13</span>
+              <span class="px-2 py-1 bg-secondary-container/20 text-on-secondary-container rounded font-label-md text-label-sm">20 LT</span>
+            </div>
+            <div class="flex gap-2">
+              <span class="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm">S</span>
+              <span class="w-9 h-9 rounded-full border-2 border-dashed border-outline-variant"></span>
+              <span class="w-9 h-9 rounded-full border-2 border-dashed border-outline-variant"></span>
+              <span class="w-9 h-9 rounded-full border-2 border-dashed border-outline-variant"></span>
+            </div>
+            <div class="flex items-center justify-between pt-3 border-t border-outline-variant/20">
+              <span class="text-label-sm text-outline">1/4 oyuncu</span>
+              <a href="<%= meta.playUrl %>" class="px-4 py-1.5 bg-primary text-white rounded-lg font-label-md text-label-sm hover:bg-secondary-container transition-colors">Otur</a>
+            </div>
           </div>
-          <div class="flex gap-2">
-            <span class="w-9 h-9 rounded-full bg-slate-dark text-white flex items-center justify-center font-bold text-sm">D</span>
-            <span class="w-9 h-9 rounded-full bg-slate-dark text-white flex items-center justify-center font-bold text-sm">O</span>
-            <span class="w-9 h-9 rounded-full bg-slate-dark text-white flex items-center justify-center font-bold text-sm">T</span>
-            <span class="w-9 h-9 rounded-full bg-slate-dark text-white flex items-center justify-center font-bold text-sm">B</span>
-          </div>
-          <div class="flex items-center justify-between pt-3 border-t border-outline-variant/20">
-            <span class="text-label-sm text-error">Dolu (4/4)</span>
-            <a href="<%= meta.playUrl %>" class="px-4 py-1.5 border border-silver-light text-primary rounded-lg font-label-md text-label-sm hover:bg-surface-container-low transition-colors">Izle</a>
-          </div>
-        </div>
 
-        <!-- Boş masa ipucu -->
-        <div class="bg-surface-container-low rounded-xl border-2 border-dashed border-outline-variant/50 p-5 flex flex-col items-center justify-center text-center gap-2">
-          <span class="material-symbols-outlined text-4xl text-primary">add_circle</span>
-          <p class="text-body-sm text-outline">Bos masa mi ariyorsun?<br/>Kendi masani olustur.</p>
-          <button type="button" id="create-table-btn-2" class="px-4 py-2 border border-silver-light text-primary rounded-lg font-label-md text-label-sm hover:bg-white transition-all">Masa Olustur</button>
+          <!-- Masa 3: dolu -->
+          <div class="bg-white rounded-xl border border-outline-variant/30 shadow-sm p-5 flex flex-col gap-4 opacity-80">
+            <div class="flex items-center justify-between">
+              <span class="font-headline-md text-primary">Masa #14</span>
+              <span class="px-2 py-1 bg-secondary-container text-white rounded font-label-md text-label-sm">100 LT</span>
+            </div>
+            <div class="flex gap-2">
+              <span class="w-9 h-9 rounded-full bg-slate-dark text-white flex items-center justify-center font-bold text-sm">D</span>
+              <span class="w-9 h-9 rounded-full bg-slate-dark text-white flex items-center justify-center font-bold text-sm">O</span>
+              <span class="w-9 h-9 rounded-full bg-slate-dark text-white flex items-center justify-center font-bold text-sm">T</span>
+              <span class="w-9 h-9 rounded-full bg-slate-dark text-white flex items-center justify-center font-bold text-sm">B</span>
+            </div>
+            <div class="flex items-center justify-between pt-3 border-t border-outline-variant/20">
+              <span class="text-label-sm text-error">Dolu (4/4)</span>
+              <a href="<%= meta.playUrl %>" class="px-4 py-1.5 border border-silver-light text-primary rounded-lg font-label-md text-label-sm hover:bg-surface-container-low transition-colors">Izle</a>
+            </div>
+          </div>
+
+          <!-- Boş masa ipucu -->
+          <div class="bg-surface-container-low rounded-xl border-2 border-dashed border-outline-variant/50 p-5 flex flex-col items-center justify-center text-center gap-2">
+            <span class="material-symbols-outlined text-4xl text-primary">add_circle</span>
+            <p class="text-body-sm text-outline">Bos masa mi ariyorsun?<br/>Kendi masani olustur.</p>
+            <button type="button" id="create-table-btn-2" class="px-4 py-2 border border-silver-light text-primary rounded-lg font-label-md text-label-sm hover:bg-white transition-all">Masa Olustur</button>
+          </div>
         </div>
-      </div>
+      </div> <!-- /Sol Kısım -->
+
+      <!-- Sağ: Aktif Oyuncular -->
+      <aside class="w-full lg:w-72 xl:w-80 shrink-0">
+        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant/30 shadow-sm overflow-hidden sticky top-6 flex flex-col max-h-[600px]">
+          <div class="bg-primary text-white p-4 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-lg">group</span>
+              <h3 class="font-headline-sm">Aktif Oyuncular</h3>
+            </div>
+            <span class="bg-secondary px-2.5 py-0.5 rounded-full text-xs font-bold shadow-sm" id="lobby-online-count">0</span>
+          </div>
+          <div class="p-4 flex-1 overflow-y-auto">
+            <ul id="lobby-online-list" class="flex flex-col gap-3">
+              <li class="text-center text-outline text-sm italic py-4">
+                Sistemde henüz aktif<br/>oyuncu bulunmuyor.
+              </li>
+            </ul>
+          </div>
+        </div>
+      </aside> <!-- /Sağ Kısım -->
+
     </div> <!-- /GÖRÜNÜM: MASALAR -->
 
     <!-- GÖRÜNÜM: ODA OLUŞTURMA (Gizli) -->
@@ -264,8 +289,149 @@
       </form>
     </div> <!-- /GÖRÜNÜM: ODA OLUŞTURMA -->
   </main>
+  <!-- ===== Lobby Chat Panel ===== -->
+  <aside id="lobby-chatpanel" class="fixed bottom-0 left-0 right-0 w-full h-64 bg-surface flex flex-col shadow-[0_-4px_20px_rgba(0,0,0,0.05)] border-t border-outline-variant/30 z-50">
+    <div class="flex border-b border-outline-variant/30 px-2 bg-surface-container-lowest">
+      <button id="chat-tab-sistem" class="relative px-4 py-3 font-label-md text-on-surface-variant border-b-2 border-transparent hover:text-primary transition-colors">
+        Sistem Mesajı
+        <span class="chat-badge hidden absolute top-3 right-1 w-2 h-2 bg-error rounded-full"></span>
+      </button>
+      <button id="chat-tab-lobi" class="relative px-4 py-3 font-label-md text-primary border-b-2 border-primary transition-colors">
+        Lobi Mesajı
+        <span class="chat-badge hidden absolute top-3 right-1 w-2 h-2 bg-error rounded-full"></span>
+      </button>
+    </div>
+    <div class="flex-1 overflow-y-auto p-3 bg-surface-container-lowest flex flex-col gap-2" id="chat-messages">
+      <!-- Mesajlar JS ile buraya eklenecek -->
+    </div>
+    <form id="chat-form" class="flex gap-2 p-3 bg-surface border-t border-outline-variant/30">
+      <input type="text" id="chat-input" class="flex-1 bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 text-on-surface outline-none focus:border-primary transition-colors text-body-sm" placeholder="Bir mesaj yazın..." autocomplete="off">
+      <button type="submit" class="bg-primary text-on-primary px-4 py-2 rounded-lg font-label-md hover:bg-primary/90 transition-colors">Gönder</button>
+    </form>
+  </aside>
 
   <%- include('partials/theme-foot', { user: user }) %>
+  <script>window.LOBBY_GAME_ID = 'salon_' + '<%= meta.slug %>';</script>
+  <script src="/js/lobby.js"></script>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      if (!window.lobbySocket) return;
+      
+      var gameId = window.LOBBY_GAME_ID || 'lobby';
+      var socket = window.lobbySocket;
+      
+      var chatMessages = document.getElementById('chat-messages');
+      var chatForm = document.getElementById('chat-form');
+      var chatInput = document.getElementById('chat-input');
+      
+      var tabSistem = document.getElementById('chat-tab-sistem');
+      var tabLobi = document.getElementById('chat-tab-lobi');
+      
+      var currentTab = 'lobi'; // 'lobi' or 'sistem'
+      
+      var messagesByTab = {
+        sistem: [],
+        lobi: []
+      };
+      
+      function formatTime(isoLike) {
+        try {
+          var d = new Date(String(isoLike).replace(' ', 'T') + 'Z');
+          if (isNaN(d.getTime())) return '';
+          return d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+        } catch (e) { return ''; }
+      }
+      
+      function escapeHtml(str) {
+        var div = document.createElement('div');
+        div.textContent = str == null ? '' : String(str);
+        return div.innerHTML;
+      }
+      
+      function renderMessages() {
+        if (!chatMessages) return;
+        var msgs = messagesByTab[currentTab];
+        chatMessages.innerHTML = msgs.map(function(m) {
+          if (currentTab === 'sistem') {
+            return '<div class="text-on-surface-variant italic text-body-sm bg-surface-container rounded p-2 border border-outline-variant/30">' + escapeHtml(m.content) + '</div>';
+          } else {
+            return '<div class="flex flex-col mb-1">' +
+                     '<div class="flex items-center justify-between">' +
+                       '<span class="font-label-sm text-primary">' + escapeHtml(m.username) + '</span>' +
+                       '<span class="text-[10px] text-outline">' + formatTime(m.created_at) + '</span>' +
+                     '</div>' +
+                     '<div class="text-body-sm text-on-surface">' + escapeHtml(m.content) + '</div>' +
+                   '</div>';
+          }
+        }).join('');
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+      
+      function switchTab(tab) {
+        currentTab = tab;
+        if (tab === 'sistem') {
+          tabSistem.classList.add('text-primary', 'border-primary');
+          tabSistem.classList.remove('text-on-surface-variant', 'border-transparent');
+          tabLobi.classList.remove('text-primary', 'border-primary');
+          tabLobi.classList.add('text-on-surface-variant', 'border-transparent');
+          chatInput.disabled = true;
+          chatInput.placeholder = 'Sistem kanalına yazılamaz...';
+        } else {
+          tabLobi.classList.add('text-primary', 'border-primary');
+          tabLobi.classList.remove('text-on-surface-variant', 'border-transparent');
+          tabSistem.classList.remove('text-primary', 'border-primary');
+          tabSistem.classList.add('text-on-surface-variant', 'border-transparent');
+          chatInput.disabled = false;
+          chatInput.placeholder = 'Bir mesaj yazın...';
+        }
+        document.querySelector('#chat-tab-' + tab + ' .chat-badge').classList.add('hidden');
+        renderMessages();
+      }
+      
+      tabSistem.addEventListener('click', function() { switchTab('sistem'); });
+      tabLobi.addEventListener('click', function() { switchTab('lobi'); });
+      
+      socket.on('chat:history', function(history) {
+        // history[gameId] has messages for this game
+        if (history && history[gameId]) {
+          messagesByTab.lobi = history[gameId];
+        }
+        if (history && history.sistem) {
+          messagesByTab.sistem = history.sistem;
+        }
+        renderMessages();
+      });
+      
+      socket.on('chat:message', function(msg) {
+        if (!msg) return;
+        var tab = msg.channel === 'sistem' ? 'sistem' : 'lobi';
+        
+        // Ensure we only accept messages for our channel (gameId) or sistem
+        if (msg.channel !== 'sistem' && msg.channel !== gameId) return;
+        
+        messagesByTab[tab].push(msg);
+        if (messagesByTab[tab].length > 200) messagesByTab[tab].shift();
+        
+        if (currentTab === tab) {
+          renderMessages();
+        } else {
+          document.querySelector('#chat-tab-' + tab + ' .chat-badge').classList.remove('hidden');
+        }
+      });
+      
+      if (chatForm) {
+        chatForm.addEventListener('submit', function(e) {
+          e.preventDefault();
+          var text = chatInput.value.trim();
+          if (!text || currentTab === 'sistem') return;
+          socket.emit('chat:message', { channel: gameId, text: text });
+          chatInput.value = '';
+        });
+      }
+    });
+  </script>
+
   <script>
     (function () {
       var tablesView = document.getElementById('tables-view');

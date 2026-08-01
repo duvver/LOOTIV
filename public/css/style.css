@@ -227,6 +227,7 @@ button {
 }
 
 .form-group input {
+  width: 100%;
   background: var(--bg-panel-alt);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
