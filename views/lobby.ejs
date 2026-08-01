@@ -45,6 +45,13 @@
           </div>
           <span class="font-label-md text-label-md">Pazar</span>
         </a>
+        <div class="w-px h-12 bg-outline-variant"></div>
+        <button onclick="openVipModal()" class="flex flex-col items-center gap-2 group hover:text-yellow-600 transition-colors focus:outline-none">
+          <div class="w-12 h-12 bg-yellow-100 text-yellow-600 rounded-lg flex items-center justify-center group-hover:bg-yellow-500 group-hover:text-white transition-all shadow-sm border border-yellow-200">
+            <span class="material-symbols-outlined text-2xl">workspace_premium</span>
+          </div>
+          <span class="font-label-md text-label-md font-bold text-yellow-600 group-hover:text-yellow-700">VIP Satın Al</span>
+        </button>
       </div>
 
       <!-- Gorevler / Gunluk oduller (sadece giris yapmis) -->
@@ -278,6 +285,66 @@
   </main>
 
   <%- include('partials/theme-foot', { user: user }) %>
-  <% if (user) { %><script src="/js/lobby.js?v=2"></script><% } %>
+  <% if (user) { %>
+  <!-- VIP Satin Al / E-Pin Modal -->
+  <div id="vip-modal" class="fixed inset-0 bg-black/60 z-[100] hidden flex items-center justify-center p-4">
+    <div class="bg-surface rounded-2xl shadow-2xl border border-outline-variant w-full max-w-md overflow-hidden animate-fade-in relative">
+      <!-- Gradient Header -->
+      <div class="bg-gradient-to-r from-yellow-500 to-yellow-600 p-5 flex justify-between items-center text-white">
+        <h3 class="font-headline-sm flex items-center gap-2">
+          <span class="material-symbols-outlined">workspace_premium</span>
+          VIP Satın Al & Aktifleştir
+        </h3>
+        <button onclick="closeVipModal()" class="text-white hover:text-gray-200 transition-colors focus:outline-none">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      
+      <!-- Body -->
+      <div class="p-6">
+        <p class="text-body-md text-outline mb-4">Aşağıdaki resmi satıcılarımızdan güvenle VIP E-Pin kodu satın alabilirsiniz:</p>
+        
+        <div class="grid grid-cols-2 gap-4 mb-6">
+          <% if (typeof vipLinks !== 'undefined' && vipLinks.length > 0) { %>
+            <% vipLinks.forEach(link => { %>
+              <a href="<%= link.url %>" target="_blank" class="flex flex-col items-center justify-center p-4 border border-outline-variant rounded-xl hover:border-yellow-500 hover:bg-yellow-50 transition-colors">
+                <span class="font-label-lg font-bold text-gray-700 mb-1"><%= link.name %></span>
+                <span class="font-body-sm text-outline text-center">Hemen Al</span>
+              </a>
+            <% }) %>
+          <% } else { %>
+            <div class="col-span-2 text-center text-outline text-sm py-4">Şu an aktif bir VIP satış noktası bulunmuyor.</div>
+          <% } %>
+        </div>
+
+        <hr class="border-outline-variant mb-6">
+        
+        <form action="/settings/profile/vip" method="POST" class="flex flex-col gap-3">
+          <label class="font-label-md text-primary">E-Pin Kodunuzu Girin</label>
+          <div class="flex flex-col sm:flex-row gap-2">
+            <input type="text" name="vip_code" placeholder="XXXX-YYYY-ZZZZ" class="flex-1 bg-background border border-outline-variant rounded-lg px-4 py-2.5 focus:border-yellow-500 focus:outline-none uppercase font-mono text-center sm:text-left" required>
+            <button type="submit" class="bg-yellow-500 hover:bg-yellow-600 text-white px-5 py-2.5 rounded-lg font-label-md transition-colors whitespace-nowrap shadow-sm">Aktifleştir</button>
+          </div>
+          <p class="text-[11px] text-outline mt-1 text-center sm:text-left">* VIP süreniz kodu girdiğiniz andan itibaren başlar.</p>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function openVipModal() {
+      document.getElementById('vip-modal').classList.remove('hidden');
+    }
+    function closeVipModal() {
+      document.getElementById('vip-modal').classList.add('hidden');
+    }
+    // Disariya tiklaninca modal kapansin
+    document.getElementById('vip-modal').addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeVipModal();
+      }
+    });
+  </script>
+  <% } %>
 </body>
 </html>

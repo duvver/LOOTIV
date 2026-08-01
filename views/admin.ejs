@@ -1190,6 +1190,65 @@
         </div>
       </div>
 
+      <!-- VIP Linkleri Yonetimi -->
+      <div class="adm-section open">
+        <div class="adm-section-head" onclick="toggleSection(this)">
+          <span class="adm-section-head-icon">&#128279;</span>
+          <div class="adm-section-head-text">
+            <div class="adm-section-head-title">VIP Satin Alma Linkleri</div>
+            <div class="adm-section-head-sub">Lobi ekranindaki modalda gosterilecek alisveris linkleri</div>
+          </div>
+          <span class="adm-chevron">&#9660;</span>
+        </div>
+        <div class="adm-section-body">
+          <form class="adm-form" method="POST" action="/admin/vip-links/add">
+            <div class="adm-form-row adm-form-row-2">
+              <div class="adm-field">
+                <label>Platform Adi</label>
+                <input type="text" name="name" placeholder="Orn: ByNoGame" required class="adm-input" />
+              </div>
+              <div class="adm-field">
+                <label>Satis Linki URL</label>
+                <input type="url" name="url" placeholder="https://..." required class="adm-input" />
+              </div>
+            </div>
+            <div class="adm-form-footer">
+              <button class="adm-save-btn">Link Ekle</button>
+            </div>
+          </form>
+
+          <div class="adm-table-scroll mt-4" style="margin-top:20px;">
+            <table class="adm-table">
+              <thead>
+                <tr>
+                  <th>Platform Adi</th>
+                  <th>Satis Linki (URL)</th>
+                  <th style="width:100px;text-align:right;">İşlem</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (typeof vipLinks !== 'undefined' && vipLinks.length > 0) { %>
+                  <% vipLinks.forEach(function(link) { %>
+                    <tr>
+                      <td style="font-weight:500;color:#e6edf3"><%= link.name %></td>
+                      <td style="color:#8b949e"><a href="<%= link.url %>" target="_blank" style="color:#58a6ff;text-decoration:none;"><%= link.url.length > 50 ? link.url.substring(0, 50) + '...' : link.url %></a></td>
+                      <td style="text-align:right;">
+                        <form action="/admin/vip-links/delete" method="POST" style="display:inline;" onsubmit="return confirm('Bu linki silmek istediginize emin misiniz?');">
+                          <input type="hidden" name="id" value="<%= link.id %>">
+                          <button type="submit" class="adm-btn red" style="padding:4px 8px;font-size:12px;" title="Sil">&#128465;</button>
+                        </form>
+                      </td>
+                    </tr>
+                  <% }); %>
+                <% } else { %>
+                  <tr><td colspan="3" style="text-align:center;color:#8b949e;padding:16px;">Hic link eklenmedi.</td></tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
       <!-- VIP plan bilgileri -->
       <div class="adm-section open">
         <div class="adm-section-head" onclick="toggleSection(this)">

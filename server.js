@@ -138,6 +138,7 @@ app.get(
       
       dailyTasks = await db.getUserDailyTasks(req.user.id);
     }
+    const vipLinks = await db.getVipLinks();
 
     res.render('lobby', {
       user: req.user || null,
@@ -152,6 +153,7 @@ app.get(
       dailyTasks,
       userDailyTasks,
       vipPlans: db.getVipPlans(),
+      vipLinks,
     });
   })
 );
@@ -1029,6 +1031,7 @@ app.get(
     const marketConfig = await db.getMarketConfig();
     const dailyTasks = await db.getDailyTasks(true);
     const vipCodes = await db.getAllVipCodes();
+    const vipLinks = await db.getVipLinks();
     res.render('admin', {
       user: req.user,
       users,
@@ -1041,6 +1044,7 @@ app.get(
       marketConfig,
       dailyTasks,
       vipCodes,
+      vipLinks,
       categories: db.MARKET_CATEGORIES,
       rarities: db.MARKET_RARITIES,
       vipPlans: db.getVipPlans(),
@@ -1124,6 +1128,33 @@ app.post(
     const code = req.body.code;
     if (code) {
       await db.deleteVipCode(code);
+    }
+    res.redirect('/admin#vip');
+  })
+);
+
+app.post(
+  '/admin/vip-links/add',
+  attachUser,
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const name = (req.body.name || '').trim();
+    const url = (req.body.url || '').trim();
+    if (name && url) {
+      await db.addVipLink(name, url);
+    }
+    res.redirect('/admin#vip');
+  })
+);
+
+app.post(
+  '/admin/vip-links/delete',
+  attachUser,
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const id = Number(req.body.id);
+    if (id) {
+      await db.deleteVipLink(id);
     }
     res.redirect('/admin#vip');
   })
