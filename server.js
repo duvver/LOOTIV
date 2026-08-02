@@ -139,6 +139,7 @@ app.get(
       dailyTasks = await db.getUserDailyTasks(req.user.id);
     }
     const vipLinks = await db.getVipLinks();
+    const blogs = await db.getAllBlogs(5).catch(() => []);
 
     res.render('lobby', {
       user: req.user || null,
@@ -154,6 +155,7 @@ app.get(
       userDailyTasks,
       vipPlans: db.getVipPlans(),
       vipLinks,
+      blogs,
     });
   })
 );
@@ -328,12 +330,6 @@ app.post(
       return res.json({ success: false, message: 'Yetersiz LT bakiyesi.' });
     }
 
-    // Ücreti kes
-    await db.adjustLt(req.user.id, -config.entry_fee);
-
-    // Günlük görevi ilerlet (Kazı Kazan oynama)
-    await db.incrementUserTaskProgress(req.user.id, 'play_scratchcard', 1);
-
     // Sonucu belirle (playScratch sadece DB kaydı yapar)
     const prizes = (config.prizes || '0')
       .split(',')
@@ -341,6 +337,12 @@ app.post(
       .filter((n) => Number.isFinite(n));
     
     const prize = prizes.length ? prizes[Math.floor(Math.random() * prizes.length)] : 0;
+
+    // Ücreti kes ve ödülü ekle
+    await db.adjustLt(req.user.id, prize - config.entry_fee);
+
+    // Günlük görevi ilerlet (Kazı Kazan oynama)
+    await db.incrementUserTaskProgress(req.user.id, 'play_scratchcard', 1);
     
     await db.playScratch(req.user.id, prize);
     
@@ -1059,7 +1061,7 @@ app.post(
   requireAdmin,
   asyncHandler(async (req, res) => {
     await db.toggleMute(Number(req.params.id));
-    res.redirect('/admin#users');
+    res.redirect('/admin?tab=users#users');
   })
 );
 
@@ -1069,7 +1071,7 @@ app.post(
   requireAdmin,
   asyncHandler(async (req, res) => {
     await db.toggleAdmin(Number(req.params.id));
-    res.redirect('/admin#users');
+    res.redirect('/admin?tab=users#users');
   })
 );
 
@@ -1079,7 +1081,7 @@ app.post(
   requireAdmin,
   asyncHandler(async (req, res) => {
     await db.toggleBan(Number(req.params.id), req.body.reason);
-    res.redirect('/admin#users');
+    res.redirect('/admin?tab=users#users');
   })
 );
 
@@ -1092,7 +1094,7 @@ app.post(
     if (Number.isFinite(amount) && amount !== 0) {
       await db.adjustLt(Number(req.params.id), amount);
     }
-    res.redirect('/admin#users');
+    res.redirect('/admin?tab=users#users');
   })
 );
 
@@ -1102,7 +1104,7 @@ app.post(
   requireAdmin,
   asyncHandler(async (req, res) => {
     await db.setVip(Number(req.params.id), Number(req.body.tier));
-    res.redirect('/admin#vip');
+    res.redirect('/admin?tab=vip#vip');
   })
 );
 
@@ -1116,7 +1118,7 @@ app.post(
     if (tier >= 1 && tier <= 3 && count > 0 && count <= 50) {
       await db.generateVipCodes(tier, count);
     }
-    res.redirect('/admin#vip');
+    res.redirect('/admin?tab=vip#vip');
   })
 );
 
@@ -1129,7 +1131,7 @@ app.post(
     if (code) {
       await db.deleteVipCode(code);
     }
-    res.redirect('/admin#vip');
+    res.redirect('/admin?tab=vip#vip');
   })
 );
 
@@ -1143,7 +1145,7 @@ app.post(
     if (name && url) {
       await db.addVipLink(name, url);
     }
-    res.redirect('/admin#vip');
+    res.redirect('/admin?tab=vip#vip');
   })
 );
 
@@ -1156,7 +1158,7 @@ app.post(
     if (id) {
       await db.deleteVipLink(id);
     }
-    res.redirect('/admin#vip');
+    res.redirect('/admin?tab=vip#vip');
   })
 );
 
@@ -1316,6 +1318,18 @@ function broadcastPlayers() {
 async function broadcastLobbyPlayers() {
   const allPlayers = Array.from(onlinePlayers.values());
   const ids = Array.from(new Set(allPlayers.map((p) => p.userId)));
+
+  // Emit player counts for the homepage and other listeners
+  const stats = {
+    total: ids.length,
+    games: { okey: 0, okey101: 0, poker: 0 }
+  };
+  const games = ['okey', 'okey101', 'poker'];
+  for (const g of games) {
+    stats.games[g] = new Set(allPlayers.filter(p => p.game === g || p.game === 'salon_' + g).map(p => p.userId)).size;
+  }
+  io.emit('lobby:stats', stats);
+
   if (ids.length === 0) {
     io.to('lobby').emit('lobby:players', []);
     return;
@@ -1347,7 +1361,6 @@ async function broadcastLobbyPlayers() {
   io.to('lobby').emit('lobby:players', mapIds(ids));
 
   // Oyun özel lobileri için yayın
-  const games = ['okey', 'okey101', 'poker'];
   for (const g of games) {
     const gameUserIds = Array.from(new Set(
       allPlayers.filter(p => p.game === g || p.game === 'salon_' + g).map(p => p.userId)

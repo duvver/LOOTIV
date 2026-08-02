@@ -35,10 +35,6 @@
   // ---- Aktif oyuncular ----
   function renderOnline(list) {
     if (onlineCount) onlineCount.textContent = String(list.length);
-    // Oyun kartindaki "aktif oyuncu" rozetleri
-    document.querySelectorAll('.lobby-online-count-badge').forEach(function (el) {
-      el.textContent = String(list.length);
-    });
     if (!onlineList) return;
     if (!list.length) {
       onlineList.innerHTML = '<li class="text-outline text-body-sm px-3 py-2">Su an aktif kullanici yok.</li>';
@@ -52,6 +48,11 @@
       var vip = p.vip > 0
         ? '<span class="text-[10px] px-1.5 py-0.5 bg-energetic-purple/15 text-energetic-purple rounded-full font-label-md">VIP' + escapeHtml(p.vip) + '</span>'
         : '';
+      
+      var pmButton = (window.currentRumuz !== p.rumuz) 
+        ? '<button onclick="openPmModal(\'' + escapeHtml(p.rumuz) + '\', \'' + escapeHtml(initial) + '\')" class="ml-auto flex items-center justify-center w-8 h-8 rounded-full bg-surface-container hover:bg-primary-container text-primary transition-colors focus:outline-none" title="Özel Mesaj Gönder"><span class="material-symbols-outlined text-[16px]">chat</span></button>'
+        : '';
+
       return (
         '<li class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-surface-container-low transition-colors">' +
           '<span class="relative flex-shrink-0">' +
@@ -62,12 +63,30 @@
             '<span class="flex items-center gap-1.5 font-label-md text-label-md text-on-surface truncate">' + escapeHtml(p.rumuz) + vip + '</span>' +
             '<span class="block text-label-sm text-secondary font-semibold">' + escapeHtml(ltText(p.lt)) + '</span>' +
           '</span>' +
+          pmButton +
         '</li>'
       );
     }).join('');
   }
 
   socket.on('lobby:players', renderOnline);
+
+  socket.on('lobby:stats', function(stats) {
+    document.querySelectorAll('.global-online-count').forEach(function(el) {
+      el.textContent = String(stats.total);
+    });
+    if (stats.games) {
+      document.querySelectorAll('.game-online-count-okey').forEach(function(el) {
+        el.textContent = String(stats.games.okey || 0);
+      });
+      document.querySelectorAll('.game-online-count-okey101').forEach(function(el) {
+        el.textContent = String(stats.games.okey101 || 0);
+      });
+      document.querySelectorAll('.game-online-count-poker').forEach(function(el) {
+        el.textContent = String(stats.games.poker || 0);
+      });
+    }
+  });
 
   // ---- Sohbet ----
   function renderMessages() {

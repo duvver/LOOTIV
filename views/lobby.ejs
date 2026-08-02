@@ -24,7 +24,9 @@
 
     <!-- ===== Kompakt kategori + gorevler ===== -->
     <section class="grid grid-cols-12 gap-6 mb-12">
-      <div class="col-span-12 <%= user ? 'md:col-span-8' : '' %> bg-white rounded-xl shadow-sm border border-outline-variant p-4 flex items-center justify-around">
+      <div class="col-span-12 <%= user ? 'md:col-span-8' : '' %> flex flex-col gap-6">
+        <div class="bg-white rounded-xl shadow-sm border border-outline-variant p-4 pb-8 relative flex items-center justify-around">
+            
         <a class="flex flex-col items-center gap-2 group hover:text-primary transition-colors" href="/karakter-sec">
           <div class="w-12 h-12 bg-primary-fixed-dim text-primary rounded-lg flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
             <span class="material-symbols-outlined text-2xl">account_circle</span>
@@ -52,23 +54,140 @@
           </div>
           <span class="font-label-md text-label-md font-bold text-yellow-600 group-hover:text-yellow-700">VIP Satın Al</span>
         </button>
-      </div>
+      
+          <% if (user) { %>
+            <div class="absolute bottom-2 left-4 flex items-center gap-1.5 text-[11px] text-outline font-medium bg-transparent">
+              <span class="w-1.5 h-1.5 bg-success-green rounded-full animate-pulse"></span>
+              Sitede <span class="global-online-count font-bold text-primary">...</span> aktif oyuncu var
+            </div>
+          <% } %>
+        </div>
 
-      <!-- Gorevler / Gunluk oduller (sadece giris yapmis) -->
+        <section id="oyunlar">
+      <div class="flex justify-between items-end mb-8">
+        <div>
+          <h2 class="font-headline-lg text-headline-lg text-primary">Popüler Oyunlar</h2>
+          <p class="font-body-md text-body-md text-outline">Masaya otur, sohbet et, LT kazan.</p>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-6">
+        <!-- 101 Okey (aktif) -->
+        <a href="/oyun/okey101" class="game-card-hover bg-white rounded-xl overflow-hidden shadow-sm flex flex-col">
+          <div class="relative h-48 group/img bg-primary-container">
+            <img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD3IRAWvK-mmHFBucdVV8OGEhScS0BOJ99qSDXdr_Nzm_waM-8xPrE9CP1fDpZZjyZFWb6Cjzg2nwYCs2V4xgC9EOIFxcxDe-UEkoOORCcb9BF54_p_yZ2gUivWPNynr7znJLFfT3eKdGsN8H11v6xKTMSpAV2WqnuB3K8bsmFd-YhJCjLC-nJhaYbsEzuXAc7ArGlf149Ac3U6TS6XePsaSfD5DYE0ScGf-S2gQAMsjM4gJc1tE4W7" alt="101 Okey" />
+            <div class="absolute inset-0 bg-primary/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+              <span class="px-6 py-2 bg-secondary text-white rounded-full font-label-md text-label-md">Oyna</span>
+            </div>
+          </div>
+          <div class="p-4">
+            <h3 class="font-headline-md text-headline-md text-primary mb-1">101 Okey</h3>
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-success-green"></span>
+              <span class="font-label-sm text-label-sm text-outline"><span class="game-online-count-okey101">...</span> Oyuncu Aktif</span>
+            </div>
+          </div>
+        </a>
+
+        <!-- Canak Okey (aktif) -->
+        <a href="/oyun/okey" class="game-card-hover bg-white rounded-xl overflow-hidden shadow-sm flex flex-col">
+          <div class="relative h-48 group/img bg-primary-container">
+            <img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCUibdf8xrKOQOY4NOcs-qteEgQzDt0b5p4HNLPQUl1hc270TKSdKM_qN6zsGyd-vJv4Imn50YwfFw5glfM4kcjPeK7UApFaCqa0hd5JWZU0lZ_JPJWJ6Or_pD5xXR4keo1bgVdhqqc0m7wDXMC17x69SzZhqou9VQcd8krUKCpp3Bc57Czn1Mi8w97DrELGAKJD9qwH5_x_I9vKUKM4Tws1GSQGA7HOwsY0LAG6NQy3oGo2_hk_7Ny" alt="Canak Okey" />
+            <div class="absolute inset-0 bg-primary/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+              <span class="px-6 py-2 bg-secondary text-white rounded-full font-label-md text-label-md">Oyna</span>
+            </div>
+          </div>
+          <div class="p-4">
+            <h3 class="font-headline-md text-headline-md text-primary mb-1">Çanak Okey</h3>
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-success-green"></span>
+              <span class="font-label-sm text-label-sm text-outline"><span class="game-online-count-okey">...</span> Oyuncu Aktif</span>
+            </div>
+          </div>
+        </a>
+
+        <!-- Turk Pokeri (aktif) -->
+        <a href="/oyun/poker" class="game-card-hover bg-white rounded-xl overflow-hidden shadow-sm flex flex-col">
+          <div class="relative h-48 group/img bg-primary-container">
+            <img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBvi8X7sIDnTAIHHxVuCDVevoAY51kJdmnWtYtuiRkT8yOSjr8RP9dDHm9JM9szJJosFjk0QZFgfS909RSgmh4EQqKhGM8MHEkqwXmda4Ivxi5Dzi44EDjlkwHlra4HWsP6WYfy-S0pkMSvwZ4fvSbwBrCmRtpsgNQdcEEP6kwHEQug3BdeewVVfJzhvqCXsRnjWnprXKvrN7d4tAtwUC_oI3ut2zWN2RmsFr-zaQ7xczc3ZIdxL_0z" alt="Turk Pokeri" />
+            <div class="absolute inset-0 bg-primary/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+              <span class="px-6 py-2 bg-secondary text-white rounded-full font-label-md text-label-md">Oyna</span>
+            </div>
+          </div>
+          <div class="p-4">
+            <h3 class="font-headline-md text-headline-md text-primary mb-1">Türk Pokeri</h3>
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-success-green"></span>
+              <span class="font-label-sm text-label-sm text-outline"><span class="game-online-count-poker">...</span> Oyuncu Aktif</span>
+            </div>
+          </div>
+        </a>
+
+        <!-- Tavla (yakinda) -->
+        <div class="bg-white rounded-xl overflow-hidden shadow-sm flex flex-col opacity-70">
+          <div class="relative h-48 grayscale">
+            <img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAktesiC0-SshV64nmg72I7_7v0Z0wwnnvV0iwwMSLVN2JfF_AoojbkGH7cdPpTo3eo3vmhlJWHMwIMuIa1cnBPgrOQeFo7Z7ondxf_ycb7nJLIKJt8DCi9IIDjqnWSwRSw-Fera3qKd_fzP9DrNMIbg0pmdlYvMQsLExi36jOTADBDglAppDn6gljHc77dQIahCGR5ZY9UhVAivHDc_t9wLjE3p2lBMcX7t5K51XTlQmuJpGJe9M8X" alt="Tavla" />
+            <div class="absolute inset-0 flex items-center justify-center"><span class="px-4 py-1 bg-slate-dark/80 text-white rounded-full font-label-sm text-label-sm">Yakında</span></div>
+          </div>
+          <div class="p-4">
+            <h3 class="font-headline-md text-headline-md text-primary mb-1">Tavla</h3>
+            <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-outline"></span><span class="font-label-sm text-label-sm text-outline">Yakında</span></div>
+          </div>
+        </div>
+
+        <!-- King (yakinda) -->
+        <div class="bg-white rounded-xl overflow-hidden shadow-sm flex flex-col opacity-70">
+          <div class="relative h-48 grayscale">
+            <img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCy4ehnAgPBuk5MvtZMDzrEvvFRUtjMbS4WbBQwLx3t2mxKnCjkWO5kYeFlxmhI1viUt8o1hpT28NE2o7ysGQIzgy5iJOZBs1KQsEmGMw9aU2HVX807ua3M5Z89HB21kqq28B3pLuEf9EhflCEhgh0VLa--vkKRwUMzWP7AqtGiyNXGTEg34U0L-IIqxTWw2qLUZf7R6HfMqyfdxXtMG7T6-GnZVONwwefVMwcwIRGS0defvvKlVyof" alt="King" />
+            <div class="absolute inset-0 flex items-center justify-center"><span class="px-4 py-1 bg-slate-dark/80 text-white rounded-full font-label-sm text-label-sm">Yakında</span></div>
+          </div>
+          <div class="p-4">
+            <h3 class="font-headline-md text-headline-md text-primary mb-1">King</h3>
+            <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-outline"></span><span class="font-label-sm text-label-sm text-outline">Yakında</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+      
+        <!-- Duyurular -->
+        <div class="bg-white rounded-xl p-5 shadow-sm flex flex-col justify-between w-full mt-2 border border-outline-variant">
+          <div>
+          <h2 class="font-headline-md text-headline-sm text-primary mb-4 flex items-center gap-2">
+            <span class="material-symbols-outlined text-xl text-secondary">campaign</span> Duyurular
+          </h2>
+          <div class="space-y-3">
+            <% if (!announcements || !announcements.length) { %>
+              <p class="font-body-sm text-outline">Henüz duyuru yok.</p>
+            <% } else { %>
+              <% announcements.forEach(function(a) { %>
+                <div class="flex items-start gap-3 p-3 bg-surface-container-low rounded-lg border border-primary/5">
+                  <div>
+                    <div class="flex items-center gap-2 mb-0.5">
+                      <span class="font-label-sm text-primary font-semibold"><%= a.title %></span>
+                      <span class="text-[10px] text-outline"><%= new Date(a.created_at).toLocaleString('tr-TR') %></span>
+                    </div>
+                    <p class="font-body-sm text-on-surface leading-snug"><%= a.content.length > 120 ? a.content.slice(0,120) + '...' : a.content %></p>
+                  </div>
+                </div>
+              <% }); %>
+            <% } %>
+          </div>
+        </div>
+        <a href="/duyurular" class="mt-4 text-center py-2 bg-surface-container text-primary font-label-md text-label-sm rounded-lg hover:bg-primary hover:text-white transition-colors">Tüm Duyuruları Gör</a>
+        </div>
+        
+      </div>
+      <!-- Gorevler<!-- Gorevler / Gunluk oduller (sadece giris yapmis) -->
       <% if (user) { %>
         <div class="col-span-12 md:col-span-4 flex flex-col gap-4">
-          <div class="bg-primary/10 text-primary font-headline-sm text-center rounded-xl p-3 border border-primary/20 shadow-sm flex items-center justify-center gap-2">
-            <span class="w-2.5 h-2.5 bg-success-green rounded-full animate-pulse"></span>
-            Sitede <span class="lobby-online-count-badge font-bold">...</span> aktif oyuncu var
-          </div>
-          <div class="bg-white rounded-xl shadow-sm border border-outline-variant p-4 flex flex-col justify-between flex-1 overflow-hidden" style="max-height: 250px; overflow-y: auto;">
+          
+          <div class="bg-white rounded-xl shadow-sm border border-outline-variant p-4 flex flex-col justify-between w-full h-auto" >
             <div class="flex items-center justify-between mb-3">
               <h3 class="font-headline-md text-label-md text-primary flex items-center gap-2">
                 <span class="material-symbols-outlined text-xl">task_alt</span> Günlük Görevler
               </h3>
             </div>
             
-            <div class="flex flex-col gap-3 flex-1 overflow-y-auto pr-1">
+            <div class="flex flex-col gap-3 w-full pr-1">
               <% if (dailyTasks && dailyTasks.length > 0) { %>
                 <% dailyTasks.forEach(task => { %>
                   <% 
@@ -99,125 +218,53 @@
               <% } %>
             </div>
           </div>
+
+          <!-- Bloglar -->
+          <div class="bg-white rounded-xl shadow-sm border border-outline-variant p-4 flex flex-col justify-between w-full h-auto mt-2">
+            <h3 class="font-headline-md text-label-md text-primary flex items-center gap-2 mb-3">
+              <span class="material-symbols-outlined text-xl">article</span> Son Blog Yazıları
+            </h3>
+            <div class="flex flex-col gap-3 w-full pr-1">
+              <% if (typeof blogs !== 'undefined' && blogs && blogs.length > 0) { %>
+                <% blogs.slice(0, 3).forEach(b => { %>
+                  <a href="/bloglar/<%= b.id %>" class="block border border-outline-variant rounded-lg p-4 hover:bg-surface-container-low transition-colors">
+                    <div class="font-label-md text-[#0ea5e9] font-bold line-clamp-1 mb-2 text-[16px]"><%= b.title %></div>
+                    <div class="text-[13px] mb-3">
+                      <span class="font-bold text-on-surface"><%= b.rumuz %></span> 
+                      <span class="text-outline">( <%= new Date(b.created_at).toLocaleDateString('tr-TR', { day: '2-digit', month: 'long' }) %> )</span>
+                    </div>
+                    <div class="text-[13px] text-outline line-clamp-2 leading-relaxed mb-2">
+                      <%= b.content.replace(/<[^>]*>?/gm, '').length > 80 ? b.content.replace(/<[^>]*>?/gm, '').slice(0, 80) + '...' : b.content.replace(/<[^>]*>?/gm, '') %>
+                    </div>
+                    <div class="text-[13px] text-[#f59e0b] font-bold mb-4">
+                      Devamını oku >
+                    </div>
+                    <div class="flex justify-end gap-4 text-outline font-bold text-[13px]">
+                      <div class="flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-[18px]">visibility</span>
+                        <span><%= b.view_count || 0 %></span>
+                      </div>
+                      <div class="flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-[18px]">chat_bubble</span>
+                        <span><%= b.comment_count || 0 %></span>
+                      </div>
+                    </div>
+                  </a>
+                <% }) %>
+              <% } else { %>
+                <div class="text-center text-outline text-sm my-4">Henüz blog yok.</div>
+              <% } %>
+            </div>
+          </div>
+
         </div>
       <% } %>
     </section>
 
     <!-- ===== Populer Oyunlar (herkes gorur) ===== -->
-    <section id="oyunlar">
-      <div class="flex justify-between items-end mb-8">
-        <div>
-          <h2 class="font-headline-lg text-headline-lg text-primary">Popüler Oyunlar</h2>
-          <p class="font-body-md text-body-md text-outline">Masaya otur, sohbet et, LT kazan.</p>
-        </div>
-      </div>
-      <div class="grid grid-cols-2 md:grid-cols-5 gap-6">
-        <!-- 101 Okey (aktif) -->
-        <a href="/oyun/okey101" class="game-card-hover bg-white rounded-xl overflow-hidden shadow-sm flex flex-col">
-          <div class="relative h-48 group/img bg-primary-container">
-            <img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD3IRAWvK-mmHFBucdVV8OGEhScS0BOJ99qSDXdr_Nzm_waM-8xPrE9CP1fDpZZjyZFWb6Cjzg2nwYCs2V4xgC9EOIFxcxDe-UEkoOORCcb9BF54_p_yZ2gUivWPNynr7znJLFfT3eKdGsN8H11v6xKTMSpAV2WqnuB3K8bsmFd-YhJCjLC-nJhaYbsEzuXAc7ArGlf149Ac3U6TS6XePsaSfD5DYE0ScGf-S2gQAMsjM4gJc1tE4W7" alt="101 Okey" />
-            <div class="absolute inset-0 bg-primary/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
-              <span class="px-6 py-2 bg-secondary text-white rounded-full font-label-md text-label-md">Oyna</span>
-            </div>
-          </div>
-          <div class="p-4">
-            <h3 class="font-headline-md text-headline-md text-primary mb-1">101 Okey</h3>
-            <div class="flex items-center gap-2">
-              <span class="w-2 h-2 rounded-full bg-success-green"></span>
-              <span class="font-label-sm text-label-sm text-outline"><span class="lobby-online-count-badge">0</span> Oyuncu Aktif</span>
-            </div>
-          </div>
-        </a>
+    
 
-        <!-- Canak Okey (aktif) -->
-        <a href="/oyun/okey" class="game-card-hover bg-white rounded-xl overflow-hidden shadow-sm flex flex-col">
-          <div class="relative h-48 group/img bg-primary-container">
-            <img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCUibdf8xrKOQOY4NOcs-qteEgQzDt0b5p4HNLPQUl1hc270TKSdKM_qN6zsGyd-vJv4Imn50YwfFw5glfM4kcjPeK7UApFaCqa0hd5JWZU0lZ_JPJWJ6Or_pD5xXR4keo1bgVdhqqc0m7wDXMC17x69SzZhqou9VQcd8krUKCpp3Bc57Czn1Mi8w97DrELGAKJD9qwH5_x_I9vKUKM4Tws1GSQGA7HOwsY0LAG6NQy3oGo2_hk_7Ny" alt="Canak Okey" />
-            <div class="absolute inset-0 bg-primary/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
-              <span class="px-6 py-2 bg-secondary text-white rounded-full font-label-md text-label-md">Oyna</span>
-            </div>
-          </div>
-          <div class="p-4">
-            <h3 class="font-headline-md text-headline-md text-primary mb-1">Çanak Okey</h3>
-            <div class="flex items-center gap-2">
-              <span class="w-2 h-2 rounded-full bg-success-green"></span>
-              <span class="font-label-sm text-label-sm text-outline">Aktif</span>
-            </div>
-          </div>
-        </a>
-
-        <!-- Turk Pokeri (aktif) -->
-        <a href="/oyun/poker" class="game-card-hover bg-white rounded-xl overflow-hidden shadow-sm flex flex-col">
-          <div class="relative h-48 group/img bg-primary-container">
-            <img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBvi8X7sIDnTAIHHxVuCDVevoAY51kJdmnWtYtuiRkT8yOSjr8RP9dDHm9JM9szJJosFjk0QZFgfS909RSgmh4EQqKhGM8MHEkqwXmda4Ivxi5Dzi44EDjlkwHlra4HWsP6WYfy-S0pkMSvwZ4fvSbwBrCmRtpsgNQdcEEP6kwHEQug3BdeewVVfJzhvqCXsRnjWnprXKvrN7d4tAtwUC_oI3ut2zWN2RmsFr-zaQ7xczc3ZIdxL_0z" alt="Turk Pokeri" />
-            <div class="absolute inset-0 bg-primary/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
-              <span class="px-6 py-2 bg-secondary text-white rounded-full font-label-md text-label-md">Oyna</span>
-            </div>
-          </div>
-          <div class="p-4">
-            <h3 class="font-headline-md text-headline-md text-primary mb-1">Türk Pokeri</h3>
-            <div class="flex items-center gap-2">
-              <span class="w-2 h-2 rounded-full bg-success-green"></span>
-              <span class="font-label-sm text-label-sm text-outline">Aktif</span>
-            </div>
-          </div>
-        </a>
-
-        <!-- Tavla (yakinda) -->
-        <div class="bg-white rounded-xl overflow-hidden shadow-sm flex flex-col opacity-70">
-          <div class="relative h-48 grayscale">
-            <img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAktesiC0-SshV64nmg72I7_7v0Z0wwnnvV0iwwMSLVN2JfF_AoojbkGH7cdPpTo3eo3vmhlJWHMwIMuIa1cnBPgrOQeFo7Z7ondxf_ycb7nJLIKJt8DCi9IIDjqnWSwRSw-Fera3qKd_fzP9DrNMIbg0pmdlYvMQsLExi36jOTADBDglAppDn6gljHc77dQIahCGR5ZY9UhVAivHDc_t9wLjE3p2lBMcX7t5K51XTlQmuJpGJe9M8X" alt="Tavla" />
-            <div class="absolute inset-0 flex items-center justify-center"><span class="px-4 py-1 bg-slate-dark/80 text-white rounded-full font-label-sm text-label-sm">Yakında</span></div>
-          </div>
-          <div class="p-4">
-            <h3 class="font-headline-md text-headline-md text-primary mb-1">Tavla</h3>
-            <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-outline"></span><span class="font-label-sm text-label-sm text-outline">Yakında</span></div>
-          </div>
-        </div>
-
-        <!-- King (yakinda) -->
-        <div class="bg-white rounded-xl overflow-hidden shadow-sm flex flex-col opacity-70">
-          <div class="relative h-48 grayscale">
-            <img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCy4ehnAgPBuk5MvtZMDzrEvvFRUtjMbS4WbBQwLx3t2mxKnCjkWO5kYeFlxmhI1viUt8o1hpT28NE2o7ysGQIzgy5iJOZBs1KQsEmGMw9aU2HVX807ua3M5Z89HB21kqq28B3pLuEf9EhflCEhgh0VLa--vkKRwUMzWP7AqtGiyNXGTEg34U0L-IIqxTWw2qLUZf7R6HfMqyfdxXtMG7T6-GnZVONwwefVMwcwIRGS0defvvKlVyof" alt="King" />
-            <div class="absolute inset-0 flex items-center justify-center"><span class="px-4 py-1 bg-slate-dark/80 text-white rounded-full font-label-sm text-label-sm">Yakında</span></div>
-          </div>
-          <div class="p-4">
-            <h3 class="font-headline-md text-headline-md text-primary mb-1">King</h3>
-            <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-outline"></span><span class="font-label-sm text-label-sm text-outline">Yakında</span></div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ===== Bento: Duyurular ===== -->
-    <section class="mt-16 grid grid-cols-12 gap-6">
-      <!-- Duyurular (herkes gorur) -->
-      <div class="col-span-12 lg:col-span-8 lg:col-start-3 bg-white rounded-xl p-5 shadow-sm flex flex-col justify-between">
-        <div>
-          <h2 class="font-headline-md text-headline-sm text-primary mb-4 flex items-center gap-2">
-            <span class="material-symbols-outlined text-xl text-secondary">campaign</span> Duyurular
-          </h2>
-          <div class="space-y-3">
-            <% if (!announcements || !announcements.length) { %>
-              <p class="font-body-sm text-outline">Henüz duyuru yok.</p>
-            <% } else { %>
-              <% announcements.forEach(function(a) { %>
-                <div class="flex items-start gap-3 p-3 bg-surface-container-low rounded-lg border border-primary/5">
-                  <div>
-                    <div class="flex items-center gap-2 mb-0.5">
-                      <span class="font-label-sm text-primary font-semibold"><%= a.title %></span>
-                      <span class="text-[10px] text-outline"><%= new Date(a.created_at).toLocaleString('tr-TR') %></span>
-                    </div>
-                    <p class="font-body-sm text-on-surface leading-snug"><%= a.content.length > 120 ? a.content.slice(0,120) + '...' : a.content %></p>
-                  </div>
-                </div>
-              <% }); %>
-            <% } %>
-          </div>
-        </div>
-        <a href="/duyurular" class="mt-4 text-center py-2 bg-surface-container text-primary font-label-md text-label-sm rounded-lg hover:bg-primary hover:text-white transition-colors">Tüm Duyuruları Gör</a>
-      </div>
-    </section>
+    
 
     <% if (user) { %>
 
@@ -286,6 +333,46 @@
 
   <%- include('partials/theme-foot', { user: user }) %>
   <% if (user) { %>
+  
+  <!-- Özel Mesaj (PM) Modal -->
+  <div id="pm-modal" class="fixed bottom-4 right-4 z-[110] hidden flex-col w-[320px] bg-surface rounded-t-xl rounded-b-md shadow-2xl border border-outline-variant overflow-hidden animate-fade-in">
+    <!-- Header -->
+    <div class="bg-primary p-3 flex justify-between items-center text-white cursor-pointer" onclick="togglePmModal()">
+      <div class="flex items-center gap-2">
+        <span class="relative flex-shrink-0">
+          <span class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center font-bold overflow-hidden" id="pm-avatar">?</span>
+          <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-success-green border-2 border-primary rounded-full"></span>
+        </span>
+        <div class="flex flex-col">
+          <span class="font-label-md leading-tight" id="pm-username">Oyuncu</span>
+          <span class="text-[10px] opacity-80" id="pm-status">Çevrimiçi</span>
+        </div>
+      </div>
+      <button onclick="closePmModal(event)" class="text-white/80 hover:text-white transition-colors focus:outline-none p-1">
+        <span class="material-symbols-outlined text-sm">close</span>
+      </button>
+    </div>
+    
+    <!-- Body (Chat messages) -->
+    <div id="pm-messages" class="p-3 h-[250px] overflow-y-auto bg-surface flex flex-col gap-2 text-body-sm relative">
+       <!-- Not VIP overlay -->
+       <div id="pm-vip-overlay" class="absolute inset-0 bg-surface/90 backdrop-blur-sm hidden flex-col items-center justify-center p-4 text-center z-10">
+          <span class="material-symbols-outlined text-4xl text-yellow-500 mb-2">workspace_premium</span>
+          <p class="font-headline-sm text-primary mb-2">VIP Özel Mesaj</p>
+          <p class="text-body-sm text-outline mb-4">Özel mesaj göndermek için VIP olmalısınız.</p>
+          <button onclick="closePmModal(event); openVipModal();" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg font-label-md transition-colors shadow-sm w-full">VIP Satın Al</button>
+       </div>
+    </div>
+    
+    <!-- Input -->
+    <form id="pm-form" class="border-t border-outline-variant p-2 flex gap-2 bg-surface-container-low" onsubmit="sendPm(event)">
+      <input type="text" id="pm-input" placeholder="Bir mesaj yazın..." class="flex-1 bg-white border border-outline-variant rounded-full px-4 py-1.5 focus:border-primary focus:outline-none text-body-sm" autocomplete="off">
+      <button type="submit" id="pm-submit" class="w-8 h-8 flex items-center justify-center bg-primary text-white rounded-full hover:bg-primary-hover transition-colors flex-shrink-0">
+        <span class="material-symbols-outlined text-sm">send</span>
+      </button>
+    </form>
+  </div>
+  
   <!-- VIP Satin Al / E-Pin Modal -->
   <div id="vip-modal" class="fixed inset-0 bg-black/60 z-[100] hidden flex items-center justify-center p-4">
     <div class="bg-surface rounded-2xl shadow-2xl border border-outline-variant w-full max-w-md overflow-hidden animate-fade-in relative">
@@ -332,6 +419,86 @@
   </div>
 
   <script>
+    
+    let currentPmUser = null;
+    let isUserVip = <%= (user && user.vip > 0) ? 'true' : 'false' %>;
+
+    function openPmModal(username, avatarInitial) {
+      currentPmUser = username;
+      document.getElementById('pm-username').textContent = username;
+      document.getElementById('pm-avatar').innerHTML = avatarInitial || '?';
+      document.getElementById('pm-modal').classList.remove('hidden');
+      document.getElementById('pm-modal').classList.add('flex');
+      
+      const overlay = document.getElementById('pm-vip-overlay');
+      const input = document.getElementById('pm-input');
+      const submit = document.getElementById('pm-submit');
+      
+      if (!isUserVip) {
+        overlay.classList.remove('hidden');
+        overlay.classList.add('flex');
+        input.disabled = true;
+        submit.disabled = true;
+      } else {
+        overlay.classList.remove('flex');
+        overlay.classList.add('hidden');
+        input.disabled = false;
+        submit.disabled = false;
+        input.focus();
+        
+        // Render history if we had any
+        const msgContainer = document.getElementById('pm-messages');
+        const overlayNode = document.getElementById('pm-vip-overlay');
+        msgContainer.innerHTML = '';
+        msgContainer.appendChild(overlayNode);
+        msgContainer.innerHTML += '<div class="text-center text-[10px] text-outline my-2">Sohbet başlangıcı</div>';
+      }
+    }
+
+    function closePmModal(e) {
+      if (e) e.stopPropagation();
+      document.getElementById('pm-modal').classList.remove('flex');
+      document.getElementById('pm-modal').classList.add('hidden');
+      currentPmUser = null;
+    }
+
+    function togglePmModal() {
+      const msgs = document.getElementById('pm-messages');
+      const form = document.getElementById('pm-form');
+      if (msgs.style.display === 'none') {
+        msgs.style.display = 'flex';
+        form.style.display = 'flex';
+      } else {
+        msgs.style.display = 'none';
+        form.style.display = 'none';
+      }
+    }
+
+    function sendPm(e) {
+      e.preventDefault();
+      if (!isUserVip) return;
+      
+      const input = document.getElementById('pm-input');
+      const text = input.value.trim();
+      if (!text || !currentPmUser) return;
+      
+      const msgContainer = document.getElementById('pm-messages');
+      const time = new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+      
+      // Add my message
+      msgContainer.innerHTML += `
+        <div class="flex flex-col items-end w-full mt-1">
+          <div class="bg-primary text-white rounded-2xl rounded-br-sm px-3 py-1.5 max-w-[85%] break-words relative group">
+            ${text}
+          </div>
+          <span class="text-[9px] text-outline mt-0.5">${time}</span>
+          </div>
+        `;
+      
+      input.value = '';
+      msgContainer.scrollTop = msgContainer.scrollHeight;
+    }
+    
     function openVipModal() {
       document.getElementById('vip-modal').classList.remove('hidden');
     }
@@ -346,5 +513,8 @@
     });
   </script>
   <% } %>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>window.LOBBY_GAME_ID = 'lobby';</script>
+  <script src="/js/lobby.js"></script>
 </body>
 </html>

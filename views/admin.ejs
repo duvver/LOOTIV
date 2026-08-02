@@ -1510,12 +1510,23 @@
       document.getElementById('adm-sidebar').classList.remove('open');
     }
 
-    /* Hash'ten başlangıç sayfasını belirle */
+    /* Hash veya query parametresinden başlangıç sayfasını belirle */
     (function(){
       var hash = location.hash.replace('#','');
-      if (hash && document.getElementById('page-' + hash)) {
-        var link = document.querySelector('[data-page=' + hash + ']');
-        showPage(hash, link);
+      var urlParams = new URLSearchParams(window.location.search);
+      var tab = urlParams.get('tab') || hash;
+      
+      var saved = urlParams.get('saved');
+      if (!tab && saved) {
+        if (saved === 'gunun-sorusu') tab = 'dailyq';
+        else if (saved === 'kazikazan') tab = 'scratch';
+        else if (saved === 'dailytasks') tab = 'dailytasks';
+        else if (saved === 'market') tab = 'market';
+      }
+
+      if (tab && document.getElementById('page-' + tab)) {
+        var link = document.querySelector('[data-page=' + tab + ']');
+        showPage(tab, link);
       }
     })();
 

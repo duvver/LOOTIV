@@ -528,9 +528,16 @@
   function renderIndicator(state) {
     if (!state.indicator) {
       indicatorEl.innerHTML = '';
+      document.getElementById('infoCurrentOkey').innerHTML = '';
       return;
     }
     indicatorEl.innerHTML = miniTileHtml(state.indicator, null);
+    
+    // Oyun Modu ve Turunu guncelle (simdilik sabit ancak ileride state'den gelebilir)
+    const modeEl = document.getElementById('infoGameMode');
+    if (modeEl) modeEl.textContent = state.gameMode || 'Tek';
+    const typeEl = document.getElementById('infoGameType');
+    if (typeEl) typeEl.textContent = state.gameType || 'Katlamasız';
   }
 
   // ---- Acilan perler panosu (isleme drop hedefi) ----
@@ -705,6 +712,9 @@
         parts.push(`<div class="okey-hint">Ortadaki ${takeHint}</div>`);
       } else {
         if (mySeat && !mySeat.hasOpened) {
+          if (mySeat.mustOpenThisTurn) {
+            parts.push(`<button type="button" class="action-btn action-fold" id="okey101-undo-draw-btn">Tasi Geri Birak</button>`);
+          }
           parts.push(`<div class="okey-hint">Gruplarini bosluklarla ayirip ac; ya da tasini sag kosene surukleyip at.</div>`);
           parts.push(`<button type="button" class="action-btn action-raise" id="okey101-open-seri-btn">Seri Ac (${state.openMin}+)</button>`);
           parts.push(`<button type="button" class="action-btn action-call" id="okey101-open-cift-btn">Cift Ac (${state.ciftMin}+ cift)</button>`);
@@ -721,6 +731,9 @@
     });
     document.getElementById('okey-removebots-btn')?.addEventListener('click', () => {
       socket.emit('okey101:removebots');
+    });
+    document.getElementById('okey101-undo-draw-btn')?.addEventListener('click', () => {
+      socket.emit('okey101:undoDraw');
     });
     document.getElementById('okey101-open-seri-btn')?.addEventListener('click', () => {
       const groups = extractRackGroups(3);
@@ -772,4 +785,60 @@
   });
 
   socket.on('okey101:error', (msg) => showToast(msg));
+  renderRack(null);
 })();
+
+
+function calculateRackScore(okeySpec) {
+  const groups = extractRackGroups(3);
+  let seriTotal = 0;
+  for (const g of groups) {
+    const tiles = g.map(id => rackLayout.find(t => t && t.id === id));
+    if (tiles.some(t => !t)) continue;
+    const wilds = tiles.filter(t => t.joker || (okeySpec && t.color === okeySpec.color && t.number === okeySpec.number));
+    const normals = tiles.filter(t => !t.joker && !(okeySpec && t.color === okeySpec.color && t.number === okeySpec.number));
+    if (normals.length === 0) continue;
+    
+    // Per check
+    const isPer = normals.every(t => t.number === normals[0].number) && new Set(normals.map(t => t.color)).size === normals.length;
+    if (isPer && tiles.length <= 4) {
+        seriTotal += normals[0].number * tiles.length;
+        continue;
+    }
+    
+    // Seri check
+    if (normals.every(t => t.color === normals[0].color)) {
+        const nums = normals.map(t => t.number).sort((a,b) => a-b);
+        let valid = true;
+        for (let i=1; i<nums.length; i++) if (nums[i] === nums[i-1]) valid = false;
+        if (valid) {
+            let lo = nums[0];
+            let hi = nums[nums.length-1];
+            let freeWilds = wilds.length;
+            const span = hi - lo + 1;
+            const gaps = span - nums.length;
+            if (gaps <= freeWilds) {
+                freeWilds -= gaps;
+                while (freeWilds > 0 && hi < 13) { hi++; freeWilds--; }
+                while (freeWilds > 0 && lo > 1) { lo--; freeWilds--; }
+                if (freeWilds === 0) {
+                    seriTotal += ((lo + hi) * (hi - lo + 1)) / 2;
+                }
+            }
+        }
+    }
+  }
+  
+  let badge = document.getElementById('rack-score-badge');
+  if (!badge) {
+      badge = document.createElement('div');
+      badge.id = 'rack-score-badge';
+      badge.className = 'rack-score-badge';
+      const rackZone = document.querySelector('.ok1-rackzone');
+      if (rackZone) rackZone.appendChild(badge);
+  }
+  if (badge) {
+      badge.innerHTML = `Seri Puani: <strong>${seriTotal}</strong>`;
+  }
+}
+
