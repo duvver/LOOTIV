@@ -85,6 +85,20 @@
   var lastLoggedViewFeature = null;
   var lastLoggedViewTime = 0;
 
+  function updateWhitelistBtnUI(isJoined) {
+    var btn = document.getElementById('btn-join-whitelist');
+    if (!btn) return;
+    if (isJoined) {
+      btn.disabled = true;
+      btn.className = 'w-full py-3.5 px-6 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-bold rounded-xl shadow-lg shadow-emerald-500/25 transition-all text-sm flex items-center justify-center gap-2 cursor-default';
+      btn.innerHTML = '<span class="material-symbols-outlined text-lg">check_circle</span> <span>Erken Erişim Talebiniz Alındı</span>';
+    } else {
+      btn.disabled = false;
+      btn.className = 'w-full py-3.5 px-6 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-bold rounded-xl shadow-lg shadow-amber-500/25 hover:brightness-110 active:scale-95 transition-all text-sm flex items-center justify-center gap-2 cursor-pointer';
+      btn.innerHTML = '<span class="material-symbols-outlined text-lg">stars</span> <span>Erken Erişim Listesine Katıl (Whitelist)</span>';
+    }
+  }
+
   function openConstructionModal(featureKey) {
     var modal = document.getElementById('construction-modal');
     var card = document.getElementById('construction-modal-card');
@@ -100,9 +114,17 @@
       tip: 'Bu modül şu anda geliştirme aşamasındadır. Çok yakında hizmetinizde olacaktır!'
     };
 
-    if (featName) featName.textContent = data.title || key;
+    var featureTitle = data.title || key;
+    if (featName) featName.textContent = featureTitle;
     if (tipPara) tipPara.textContent = data.tip;
     if (iconDiv) iconDiv.textContent = data.icon;
+
+    // Kullanıcı bu özellik için önceden erken erişim talebi göndermiş mi?
+    var isJoined = false;
+    try {
+      isJoined = localStorage.getItem('lootiv_whitelist_' + featureTitle) === 'true';
+    } catch(e) {}
+    updateWhitelistBtnUI(isJoined);
 
     var now = Date.now();
     // Ayni feature 4 saniye icinde 2 kez loglanmasin
@@ -113,7 +135,7 @@
         fetch('/api/whitelist/event', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ feature: data.title || key, eventType: 'view' })
+          body: JSON.stringify({ feature: featureTitle, eventType: 'view' })
         });
       } catch(e) {}
     }
@@ -144,14 +166,13 @@
     var name = data.title || currentFeatureKey || 'Bu alan';
 
     var targetBtn = btn || document.getElementById('btn-join-whitelist');
-    var origText = targetBtn ? targetBtn.innerHTML : '';
 
     if (targetBtn) {
       targetBtn.disabled = true;
       targetBtn.innerHTML = '⌛ Kaydediliyor...';
     }
 
-    // Log click event (guaranteed completion via await)
+    // Log click event
     try {
       await fetch('/api/whitelist/event', {
         method: 'POST',
@@ -162,13 +183,15 @@
       console.error('Whitelist click event error:', e);
     }
 
-    if (targetBtn) {
-      targetBtn.disabled = false;
-      targetBtn.innerHTML = origText;
-    }
+    // Kullanıcının tarayıcısına kaydet
+    try {
+      localStorage.setItem('lootiv_whitelist_' + name, 'true');
+    } catch(e) {}
 
-    alert('Tebrikler! "' + name + '" için Erken Erişim (Whitelist) bekleme listesine kaydınız başarıyla alındı.');
-    closeConstructionModal();
+    // Buton rengini yeşil başarı durumuna çevir
+    updateWhitelistBtnUI(true);
+
+    alert('Tebrikler! "' + name + '" için Erken Erişim (Whitelist) talebiniz başarıyla alındı.');
   }
 
   // URL'de ?construction=Pazar gibi parametre varsa otomatik ac
