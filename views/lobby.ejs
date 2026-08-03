@@ -27,26 +27,29 @@
       <div class="col-span-12 <%= user ? 'md:col-span-8' : '' %> flex flex-col gap-6">
         <div class="bg-white rounded-xl shadow-sm border border-outline-variant p-4 pb-8 relative flex items-center justify-around">
             
-        <a class="flex flex-col items-center gap-2 group hover:text-primary transition-colors" href="/karakter-sec">
+        <button type="button" onclick="openConstructionModal('Karakter')" class="flex flex-col items-center gap-2 group hover:text-primary transition-colors cursor-pointer relative">
+          <span class="absolute -top-3 -right-2 px-1.5 py-0.2 bg-amber-500 text-slate-950 font-extrabold text-[9px] rounded-md uppercase tracking-wider shadow-sm">YAKINDA</span>
           <div class="w-12 h-12 bg-primary-fixed-dim text-primary rounded-lg flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
             <span class="material-symbols-outlined text-2xl">account_circle</span>
           </div>
           <span class="font-label-md text-label-md">Karakter</span>
-        </a>
+        </button>
         <div class="w-px h-12 bg-outline-variant"></div>
-        <a class="flex flex-col items-center gap-2 group hover:text-primary transition-colors" href="/envanter">
+        <button type="button" onclick="openConstructionModal('Envanter')" class="flex flex-col items-center gap-2 group hover:text-primary transition-colors cursor-pointer relative">
+          <span class="absolute -top-3 -right-2 px-1.5 py-0.2 bg-amber-500 text-slate-950 font-extrabold text-[9px] rounded-md uppercase tracking-wider shadow-sm">YAKINDA</span>
           <div class="w-12 h-12 bg-primary-fixed-dim text-primary rounded-lg flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
             <span class="material-symbols-outlined text-2xl">inventory_2</span>
           </div>
           <span class="font-label-md text-label-md">Envanter</span>
-        </a>
+        </button>
         <div class="w-px h-12 bg-outline-variant"></div>
-        <a class="flex flex-col items-center gap-2 group hover:text-primary transition-colors" href="/pazar">
+        <button type="button" onclick="openConstructionModal('Pazar')" class="flex flex-col items-center gap-2 group hover:text-primary transition-colors cursor-pointer relative">
+          <span class="absolute -top-3 -right-2 px-1.5 py-0.2 bg-amber-500 text-slate-950 font-extrabold text-[9px] rounded-md uppercase tracking-wider shadow-sm">YAKINDA</span>
           <div class="w-12 h-12 bg-primary-fixed-dim text-primary rounded-lg flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
             <span class="material-symbols-outlined text-2xl">storefront</span>
           </div>
           <span class="font-label-md text-label-md">Pazar</span>
-        </a>
+        </button>
         <div class="w-px h-12 bg-outline-variant"></div>
         <button onclick="openVipModal()" class="flex flex-col items-center gap-2 group hover:text-yellow-600 transition-colors focus:outline-none">
           <div class="w-12 h-12 bg-yellow-100 text-yellow-600 rounded-lg flex items-center justify-center group-hover:bg-yellow-500 group-hover:text-white transition-all shadow-sm border border-yellow-200">

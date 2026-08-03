@@ -1,55 +1,74 @@
 <%
-  // Nexus Play / LOOTIV tema ust menusu. Parametreler: active, user, unreadCount
+  // Nexus Play / LOOTIV tema ust menusu. Parametreler: active, user, unreadCount, pendingFriendCount
   var _active = typeof active !== 'undefined' ? active : '';
   var _unread = typeof unreadCount !== 'undefined' ? unreadCount : 0;
+  var _pendingFriends = typeof pendingFriendCount !== 'undefined' ? pendingFriendCount : 0;
   function navCls(key) {
     return key === _active
       ? 'font-label-md text-label-md text-primary border-b-2 border-primary pb-1'
       : 'font-label-md text-label-md text-outline hover:text-primary transition-colors';
   }
 %>
-<header class="sticky top-0 z-50 bg-white shadow-sm h-16 w-full">
-  <div class="flex justify-between items-center px-margin-mobile md:px-margin-desktop w-full max-w-container-max mx-auto h-full">
-    <div class="flex items-center gap-8">
-      <a href="/" class="flex items-center gap-2">
-        <img src="/images/lootivlogo.png" alt="LOOTIV" class="h-8" />
+<header class="sticky top-0 z-50 bg-white shadow-sm h-16 w-full flex items-center">
+  <div class="flex justify-between items-center px-margin-mobile md:px-margin-desktop w-full max-w-container-max mx-auto h-full gap-4">
+    <div class="flex items-center gap-4 lg:gap-8 shrink-0 min-w-0">
+      <a href="/" class="shrink-0 flex items-center gap-2">
+        <img src="/images/lootivlogo.png" alt="LOOTIV" class="shrink-0 h-9 md:h-10 max-h-10 w-auto object-contain transition-all" />
         <span class="text-headline-md font-headline-lg text-primary hidden sm:inline"></span>
       </a>
       <!-- Ana menu: herkes gorur (kisisel baglantilar sadece girise ozel) -->
       <nav class="hidden md:flex items-center gap-6 h-full">
         <a class="<%= navCls('home') %>" href="/">Anasayfa</a>
         <a class="<%= navCls('oyunlar') %>" href="/#oyunlar">Oyunlar</a>
-        <a class="<%= navCls('pazar') %>" href="/pazar">Pazar</a>
-        <a class="<%= navCls('envanter') %>" href="/envanter">Envanter</a>
+        <button type="button" onclick="openConstructionModal('Pazar')" class="flex items-center gap-1.5 font-label-md text-label-md text-outline hover:text-primary transition-colors cursor-pointer">
+          <span>Pazar</span>
+          <span class="px-1.5 py-0.5 bg-amber-500/15 text-amber-600 border border-amber-500/30 rounded-md text-[10px] font-extrabold uppercase tracking-wider">YAKINDA</span>
+        </button>
+        <button type="button" onclick="openConstructionModal('Envanter')" class="flex items-center gap-1.5 font-label-md text-label-md text-outline hover:text-primary transition-colors cursor-pointer">
+          <span>Envanter</span>
+          <span class="px-1.5 py-0.5 bg-amber-500/15 text-amber-600 border border-amber-500/30 rounded-md text-[10px] font-extrabold uppercase tracking-wider">YAKINDA</span>
+        </button>
         <a class="<%= navCls('bloglar') %>" href="/bloglar">Bloglar</a>
-        <% if (user) { %><a class="<%= navCls('arkadaslar') %>" href="/arkadaslar">Arkadaşlar</a><% } %>
-        <a class="<%= navCls('duyurular') %>" href="/duyurular">Duyurular</a>
+        <% if (user) { %>
+          <a class="<%= navCls('arkadaslar') %> relative flex items-center gap-1.5" href="/arkadaslar">
+            <span>Arkadaşlar</span>
+            <% if (_pendingFriends > 0) { %>
+              <span class="min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-error text-white text-[10px] font-extrabold rounded-full animate-pulse shadow-sm">
+                <%= _pendingFriends %>
+              </span>
+            <% } %>
+          </a>
+        <% } %>
         <% if (user && user.is_admin) { %><a class="<%= navCls('admin') %>" href="/admin">Admin</a><% } %>
       </nav>
     </div>
 
-    <div class="flex items-center gap-3">
-      <% if (user) { %>
-        <!-- LT bakiyesi -->
-        <span class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-secondary-container/40 rounded-full font-label-md text-label-sm text-on-secondary-container">
-          <span class="w-2 h-2 rounded-full bg-amber-gold"></span>
-          <%= user.lt_balance.toLocaleString('tr-TR') %> LT
-        </span>
-        <% if (user.vip_tier > 0) { %>
-          <span class="hidden sm:inline px-2 py-1 bg-energetic-purple/15 text-energetic-purple rounded-full text-label-sm font-label-md">VIP <%= user.vip_tier %></span>
-        <% } %>
+    <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+      <!-- Bildirim zili (Herkes icin duyurular ikonu) -->
+      <a href="/duyurular" class="relative p-2 text-outline hover:text-primary hover:bg-surface-container rounded-full transition-colors shrink-0" title="Duyurular">
+        <span class="material-symbols-outlined">notifications</span>
+        <span id="nav-announce-badge" class="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-error text-white text-[11px] font-bold rounded-full" <%= _unread > 0 ? '' : 'hidden' %>><%= _unread %></span>
+      </a>
 
-        <!-- Bildirim zili -->
-        <a href="/duyurular" class="relative p-2 text-outline hover:bg-surface-container rounded-full transition-colors" title="Duyurular">
-          <span class="material-symbols-outlined">notifications</span>
-          <span id="nav-announce-badge" class="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-error text-white text-[11px] font-bold rounded-full" <%= _unread > 0 ? '' : 'hidden' %>><%= _unread %></span>
+      <% if (user) { %>
+        <!-- Ayarlar (Çark İkonu) -->
+        <a href="/settings/profile" class="p-2 text-outline hover:text-primary hover:bg-surface-container rounded-full transition-colors shrink-0 flex items-center justify-center" title="Ayarlar">
+          <span class="material-symbols-outlined text-xl">settings</span>
         </a>
 
-        <!-- Ayarlar -->
-        <a href="/settings/profile" class="hidden sm:flex items-center gap-2 px-4 py-2 border border-silver-light rounded-lg font-label-md text-label-md text-primary hover:bg-surface-container transition-all">Ayarlar</a>
+        <!-- Profil resminin yanında: Üstte VIP, Altta LT bakiyesi -->
+        <div class="hidden sm:flex flex-col items-end justify-center text-right whitespace-nowrap shrink-0 leading-tight gap-0.5">
+          <span class="text-[11px] font-bold text-energetic-purple bg-energetic-purple/10 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+            👑 VIP <%= user.vip_tier > 0 ? user.vip_tier : 1 %>
+          </span>
+          <span class="text-[12px] font-extrabold text-amber-600 px-1 inline-flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0"></span>
+            <span><%= user.lt_balance.toLocaleString('tr-TR') %> LT</span>
+          </span>
+        </div>
 
         <!-- Avatar -->
-        <a href="/settings/profile" class="w-10 h-10 rounded-full bg-primary overflow-hidden border-2 border-primary/10 flex items-center justify-center text-white font-headline-lg font-bold" title="<%= user.rumuz %>">
+        <a href="/settings/profile" class="w-10 h-10 rounded-full bg-primary overflow-hidden border-2 border-primary/10 flex items-center justify-center text-white font-headline-lg font-bold shrink-0" title="<%= user.rumuz %>">
           <% if (user.avatar_url) { %>
             <img class="w-full h-full object-cover" src="<%= user.avatar_url %>" alt="<%= user.rumuz %>" />
           <% } else { %>
@@ -72,11 +91,25 @@
   <nav id="mobile-nav" class="hidden md:hidden bg-white border-t border-outline-variant px-margin-mobile py-3 flex-col gap-1">
     <a class="block py-2 font-label-md text-label-md text-on-surface" href="/">Anasayfa</a>
     <a class="block py-2 font-label-md text-label-md text-on-surface" href="/#oyunlar">Oyunlar</a>
-    <a class="block py-2 font-label-md text-label-md text-on-surface" href="/pazar">Pazar</a>
-    <a class="block py-2 font-label-md text-label-md text-on-surface" href="/envanter">Envanter</a>
+    <button type="button" onclick="openConstructionModal('Pazar')" class="w-full text-left py-2 font-label-md text-label-md text-on-surface flex items-center justify-between">
+      <span>Pazar</span>
+      <span class="px-1.5 py-0.5 bg-amber-500/15 text-amber-600 border border-amber-500/30 rounded-md text-[10px] font-extrabold uppercase tracking-wider">YAKINDA</span>
+    </button>
+    <button type="button" onclick="openConstructionModal('Envanter')" class="w-full text-left py-2 font-label-md text-label-md text-on-surface flex items-center justify-between">
+      <span>Envanter</span>
+      <span class="px-1.5 py-0.5 bg-amber-500/15 text-amber-600 border border-amber-500/30 rounded-md text-[10px] font-extrabold uppercase tracking-wider">YAKINDA</span>
+    </button>
     <a class="block py-2 font-label-md text-label-md text-on-surface" href="/bloglar">Bloglar</a>
-    <% if (user) { %><a class="block py-2 font-label-md text-label-md text-on-surface" href="/arkadaslar">Arkadaşlar</a><% } %>
-    <a class="block py-2 font-label-md text-label-md text-on-surface" href="/duyurular">Duyurular</a>
+    <% if (user) { %>
+      <a class="block py-2 font-label-md text-label-md text-on-surface flex items-center justify-between" href="/arkadaslar">
+        <span>Arkadaşlar</span>
+        <% if (_pendingFriends > 0) { %>
+          <span class="min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-error text-white text-[10px] font-extrabold rounded-full shadow-sm">
+            <%= _pendingFriends %>
+          </span>
+        <% } %>
+      </a>
+    <% } %>
     <% if (user) { %>
       <a class="block py-2 font-label-md text-label-md text-on-surface" href="/settings/profile">Ayarlar</a>
       <% if (user.is_admin) { %><a class="block py-2 font-label-md text-label-md text-on-surface" href="/admin">Admin</a><% } %>

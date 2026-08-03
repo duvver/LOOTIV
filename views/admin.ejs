@@ -38,7 +38,7 @@
       text-decoration: none;
     }
 
-    .adm-sidebar-brand img { height: 30px; }
+    .adm-sidebar-brand img { height: 36px; width: auto; object-fit: contain; }
 
     .adm-sidebar-label {
       font-size: 11px;
@@ -539,9 +539,19 @@
         <span class="adm-nav-icon">&#128081;</span> VIP Yonetimi
       </a>
 
+      <div class="adm-nav-group">Satış</div>
+      <a class="adm-nav-link" data-page="epin" onclick="showPage('epin',this)">
+        <span class="adm-nav-icon">&#128273;</span> Satış & E-Pin
+      </a>
+
       <div class="adm-nav-group">Pazar</div>
       <a class="adm-nav-link" data-page="market" onclick="showPage('market',this)">
         <span class="adm-nav-icon">&#128722;</span> Pazar Yonetimi
+      </a>
+
+      <div class="adm-nav-group">Analiz & Katılım</div>
+      <a class="adm-nav-link" data-page="whitelist" onclick="showPage('whitelist',this)">
+        <span class="adm-nav-icon">&#128640;</span> Erken Erişim (Whitelist)
       </a>
     </div>
 
@@ -1107,148 +1117,6 @@
       </div>
       <!-- End of first section -->
 
-    <!-- VIP E-Pin / Token Olusturma -->
-      <div class="adm-section open">
-        <div class="adm-section-head" onclick="toggleSection(this)">
-          <span class="adm-section-head-icon">&#128273;</span>
-          <div class="adm-section-head-text">
-            <div class="adm-section-head-title">VIP Token (E-Pin) Uret</div>
-            <div class="adm-section-head-sub">Bynogame, Kopazar vs. icin satilabilir kod olustur</div>
-          </div>
-          <span class="adm-chevron">&#9660;</span>
-        </div>
-        <div class="adm-section-body">
-          <form class="adm-form" method="POST" action="/admin/vip-codes/generate">
-            <div class="adm-form-row adm-form-row-2">
-              <div class="adm-field">
-                <label>VIP Seviyesi</label>
-                <select name="tier" class="adm-select" required>
-                  <option value="1">VIP 1</option>
-                  <option value="2">VIP 2</option>
-                  <option value="3">VIP 3</option>
-                </select>
-              </div>
-              <div class="adm-field">
-                <label>Miktar (Kac Adet)</label>
-                <input type="number" name="count" value="1" min="1" max="50" required class="adm-input" />
-              </div>
-            </div>
-            <div class="adm-form-footer">
-              <button class="adm-save-btn">Kod Uret</button>
-            </div>
-          </form>
-
-          <div class="adm-table-scroll mt-4" style="margin-top:20px;">
-            <table class="adm-table">
-              <thead>
-                <tr>
-                  <th>Kod</th>
-                  <th>Seviye</th>
-                  <th>Durum</th>
-                  <th>Kullanan</th>
-                  <th>Olusturulma</th>
-                  <th>Islem</th>
-                </tr>
-              </thead>
-              <tbody>
-                <% if (typeof vipCodes !== 'undefined' && vipCodes.length > 0) { %>
-                  <% vipCodes.forEach(function(code) { %>
-                    <tr>
-                      <td><strong style="color:var(--green-bright);letter-spacing:1px;"><%= code.code %></strong></td>
-                      <td><span class="adm-tag adm-tag-purple">VIP <%= code.tier %></span></td>
-                      <td>
-                        <% if (code.is_used) { %>
-                          <span class="adm-tag adm-tag-red">Kullanildi</span>
-                        <% } else { %>
-                          <span class="adm-tag adm-tag-green">Aktif</span>
-                        <% } %>
-                      </td>
-                      <td>
-                        <% if (code.is_used) { %>
-                          <% const usedUser = users.find(u => u.id === code.used_by); %>
-                          <span style="color:#e6edf3"><%= usedUser ? usedUser.rumuz : 'ID: ' + code.used_by %></span>
-                          <div style="font-size:11px;color:#8b949e"><%= new Date(code.used_at).toLocaleDateString('tr-TR') %></div>
-                        <% } else { %>
-                          <span style="color:#8b949e">—</span>
-                        <% } %>
-                      </td>
-                      <td style="color:#8b949e;font-size:12px;"><%= new Date(code.created_at).toLocaleDateString('tr-TR') %></td>
-                      <td>
-                        <form action="/admin/vip-codes/delete" method="POST" style="display:inline;" onsubmit="return confirm('Bu kodu silmek istediginize emin misiniz?');">
-                          <input type="hidden" name="code" value="<%= code.code %>">
-                          <button type="submit" class="adm-btn red" style="padding:4px 8px;font-size:12px;" title="Sil">&#128465;</button>
-                        </form>
-                      </td>
-                    </tr>
-                  <% }); %>
-                <% } else { %>
-                  <tr><td colspan="6" style="text-align:center;color:#8b949e;padding:16px;">Hic kod uretilmedi.</td></tr>
-                <% } %>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- VIP Linkleri Yonetimi -->
-      <div class="adm-section open">
-        <div class="adm-section-head" onclick="toggleSection(this)">
-          <span class="adm-section-head-icon">&#128279;</span>
-          <div class="adm-section-head-text">
-            <div class="adm-section-head-title">VIP Satin Alma Linkleri</div>
-            <div class="adm-section-head-sub">Lobi ekranindaki modalda gosterilecek alisveris linkleri</div>
-          </div>
-          <span class="adm-chevron">&#9660;</span>
-        </div>
-        <div class="adm-section-body">
-          <form class="adm-form" method="POST" action="/admin/vip-links/add">
-            <div class="adm-form-row adm-form-row-2">
-              <div class="adm-field">
-                <label>Platform Adi</label>
-                <input type="text" name="name" placeholder="Orn: ByNoGame" required class="adm-input" />
-              </div>
-              <div class="adm-field">
-                <label>Satis Linki URL</label>
-                <input type="url" name="url" placeholder="https://..." required class="adm-input" />
-              </div>
-            </div>
-            <div class="adm-form-footer">
-              <button class="adm-save-btn">Link Ekle</button>
-            </div>
-          </form>
-
-          <div class="adm-table-scroll mt-4" style="margin-top:20px;">
-            <table class="adm-table">
-              <thead>
-                <tr>
-                  <th>Platform Adi</th>
-                  <th>Satis Linki (URL)</th>
-                  <th style="width:100px;text-align:right;">İşlem</th>
-                </tr>
-              </thead>
-              <tbody>
-                <% if (typeof vipLinks !== 'undefined' && vipLinks.length > 0) { %>
-                  <% vipLinks.forEach(function(link) { %>
-                    <tr>
-                      <td style="font-weight:500;color:#e6edf3"><%= link.name %></td>
-                      <td style="color:#8b949e"><a href="<%= link.url %>" target="_blank" style="color:#58a6ff;text-decoration:none;"><%= link.url.length > 50 ? link.url.substring(0, 50) + '...' : link.url %></a></td>
-                      <td style="text-align:right;">
-                        <form action="/admin/vip-links/delete" method="POST" style="display:inline;" onsubmit="return confirm('Bu linki silmek istediginize emin misiniz?');">
-                          <input type="hidden" name="id" value="<%= link.id %>">
-                          <button type="submit" class="adm-btn red" style="padding:4px 8px;font-size:12px;" title="Sil">&#128465;</button>
-                        </form>
-                      </td>
-                    </tr>
-                  <% }); %>
-                <% } else { %>
-                  <tr><td colspan="3" style="text-align:center;color:#8b949e;padding:16px;">Hic link eklenmedi.</td></tr>
-                <% } %>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
       <!-- VIP plan bilgileri -->
       <div class="adm-section open">
         <div class="adm-section-head" onclick="toggleSection(this)">
@@ -1274,6 +1142,253 @@
                     <td class="adm-pos">+<%= p.weekly.toLocaleString('tr-TR') %> LT / hafta</td>
                   </tr>
                 <% }); %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== SAYFA: Satış & E-Pin ========== -->
+    <div class="adm-page" id="page-epin">
+
+      <!-- E-Pin Olusturma -->
+      <div class="adm-section open">
+        <div class="adm-section-head" onclick="toggleSection(this)">
+          <span class="adm-section-head-icon">&#128273;</span>
+          <div class="adm-section-head-text">
+            <div class="adm-section-head-title">VIP Token (E-Pin) Uret</div>
+            <div class="adm-section-head-sub">Platform secip satilabilir kod olustur</div>
+          </div>
+          <span class="adm-chevron">&#9660;</span>
+        </div>
+        <div class="adm-section-body">
+          <form class="adm-form" method="POST" action="/admin/vip-codes/generate">
+            <div class="adm-form-row adm-form-row-3">
+              <div class="adm-field">
+                <label>VIP Seviyesi</label>
+                <select name="tier" class="adm-select" required>
+                  <option value="1">VIP 1</option>
+                  <option value="2">VIP 2</option>
+                  <option value="3">VIP 3</option>
+                </select>
+              </div>
+              <div class="adm-field">
+                <label>Platform</label>
+                <select name="platform" class="adm-select" required>
+                  <% if (typeof vipLinks !== 'undefined' && vipLinks.length > 0) { %>
+                    <% vipLinks.forEach(function(link) { %>
+                      <option value="<%= link.name.toLowerCase() %>"><%= link.name %></option>
+                    <% }); %>
+                  <% } %>
+                  <option value="genel">Genel (Platform Belirtme)</option>
+                </select>
+              </div>
+              <div class="adm-field">
+                <label>Miktar (Kac Adet)</label>
+                <input type="number" name="count" value="1" min="1" max="50" required class="adm-input" />
+              </div>
+            </div>
+            <div class="adm-form-footer">
+              <button class="adm-save-btn">Kod Uret</button>
+            </div>
+          </form>
+
+          <!-- Disa Aktar Butonlari -->
+          <div style="margin-top:16px; padding:16px; background:rgba(88,166,255,0.06); border:1px solid rgba(88,166,255,0.15); border-radius:12px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+            <span style="font-weight:600; color:#e6edf3; font-size:14px; margin-right:4px;">&#128229; Dışa Aktar (TXT):</span>
+            <a href="/admin/vip-codes/export" class="adm-btn green" style="padding:6px 14px; font-size:13px; text-decoration:none; display:inline-flex; align-items:center; gap:4px;">
+              &#128196; Tümü
+            </a>
+            <a href="/admin/vip-codes/export?status=active" class="adm-btn green" style="padding:6px 14px; font-size:13px; text-decoration:none; display:inline-flex; align-items:center; gap:4px;">
+              &#9989; Sadece Aktifler
+            </a>
+            <% if (typeof vipLinks !== 'undefined' && vipLinks.length > 0) { %>
+              <span style="color:#8b949e; font-size:12px;">|</span>
+              <% vipLinks.forEach(function(link) { %>
+                <a href="/admin/vip-codes/export?platform=<%= link.name.toLowerCase() %>&status=active" class="adm-btn" style="padding:6px 14px; font-size:13px; text-decoration:none; background:linear-gradient(135deg,#58a6ff,#388bfd); color:#fff; display:inline-flex; align-items:center; gap:4px;">
+                  &#128194; <%= link.name %> (Aktif)
+                </a>
+              <% }); %>
+            <% } %>
+          </div>
+
+          <%
+            var activeCodes = (typeof vipCodes !== 'undefined' ? vipCodes : []).filter(function(c){ return !c.is_used; });
+            var usedCodes = (typeof vipCodes !== 'undefined' ? vipCodes : []).filter(function(c){ return c.is_used; });
+          %>
+
+          <!-- Aktif Kodlar Tablosu -->
+          <div style="margin-top:20px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+              <span style="font-weight:600;color:#3fb950;font-size:14px;">&#9989; Aktif Kodlar</span>
+              <span class="adm-tag adm-tag-green"><%= activeCodes.length %> adet</span>
+            </div>
+            <div class="adm-table-scroll">
+              <table class="adm-table">
+                <thead>
+                  <tr>
+                    <th>Kod</th>
+                    <th>Seviye</th>
+                    <th>Platform</th>
+                    <th>Olusturulma</th>
+                    <th>Islem</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% if (activeCodes.length > 0) { %>
+                    <% activeCodes.forEach(function(code) { %>
+                      <tr>
+                        <td><strong style="color:var(--green-bright);letter-spacing:1px;"><%= code.code %></strong></td>
+                        <td><span class="adm-tag adm-tag-purple">VIP <%= code.tier %></span></td>
+                        <td>
+                          <% var pName = (code.platform || 'genel'); %>
+                          <% if (pName === 'genel') { %>
+                            <span class="adm-tag adm-tag-gray">Genel</span>
+                          <% } else if (pName === 'bynogame') { %>
+                            <span class="adm-tag" style="background:linear-gradient(135deg,#ff6b35,#f7931e);color:#fff;">ByNoGame</span>
+                          <% } else if (pName === 'kopazar') { %>
+                            <span class="adm-tag" style="background:linear-gradient(135deg,#2196F3,#00BCD4);color:#fff;">Kopazar</span>
+                          <% } else { %>
+                            <span class="adm-tag adm-tag-blue"><%= pName %></span>
+                          <% } %>
+                        </td>
+                        <td style="color:#8b949e;font-size:12px;"><%= new Date(code.created_at).toLocaleDateString('tr-TR') %></td>
+                        <td>
+                          <form action="/admin/vip-codes/delete" method="POST" style="display:inline;" onsubmit="return confirm('Bu kodu silmek istediginize emin misiniz?');">
+                            <input type="hidden" name="code" value="<%= code.code %>">
+                            <button type="submit" class="adm-btn red" style="padding:4px 8px;font-size:12px;" title="Sil">&#128465;</button>
+                          </form>
+                        </td>
+                      </tr>
+                    <% }); %>
+                  <% } else { %>
+                    <tr><td colspan="5" style="text-align:center;color:#8b949e;padding:16px;">Aktif kod bulunmuyor.</td></tr>
+                  <% } %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Kullanilan Kodlar (Ayri Kategori) -->
+      <div class="adm-section">
+        <div class="adm-section-head" onclick="toggleSection(this)">
+          <span class="adm-section-head-icon">&#128203;</span>
+          <div class="adm-section-head-text">
+            <div class="adm-section-head-title">Kullanilan Kodlar</div>
+            <div class="adm-section-head-sub">Daha once kullanilmis E-Pin kodlari</div>
+          </div>
+          <span class="adm-section-badge adm-section-badge amber"><%= usedCodes.length %> adet</span>
+          <span class="adm-chevron">&#9660;</span>
+        </div>
+        <div class="adm-section-body">
+          <div class="adm-table-scroll">
+            <table class="adm-table">
+              <thead>
+                <tr>
+                  <th>Kod</th>
+                  <th>Seviye</th>
+                  <th>Platform</th>
+                  <th>Kullanan</th>
+                  <th>Kullanilma Tarihi</th>
+                  <th>Islem</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (usedCodes.length > 0) { %>
+                  <% usedCodes.forEach(function(code) { %>
+                    <tr style="opacity:0.7;">
+                      <td><strong style="color:#8b949e;letter-spacing:1px;text-decoration:line-through;"><%= code.code %></strong></td>
+                      <td><span class="adm-tag adm-tag-purple">VIP <%= code.tier %></span></td>
+                      <td>
+                        <% var pName2 = (code.platform || 'genel'); %>
+                        <% if (pName2 === 'genel') { %>
+                          <span class="adm-tag adm-tag-gray">Genel</span>
+                        <% } else if (pName2 === 'bynogame') { %>
+                          <span class="adm-tag" style="background:linear-gradient(135deg,#ff6b35,#f7931e);color:#fff;">ByNoGame</span>
+                        <% } else if (pName2 === 'kopazar') { %>
+                          <span class="adm-tag" style="background:linear-gradient(135deg,#2196F3,#00BCD4);color:#fff;">Kopazar</span>
+                        <% } else { %>
+                          <span class="adm-tag adm-tag-blue"><%= pName2 %></span>
+                        <% } %>
+                      </td>
+                      <td>
+                        <% const usedUser = users.find(u => u.id === code.used_by); %>
+                        <span style="color:#e6edf3"><%= usedUser ? usedUser.rumuz : 'ID: ' + code.used_by %></span>
+                      </td>
+                      <td style="color:#8b949e;font-size:12px;"><%= code.used_at ? new Date(code.used_at).toLocaleDateString('tr-TR') : '—' %></td>
+                      <td>
+                        <form action="/admin/vip-codes/delete" method="POST" style="display:inline;" onsubmit="return confirm('Bu kodu silmek istediginize emin misiniz?');">
+                          <input type="hidden" name="code" value="<%= code.code %>">
+                          <button type="submit" class="adm-btn red" style="padding:4px 8px;font-size:12px;" title="Sil">&#128465;</button>
+                        </form>
+                      </td>
+                    </tr>
+                  <% }); %>
+                <% } else { %>
+                  <tr><td colspan="6" style="text-align:center;color:#8b949e;padding:16px;">Henuz kullanilmis kod yok.</td></tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Satis Platformlari Yonetimi -->
+      <div class="adm-section open">
+        <div class="adm-section-head" onclick="toggleSection(this)">
+          <span class="adm-section-head-icon">&#128279;</span>
+          <div class="adm-section-head-text">
+            <div class="adm-section-head-title">Satis Platformlari</div>
+            <div class="adm-section-head-sub">E-Pin kodlarinin satildigi platformlari yonet (ByNoGame, Kopazar vb.)</div>
+          </div>
+          <span class="adm-chevron">&#9660;</span>
+        </div>
+        <div class="adm-section-body">
+          <form class="adm-form" method="POST" action="/admin/vip-links/add">
+            <div class="adm-form-row adm-form-row-2">
+              <div class="adm-field">
+                <label>Platform Adi</label>
+                <input type="text" name="name" placeholder="Orn: ByNoGame" required class="adm-input" />
+              </div>
+              <div class="adm-field">
+                <label>Satis Linki URL</label>
+                <input type="url" name="url" placeholder="https://..." required class="adm-input" />
+              </div>
+            </div>
+            <div class="adm-form-footer">
+              <button class="adm-save-btn">Platform Ekle</button>
+            </div>
+          </form>
+
+          <div class="adm-table-scroll mt-4" style="margin-top:20px;">
+            <table class="adm-table">
+              <thead>
+                <tr>
+                  <th>Platform Adi</th>
+                  <th>Satis Linki (URL)</th>
+                  <th style="width:100px;text-align:right;">İşlem</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (typeof vipLinks !== 'undefined' && vipLinks.length > 0) { %>
+                  <% vipLinks.forEach(function(link) { %>
+                    <tr>
+                      <td style="font-weight:500;color:#e6edf3"><%= link.name %></td>
+                      <td style="color:#8b949e"><a href="<%= link.url %>" target="_blank" style="color:#58a6ff;text-decoration:none;"><%= link.url.length > 50 ? link.url.substring(0, 50) + '...' : link.url %></a></td>
+                      <td style="text-align:right;">
+                        <form action="/admin/vip-links/delete" method="POST" style="display:inline;" onsubmit="return confirm('Bu platformu silmek istediginize emin misiniz?');">
+                          <input type="hidden" name="id" value="<%= link.id %>">
+                          <button type="submit" class="adm-btn red" style="padding:4px 8px;font-size:12px;" title="Sil">&#128465;</button>
+                        </form>
+                      </td>
+                    </tr>
+                  <% }); %>
+                <% } else { %>
+                  <tr><td colspan="3" style="text-align:center;color:#8b949e;padding:16px;">Hic platform eklenmedi.</td></tr>
+                <% } %>
               </tbody>
             </table>
           </div>
@@ -1478,6 +1593,178 @@
       </div>
     </div>
 
+    <!-- ========== SAYFA: Erken Erişim (Whitelist) ========== -->
+    <%
+      var _wlStats = (typeof whitelistStats !== 'undefined' && whitelistStats) ? whitelistStats : { summary: { total_views: 0, total_clicks: 0, total_users: 0 }, byFeature: [] };
+      var _wlLogs = (typeof whitelistLogs !== 'undefined' && whitelistLogs) ? whitelistLogs : [];
+    %>
+    <div class="adm-page" id="page-whitelist">
+
+      <!-- İstatistik Özet Kartları -->
+      <div class="adm-stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:24px;">
+        <div class="adm-stat-card">
+          <div class="adm-stat-icon" style="background:rgba(88,166,255,0.15);color:#58a6ff;">👁️</div>
+          <div class="adm-stat-info">
+            <div class="adm-stat-val"><%= _wlStats.summary.total_views %></div>
+            <div class="adm-stat-lbl">Toplam Görüntülenme</div>
+          </div>
+        </div>
+
+        <div class="adm-stat-card">
+          <div class="adm-stat-icon" style="background:rgba(63,185,80,0.15);color:#3fb950;">⭐</div>
+          <div class="adm-stat-info">
+            <div class="adm-stat-val"><%= _wlStats.summary.total_clicks %></div>
+            <div class="adm-stat-lbl">Erken Erişim Kaydı (Tıklama)</div>
+          </div>
+        </div>
+
+        <div class="adm-stat-card">
+          <div class="adm-stat-icon" style="background:rgba(188,140,255,0.15);color:#bc8cff;">👤</div>
+          <div class="adm-stat-info">
+            <div class="adm-stat-val"><%= _wlStats.summary.total_users %></div>
+            <div class="adm-stat-lbl">Tekil Katılan Kullanıcı</div>
+          </div>
+        </div>
+
+        <div class="adm-stat-card">
+          <div class="adm-stat-icon" style="background:rgba(210,153,34,0.15);color:#d29922;">📈</div>
+          <div class="adm-stat-info">
+            <%
+              var totalV = _wlStats.summary.total_views;
+              var totalC = _wlStats.summary.total_clicks;
+              var convRate = totalV > 0 ? ((totalC / totalV) * 100).toFixed(1) : 0;
+            %>
+            <div class="adm-stat-val">%<%= convRate %></div>
+            <div class="adm-stat-lbl">Ortalama Katılım Oranı</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Kategori Bazlı Analiz Tablosu -->
+      <div class="adm-section open">
+        <div class="adm-section-head" onclick="toggleSection(this)">
+          <span class="adm-section-head-icon">📊</span>
+          <div class="adm-section-head-text">
+            <div class="adm-section-head-title">Özellik Bazlı İstatistikler</div>
+            <div class="adm-section-head-sub">Hangi kategori kaç kez görüntülendi ve kaç kişi erken erişime katıldı?</div>
+          </div>
+          <span class="adm-chevron">▼</span>
+        </div>
+        <div class="adm-section-body">
+          <div class="adm-table-scroll">
+            <table class="adm-table">
+              <thead>
+                <tr>
+                  <th>Özellik / Kategori</th>
+                  <th>Görüntülenme (Kaç Kişi Gördü)</th>
+                  <th>Erken Erişim Kaydı (Kaç Kişi Tıkladı)</th>
+                  <th>Tekil Katılan Üye</th>
+                  <th>Katılım Oranı</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (_wlStats.byFeature && _wlStats.byFeature.length > 0) { %>
+                  <% _wlStats.byFeature.forEach(function(feat) { %>
+                    <tr>
+                      <td>
+                        <strong style="color:#e6edf3;font-size:14px;"><%= feat.feature %></strong>
+                      </td>
+                      <td>
+                        <span class="adm-tag adm-tag-blue">👁️ <%= feat.views %> Görüntülenme</span>
+                      </td>
+                      <td>
+                        <span class="adm-tag adm-tag-green">⭐ <%= feat.clicks %> Katılım</span>
+                      </td>
+                      <td>
+                        <span style="color:#e6edf3;font-weight:600;"><%= feat.unique_users %> Üye</span>
+                      </td>
+                      <td>
+                        <% var fRate = feat.views > 0 ? ((feat.clicks / feat.views) * 100).toFixed(1) : 0; %>
+                        <span class="adm-tag adm-tag-purple">%<%= fRate %></span>
+                      </td>
+                    </tr>
+                  <% }); %>
+                <% } else { %>
+                  <tr><td colspan="5" style="text-align:center;color:#8b949e;padding:16px;">Henüz erken erişim verisi kaydı yok.</td></tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Detaylı Olay & Kullanıcı Logları -->
+      <div class="adm-section open">
+        <div class="adm-section-head" onclick="toggleSection(this)">
+          <span class="adm-section-head-icon">📜</span>
+          <div class="adm-section-head-text" style="flex:1;">
+            <div class="adm-section-head-title">Erken Erişim İşlem Günlüğü (Kimin Yaptığı)</div>
+            <div class="adm-section-head-sub">Son katılım ve görüntüleme hareketleri</div>
+          </div>
+          <% if (_wlLogs && _wlLogs.length > 0) { %>
+            <form action="/admin/whitelist/logs/clear" method="POST" onsubmit="return confirm('TÜM Erken Erişim ve test kayıtlarını sıfırlamak istediğinize emin misiniz?');" style="margin-right:12px;" onclick="event.stopPropagation();">
+              <button type="submit" class="adm-btn adm-btn-danger" style="font-size:12px;padding:4px 10px;display:flex;items-center;gap:4px;">
+                🗑️ Tüm Test Verilerini Temizle
+              </button>
+            </form>
+          <% } %>
+          <span class="adm-chevron">▼</span>
+        </div>
+        <div class="adm-section-body">
+          <div class="adm-table-scroll">
+            <table class="adm-table">
+              <thead>
+                <tr>
+                  <th>Kullanıcı (Kimin Yaptığı)</th>
+                  <th>Kategori / Özellik</th>
+                  <th>İşlem Türü</th>
+                  <th>Tarih & Saat</th>
+                  <th style="text-align:right;">İşlem</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (_wlLogs && _wlLogs.length > 0) { %>
+                  <% _wlLogs.forEach(function(log) { %>
+                    <tr>
+                      <td>
+                        <strong style="color:#e6edf3;"><%= log.rumuz || 'Ziyaretçi' %></strong>
+                        <% if (log.user_id) { %>
+                          <span style="font-size:11px;color:#8b949e;margin-left:4px;">(ID: <%= log.user_id %>)</span>
+                        <% } %>
+                      </td>
+                      <td>
+                        <span class="adm-tag adm-tag-blue"><%= log.feature %></span>
+                      </td>
+                      <td>
+                        <% if (log.event_type === 'click') { %>
+                          <span class="adm-tag adm-tag-green" style="font-weight:bold;">⭐ Erken Erişime Katıldı</span>
+                        <% } else { %>
+                          <span class="adm-tag adm-tag-gray">👁️ Modalı Görüntüledi</span>
+                        <% } %>
+                      </td>
+                      <td style="color:#8b949e;font-size:12px;">
+                        <%= new Date(log.created_at).toLocaleString('tr-TR') %>
+                      </td>
+                      <td style="text-align:right;">
+                        <form action="/admin/whitelist/logs/<%= log.id %>/delete" method="POST" onsubmit="return confirm('Bu kaydı silmek istediğinize emin misiniz?');" style="display:inline;">
+                          <button type="submit" class="adm-btn adm-btn-danger" style="padding:2px 8px;font-size:11px;" title="Kaydı Sil">
+                            🗑️ Sil
+                          </button>
+                        </form>
+                      </td>
+                    </tr>
+                  <% }); %>
+                <% } else { %>
+                  <tr><td colspan="5" style="text-align:center;color:#8b949e;padding:16px;">İşlem kaydı bulunmuyor.</td></tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
   </div><!-- /adm-content -->
 
   <script src="/socket.io/socket.io.js"></script>
@@ -1493,7 +1780,9 @@
       dailyq:        'Günün Sorusu',
       scratch:       'Kazı Kazan',
       vip:           'VIP Yönetimi',
-      market:        'Pazar Yönetimi'
+      epin:          'Satış & E-Pin',
+      market:        'Pazar Yönetimi',
+      whitelist:     'Erken Erişim (Whitelist)'
     };
 
     function showPage(id, linkEl) {

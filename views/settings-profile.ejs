@@ -16,6 +16,22 @@
     };
     var myChar = user.character_class && CHAR_MAP[user.character_class] ? CHAR_MAP[user.character_class] : null;
     var fullyVerified = user.email_verified && user.phone_verified;
+
+    var vipPlansMap = {
+      1: { name: 'VIP 1', instant: '10.000 LT', weekly: '10.000 LT' },
+      2: { name: 'VIP 2', instant: '15.000 LT', weekly: '15.000 LT' },
+      3: { name: 'VIP 3', instant: '20.000 LT', weekly: '20.000 LT' }
+    };
+    var activeVip = user.vip_tier > 0 ? (vipPlansMap[user.vip_tier] || { name: 'VIP ' + user.vip_tier, instant: '10.000 LT', weekly: '10.000 LT' }) : null;
+    var daysLeft = 0;
+    var expiresDateStr = '—';
+    if (user.vip_expires_at) {
+      var expDate = new Date(user.vip_expires_at);
+      var now = new Date();
+      var diffTime = expDate - now;
+      daysLeft = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+      expiresDateStr = expDate.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+    }
   %>
 
   <main class="flex-grow max-w-4xl mx-auto w-full px-margin-mobile md:px-margin-desktop py-8">
@@ -50,29 +66,36 @@
       <div class="bg-white rounded-xl border border-outline-variant/30 shadow-sm p-6">
         <h2 class="font-headline-md text-headline-md text-primary mb-4">Profil Resmi</h2>
         <div class="flex items-center gap-4 flex-wrap">
-          <span id="avatar-preview" class="w-20 h-20 rounded-full bg-primary text-white flex items-center justify-center text-3xl font-bold overflow-hidden">
+          <span id="avatar-preview" class="w-20 h-20 rounded-full bg-primary text-white flex items-center justify-center text-3xl font-bold overflow-hidden shrink-0 border-2 border-primary/10">
             <% if (user.avatar_url) { %><img class="w-full h-full object-cover" src="<%= user.avatar_url %>" alt="" /><% } else { %><span><%= user.rumuz.charAt(0).toUpperCase() %></span><% } %>
           </span>
-          <form method="POST" action="/settings/profile/avatar" id="avatar-form" class="flex-1 min-w-[200px] space-y-2">
-            <input type="url" name="avatar_url" id="avatar-url" placeholder="Resim baglantisi (https://...)" value="<%= user.avatar_url && user.avatar_url.slice(0,5) !== 'data:' ? user.avatar_url : '' %>" class="w-full px-3 py-2 border border-silver-light rounded-lg focus:ring-2 focus:ring-primary outline-none text-body-sm" />
-            <input type="file" id="avatar-file" accept="image/png,image/jpeg,image/gif,image/webp" class="text-body-sm" />
-            <p class="text-label-sm text-outline">Baglanti yapistir ya da bilgisayardan sec (~500 KB).</p>
-            <div class="flex gap-2">
-              <button type="submit" class="px-4 py-2 bg-primary text-white rounded-lg font-label-md text-label-sm">Kaydet</button>
-              <% if (user.avatar_url) { %><button type="submit" id="avatar-remove" class="px-4 py-2 border border-silver-light text-on-surface-variant rounded-lg font-label-md text-label-sm">Kaldir</button><% } %>
+          <form method="POST" action="/settings/profile/avatar" id="avatar-form" class="flex-1 min-w-[200px] space-y-3">
+            <input type="hidden" name="avatar_url" id="avatar-url" value="<%= user.avatar_url || '' %>" />
+            <div class="flex items-center gap-2">
+              <label for="avatar-file" class="cursor-pointer px-4 py-2 bg-surface-container border border-silver-light hover:bg-surface-container-high text-primary font-label-md text-label-sm rounded-lg flex items-center gap-2 transition-all">
+                <span class="material-symbols-outlined text-lg">upload_file</span>
+                Bilgisayardan Fotoğraf Seç
+              </label>
+              <input type="file" id="avatar-file" accept="image/png,image/jpeg,image/gif,image/webp" class="hidden" />
+            </div>
+            <p id="avatar-file-name" class="text-label-sm text-outline">Bilgisayarınızdan bir resim seçin (Maks. 500 KB).</p>
+            <div class="flex gap-2 pt-1">
+              <button type="submit" class="px-5 py-2 bg-primary text-white rounded-lg font-label-md text-label-sm hover:opacity-90 transition-all">Kaydet</button>
+              <% if (user.avatar_url) { %><button type="submit" id="avatar-remove" class="px-4 py-2 border border-silver-light text-on-surface-variant rounded-lg font-label-md text-label-sm hover:bg-surface-container transition-all">Kaldır</button><% } %>
             </div>
           </form>
         </div>
       </div>
 
       <!-- Karakter -->
-      <div class="bg-white rounded-xl border border-outline-variant/30 shadow-sm p-6">
+      <div class="bg-white rounded-xl border border-outline-variant/30 shadow-sm p-6 relative">
+        <span class="absolute top-4 right-4 px-2 py-0.5 bg-amber-500/15 text-amber-600 border border-amber-500/30 rounded-md text-xs font-extrabold uppercase tracking-wider">YAKINDA</span>
         <h2 class="font-headline-md text-headline-md text-primary mb-4">Karakterim</h2>
         <div class="flex items-center gap-4">
           <span class="w-16 h-16 rounded-full bg-primary-fixed-dim text-primary flex items-center justify-center text-3xl"><%- myChar ? myChar.icon : '&#63;' %></span>
           <div>
             <p class="font-headline-md text-primary"><%= myChar ? myChar.name : 'Henuz secilmedi' %></p>
-            <a href="/karakter-sec" class="inline-block mt-2 px-4 py-2 border border-silver-light text-primary rounded-lg font-label-md text-label-sm hover:bg-surface-container-low transition-all">Karakteri Degistir</a>
+            <button type="button" onclick="openConstructionModal('Karakter Seçimi')" class="inline-block mt-2 px-4 py-2 border border-silver-light text-primary rounded-lg font-label-md text-label-sm hover:bg-surface-container-low transition-all">Karakteri Değiştir</button>
           </div>
         </div>
       </div>
@@ -139,18 +162,148 @@
         <% } %>
       </div>
 
-      <!-- VIP Kodu -->
-      <div class="bg-white rounded-xl border border-outline-variant/30 shadow-sm p-6 lg:col-span-2">
-        <div class="flex items-center gap-2 mb-3">
-          <span class="material-symbols-outlined text-energetic-purple">diamond</span>
-          <h2 class="font-headline-md text-headline-md text-primary">VIP Aktifleştir</h2>
+      <!-- VIP Kategorisi ve Detaylı Durum Kartı -->
+      <% if (user.vip_tier > 0) { %>
+        <div class="bg-gradient-to-br from-slate-900 via-purple-950 to-slate-950 text-white rounded-2xl border border-purple-500/30 shadow-xl p-6 md:p-8 lg:col-span-2 relative overflow-hidden">
+          <!-- Arka Plan Glow Efektleri -->
+          <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-purple-600/10 rounded-full blur-3xl pointer-events-none"></div>
+          <div class="absolute -left-10 -top-10 w-48 h-48 bg-amber-500/10 rounded-full blur-2xl pointer-events-none"></div>
+
+          <!-- Üst Başlık & VIP Durum Kartı -->
+          <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-6 border-b border-white/10 relative z-10">
+            <div class="flex items-center gap-4">
+              <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white text-3xl shadow-lg shadow-amber-500/20 ring-4 ring-amber-400/20 shrink-0">
+                👑
+              </div>
+              <div>
+                <div class="flex items-center gap-3 flex-wrap">
+                  <h2 class="text-2xl font-bold text-white tracking-wide">VIP <%= user.vip_tier %> Üyeliği</h2>
+                  <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full text-xs font-semibold">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Aktif Üyelik
+                  </span>
+                </div>
+                <p class="text-sm text-purple-200/80 mt-1">Tüm VIP ayrıcalıklarından ve haftalık bonustan aktif olarak faydalanıyorsunuz.</p>
+              </div>
+            </div>
+
+            <!-- Kalan Gün ve Bitiş Tarihi Sayaç Kartı -->
+            <div class="bg-white/5 border border-white/10 backdrop-blur-sm rounded-xl p-4 flex items-center gap-4 w-full md:w-auto shrink-0">
+              <div class="text-center px-2">
+                <span class="text-2xl font-extrabold text-amber-400 block"><%= daysLeft %></span>
+                <span class="text-[11px] text-purple-200/70 uppercase tracking-wider font-semibold">Kalan Gün</span>
+              </div>
+              <div class="h-8 w-px bg-white/15"></div>
+              <div>
+                <span class="text-xs text-purple-200/60 block">Bitiş Tarihi</span>
+                <span class="text-sm font-semibold text-white"><%= expiresDateStr %></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- VIP Ayrıcalıkları Grid -->
+          <div class="py-6 relative z-10">
+            <h3 class="text-sm font-semibold text-purple-200/90 uppercase tracking-wider mb-4 flex items-center gap-2">
+              <span class="material-symbols-outlined text-amber-400 text-lg">star</span> Aktif VIP Ayrıcalıklarınız
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              
+              <!-- Ayrıcalık 1: Özel Mesaj (PM) -->
+              <div class="bg-white/5 border border-white/10 rounded-xl p-4 hover:bg-white/10 transition-all">
+                <div class="w-10 h-10 rounded-lg bg-purple-500/20 text-purple-300 flex items-center justify-center mb-3">
+                  <span class="material-symbols-outlined">forum</span>
+                </div>
+                <h4 class="font-bold text-white text-base mb-1">Lobi Özel Mesaj (PM)</h4>
+                <p class="text-xs text-purple-200/70 leading-relaxed">Lobi sohbetinde dilediğiniz oyuncuya tıklayarak sınırsız 1-v-1 özel mesaj gönderebilirsiniz.</p>
+              </div>
+
+              <!-- Ayrıcalık 2: Haftalık LT Bonusu -->
+              <div class="bg-white/5 border border-white/10 rounded-xl p-4 hover:bg-white/10 transition-all">
+                <div class="w-10 h-10 rounded-lg bg-amber-500/20 text-amber-300 flex items-center justify-center mb-3">
+                  <span class="material-symbols-outlined">account_balance_wallet</span>
+                </div>
+                <h4 class="font-bold text-white text-base mb-1">Haftalık Otomatik LT</h4>
+                <p class="text-xs text-purple-200/70 leading-relaxed">Her hafta hesabınıza otomatik olarak <strong class="text-amber-400">+<%= activeVip.weekly %></strong> maaş olarak yüklenir.</p>
+              </div>
+
+              <!-- Ayrıcalık 3: VIP Rozet & Tag -->
+              <div class="bg-white/5 border border-white/10 rounded-xl p-4 hover:bg-white/10 transition-all">
+                <div class="w-10 h-10 rounded-lg bg-pink-500/20 text-pink-300 flex items-center justify-center mb-3">
+                  <span class="material-symbols-outlined">workspace_premium</span>
+                </div>
+                <h4 class="font-bold text-white text-base mb-1">Özel VIP Rozeti</h4>
+                <p class="text-xs text-purple-200/70 leading-relaxed">Sohbetlerde, masalarda ve sıralamalarda isminizin yanında VIP <%= user.vip_tier %> rozeti görünür.</p>
+              </div>
+
+              <!-- Ayrıcalık 4: Hoş Geldin Bonusu -->
+              <div class="bg-white/5 border border-white/10 rounded-xl p-4 hover:bg-white/10 transition-all">
+                <div class="w-10 h-10 rounded-lg bg-emerald-500/20 text-emerald-300 flex items-center justify-center mb-3">
+                  <span class="material-symbols-outlined">card_giftcard</span>
+                </div>
+                <h4 class="font-bold text-white text-base mb-1">Anında LT Bonusu</h4>
+                <p class="text-xs text-purple-200/70 leading-relaxed">VIP aktifleştirildiği anda tek seferde <strong class="text-emerald-400">+<%= activeVip.instant %></strong> hediye tanımlanır.</p>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Süre Uzatma / VIP Kodu Yükleme -->
+          <div class="pt-6 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-4 relative z-10">
+            <div>
+              <h4 class="font-semibold text-white text-sm">Üyelik Süresini Uzat veya Paket Yükselt</h4>
+              <p class="text-xs text-purple-200/70">ByNoGame veya Kopazar'dan aldığınız yeni VIP kodunu girerek sürenizi uzatabilirsiniz.</p>
+            </div>
+            <form method="POST" action="/settings/profile/vip" class="flex gap-2 w-full md:w-auto">
+              <input name="vip_code" placeholder="Örn: VIP1-ABCD-EFGH" required class="px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-purple-300/50 outline-none focus:ring-2 focus:ring-amber-400 uppercase text-sm w-full md:w-48" />
+              <button class="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-bold rounded-lg text-xs hover:brightness-110 transition-all whitespace-nowrap">Uzat / Yükselt</button>
+            </form>
+          </div>
         </div>
-        <p class="text-body-sm text-on-surface-variant mb-4">ByNoGame veya Kopazar'dan aldığınız VIP (E-Pin) kodunuzu buraya girerek anında VIP statüsüne sahip olabilirsiniz.</p>
-        <form method="POST" action="/settings/profile/vip" class="flex gap-2 mb-2 flex-wrap max-w-sm">
-          <input name="vip_code" placeholder="Örn: VIP1-ABCD-EFGH" required class="flex-1 px-3 py-2 border border-silver-light rounded-lg outline-none focus:ring-2 focus:ring-energetic-purple uppercase" />
-          <button class="px-5 py-2 bg-energetic-purple text-white rounded-lg font-label-md text-label-sm hover:bg-opacity-90 transition-all">Aktifleştir</button>
-        </form>
-      </div>
+      <% } else { %>
+        <!-- VIP Aktifleştirme ve Tanıtım Kartı (VIP Olmayan Kullanıcılar İçin) -->
+        <div class="bg-white rounded-xl border border-outline-variant/30 shadow-sm p-6 lg:col-span-2">
+          <div class="flex items-center gap-3 mb-4">
+            <span class="w-12 h-12 rounded-xl bg-energetic-purple/10 text-energetic-purple flex items-center justify-center text-3xl font-bold">👑</span>
+            <div>
+              <h2 class="font-headline-md text-headline-md text-primary">VIP Üyelik & Ayrıcalıklar</h2>
+              <p class="text-body-sm text-on-surface-variant">LOOTIV dünyasında ayrıcalıklı üye olarak özel imkanlardan yararlanın.</p>
+            </div>
+          </div>
+
+          <!-- VIP Avantajları Özeti -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 my-4">
+            <div class="p-4 rounded-xl bg-surface-container-low border border-outline-variant/20 flex items-center gap-3">
+              <span class="material-symbols-outlined text-energetic-purple text-2xl">forum</span>
+              <div>
+                <span class="font-bold text-primary block text-sm">Lobi Özel Mesaj (PM)</span>
+                <span class="text-outline text-xs">Diğer oyuncularla 1-v-1 özel mesajlaşma</span>
+              </div>
+            </div>
+            <div class="p-4 rounded-xl bg-surface-container-low border border-outline-variant/20 flex items-center gap-3">
+              <span class="material-symbols-outlined text-amber-gold text-2xl">account_balance_wallet</span>
+              <div>
+                <span class="font-bold text-primary block text-sm">Haftalık LT Maaşı</span>
+                <span class="text-outline text-xs">Her hafta düzenli otomatik LT yüklemesi</span>
+              </div>
+            </div>
+            <div class="p-4 rounded-xl bg-surface-container-low border border-outline-variant/20 flex items-center gap-3">
+              <span class="material-symbols-outlined text-energetic-purple text-2xl">workspace_premium</span>
+              <div>
+                <span class="font-bold text-primary block text-sm">Özel VIP Rozeti</span>
+                <span class="text-outline text-xs">Tüm masalarda & sohbetlerde seçkin görünüm</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- E-Pin Kod Girme Alanı -->
+          <div class="pt-4 border-t border-outline-variant/20">
+            <p class="text-body-sm text-on-surface-variant mb-3">ByNoGame veya Kopazar'dan aldığınız VIP (E-Pin) kodunuzu buraya girerek anında VIP statüsüne sahip olun:</p>
+            <form method="POST" action="/settings/profile/vip" class="flex gap-2 flex-wrap max-w-md">
+              <input name="vip_code" placeholder="Örn: VIP1-ABCD-EFGH" required class="flex-1 px-4 py-2.5 border border-silver-light rounded-lg outline-none focus:ring-2 focus:ring-energetic-purple uppercase text-sm" />
+              <button class="px-6 py-2.5 bg-energetic-purple text-white font-semibold rounded-lg font-label-md text-label-sm hover:bg-opacity-90 transition-all">Aktifleştir</button>
+            </form>
+          </div>
+        </div>
+      <% } %>
     </div>
 
     <div class="mt-6">
@@ -165,11 +318,13 @@
       var urlInput = document.getElementById('avatar-url');
       var preview = document.getElementById('avatar-preview');
       var removeBtn = document.getElementById('avatar-remove');
+      var fileNameLabel = document.getElementById('avatar-file-name');
       if (fileInput) {
         fileInput.addEventListener('change', function () {
           var file = fileInput.files && fileInput.files[0];
           if (!file) return;
-          if (file.size > 512 * 1024) { alert('Resim cok buyuk (~500 KB siniri).'); fileInput.value = ''; return; }
+          if (file.size > 512 * 1024) { alert('Resim çok büyük (~500 KB sınırı).'); fileInput.value = ''; return; }
+          if (fileNameLabel) fileNameLabel.textContent = 'Seçilen dosya: ' + file.name;
           var reader = new FileReader();
           reader.onload = function (e) {
             urlInput.value = e.target.result;
@@ -178,7 +333,11 @@
           reader.readAsDataURL(file);
         });
       }
-      if (removeBtn) { removeBtn.addEventListener('click', function () { urlInput.value = ''; }); }
+      if (removeBtn) {
+        removeBtn.addEventListener('click', function () {
+          urlInput.value = '';
+        });
+      }
     })();
   </script>
 </body>

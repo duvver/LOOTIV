@@ -63,6 +63,7 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 // Avatar (profil resmi) data-URL olarak gonderilebildigi icin limit yukseltildi.
 app.use(express.urlencoded({ extended: false, limit: '3mb' }));
+app.use(express.json({ limit: '3mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 const sessionMiddleware = session({
@@ -83,6 +84,7 @@ const requireGuest = (req, res, next) => {
 
 const attachUser = asyncHandler(async (req, res, next) => {
   res.locals.unreadCount = 0;
+  res.locals.pendingFriendCount = 0;
   if (req.session.userId) {
     await db.syncVip(req.session.userId).catch(() => {});
     const user = await db.getUserById(req.session.userId);
@@ -90,6 +92,9 @@ const attachUser = asyncHandler(async (req, res, next) => {
       req.user = user;
       res.locals.unreadCount = await db
         .getUnreadAnnouncementCount(user.id, user.last_seen_announcement_id)
+        .catch(() => 0);
+      res.locals.pendingFriendCount = await db
+        .getPendingFriendRequestCount(user.id)
         .catch(() => 0);
     } else {
       req.session.userId = null;
@@ -491,9 +496,8 @@ const CHARACTERS = [
 app.get(
   '/karakter-sec',
   attachUser,
-  requireAuth,
   asyncHandler(async (req, res) => {
-    res.render('karakter-sec', { user: req.user, characters: CHARACTERS });
+    res.redirect('/?construction=Karakter');
   })
 );
 
@@ -741,33 +745,7 @@ app.get(
   '/pazar',
   attachUser,
   asyncHandler(async (req, res) => {
-    const filters = {
-      category: req.query.kategori || null,
-      rarity: req.query.nadirlik || null,
-      q: (req.query.ara || '').trim() || null,
-      minPrice: req.query.min ? Number(req.query.min) : null,
-      maxPrice: req.query.max ? Number(req.query.max) : null,
-    };
-    const [listings, stats, recentSales, cfg] = await Promise.all([
-      db.getActiveListings(filters),
-      db.getMarketStats(),
-      db.getRecentSales(8),
-      db.getMarketConfig(),
-    ]);
-    const myListings = req.user ? await db.getMyListings(req.user.id) : [];
-    res.render('pazar', {
-      user: req.user || null,
-      listings,
-      stats,
-      recentSales,
-      myListings,
-      filters,
-      commission: cfg.commission_percent,
-      categories: db.MARKET_CATEGORIES,
-      rarities: db.MARKET_RARITIES,
-      info: req.query.info || null,
-      error: req.query.error || null,
-    });
+    res.redirect('/?construction=Pazar');
   })
 );
 
@@ -821,15 +799,8 @@ app.post(
 app.get(
   '/envanter',
   attachUser,
-  requireAuth,
   asyncHandler(async (req, res) => {
-    const items = await db.getUserInventory(req.user.id);
-    res.render('envanter', {
-      user: req.user,
-      items,
-      info: req.query.info || null,
-      error: req.query.error || null,
-    });
+    res.redirect('/?construction=Envanter');
   })
 );
 
@@ -1034,6 +1005,8 @@ app.get(
     const dailyTasks = await db.getDailyTasks(true);
     const vipCodes = await db.getAllVipCodes();
     const vipLinks = await db.getVipLinks();
+    const whitelistStats = await db.getWhitelistStats();
+    const whitelistLogs = await db.getWhitelistLogs(100);
     res.render('admin', {
       user: req.user,
       users,
@@ -1047,11 +1020,48 @@ app.get(
       dailyTasks,
       vipCodes,
       vipLinks,
+      whitelistStats,
+      whitelistLogs,
       categories: db.MARKET_CATEGORIES,
       rarities: db.MARKET_RARITIES,
       vipPlans: db.getVipPlans(),
       savedMsg: req.query.saved || null,
     });
+  })
+);
+
+// ---- Whitelist / Erken Erisim Olay Kaydi (AJAX) ----
+app.post(
+  '/api/whitelist/event',
+  attachUser,
+  asyncHandler(async (req, res) => {
+    const feature = (req.body.feature || 'Bilinmeyen').trim();
+    const eventType = (req.body.eventType || 'view').trim(); // 'view' or 'click'
+    const userId = req.user ? req.user.id : null;
+    const rumuz = req.user ? req.user.rumuz : 'Ziyaretçi';
+    
+    await db.logWhitelistEvent({ userId, rumuz, feature, eventType });
+    res.json({ ok: true });
+  })
+);
+
+app.post(
+  '/admin/whitelist/logs/:id/delete',
+  attachUser,
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    await db.deleteWhitelistLog(Number(req.params.id));
+    res.redirect('/admin?tab=whitelist');
+  })
+);
+
+app.post(
+  '/admin/whitelist/logs/clear',
+  attachUser,
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    await db.clearAllWhitelistLogs();
+    res.redirect('/admin?tab=whitelist');
   })
 );
 
@@ -1115,10 +1125,53 @@ app.post(
   asyncHandler(async (req, res) => {
     const tier = Number(req.body.tier);
     const count = Number(req.body.count) || 1;
+    const platform = (req.body.platform || 'genel').trim();
     if (tier >= 1 && tier <= 3 && count > 0 && count <= 50) {
-      await db.generateVipCodes(tier, count);
+      await db.generateVipCodes(tier, count, platform);
     }
-    res.redirect('/admin?tab=vip#vip');
+    res.redirect('/admin?tab=epin#epin');
+  })
+);
+
+// ---- VIP Kodlari TXT olarak disa aktar ----
+app.get(
+  '/admin/vip-codes/export',
+  attachUser,
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const allCodes = await db.getAllVipCodes();
+    const filterPlatform = (req.query.platform || '').trim().toLowerCase();
+    const filterStatus = (req.query.status || '').trim(); // 'active' | 'used' | '' (all)
+
+    let codes = allCodes;
+    if (filterPlatform && filterPlatform !== 'all') {
+      codes = codes.filter(c => (c.platform || 'genel').toLowerCase() === filterPlatform);
+    }
+    if (filterStatus === 'active') {
+      codes = codes.filter(c => !c.is_used);
+    } else if (filterStatus === 'used') {
+      codes = codes.filter(c => c.is_used);
+    }
+
+    const lines = [];
+    lines.push('=== LOOTIV VIP E-Pin Kodlari ===');
+    lines.push('Tarih: ' + new Date().toLocaleString('tr-TR'));
+    if (filterPlatform && filterPlatform !== 'all') lines.push('Platform: ' + filterPlatform);
+    if (filterStatus) lines.push('Durum: ' + (filterStatus === 'active' ? 'Aktif' : 'Kullanildi'));
+    lines.push('Toplam: ' + codes.length + ' adet');
+    lines.push('================================');
+    lines.push('');
+
+    codes.forEach(c => {
+      const status = c.is_used ? 'KULLANILDI' : 'AKTIF';
+      const plat = (c.platform || 'genel').toUpperCase();
+      lines.push(c.code + '  |  VIP ' + c.tier + '  |  ' + plat + '  |  ' + status);
+    });
+
+    const filename = 'lootiv-epinler-' + new Date().toISOString().slice(0, 10) + '.txt';
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="' + filename + '"');
+    res.send(lines.join('\r\n'));
   })
 );
 
@@ -1131,7 +1184,7 @@ app.post(
     if (code) {
       await db.deleteVipCode(code);
     }
-    res.redirect('/admin?tab=vip#vip');
+    res.redirect('/admin?tab=epin#epin');
   })
 );
 
@@ -1145,7 +1198,7 @@ app.post(
     if (name && url) {
       await db.addVipLink(name, url);
     }
-    res.redirect('/admin?tab=vip#vip');
+    res.redirect('/admin?tab=epin#epin');
   })
 );
 
@@ -1158,7 +1211,7 @@ app.post(
     if (id) {
       await db.deleteVipLink(id);
     }
-    res.redirect('/admin?tab=vip#vip');
+    res.redirect('/admin?tab=epin#epin');
   })
 );
 

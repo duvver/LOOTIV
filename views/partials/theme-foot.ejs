@@ -18,6 +18,176 @@
   </div>
 </footer>
 
+<!-- Yapım Aşamasında Modal Overlay (Ortak) -->
+<div id="construction-modal" class="fixed inset-0 z-[99999] hidden flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md transition-all duration-300">
+  <div class="relative w-full max-w-md bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 text-white rounded-3xl border border-purple-500/30 shadow-2xl p-6 md:p-8 text-center overflow-hidden transform transition-all scale-95 opacity-0" id="construction-modal-card">
+    
+    <!-- Arka plan glow efektleri -->
+    <div class="absolute -top-16 -left-16 w-36 h-36 bg-amber-500/20 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute -bottom-16 -right-16 w-36 h-36 bg-purple-500/20 rounded-full blur-3xl pointer-events-none"></div>
+
+    <!-- Kapat X Butonu -->
+    <button onclick="closeConstructionModal()" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white/80 hover:text-white flex items-center justify-center transition-all">
+      <span class="material-symbols-outlined text-lg">close</span>
+    </button>
+
+    <!-- İkon -->
+    <div id="construction-icon" class="w-20 h-20 mx-auto mb-4 rounded-3xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-slate-950 text-4xl shadow-xl shadow-amber-500/25 ring-4 ring-amber-400/20">
+      🚧
+    </div>
+
+    <!-- Başlık & Metin -->
+    <h3 class="text-2xl font-extrabold text-white mb-1 tracking-tight">Yapım Aşamasında</h3>
+    <p class="text-xs text-purple-200/70 leading-relaxed mb-4">
+      <span id="construction-feature-name" class="font-bold text-amber-400">Bu özellik</span> geliştirme aşamasındadır.
+    </p>
+
+    <!-- Kısa İpucu Kutusu -->
+    <div class="mb-6 p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm text-left">
+      <div class="flex items-center gap-2 mb-1.5">
+        <span class="material-symbols-outlined text-amber-400 text-lg">lightbulb</span>
+        <span class="text-[11px] font-bold uppercase tracking-wider text-amber-400">Kısa İpucu</span>
+      </div>
+      <p id="construction-tip" class="text-xs text-purple-200/90 leading-relaxed">
+        Özellik hakkında detaylı bilgi...
+      </p>
+    </div>
+
+    <!-- Whitelist / Erken Erişim Butonu -->
+    <button id="btn-join-whitelist" onclick="joinWhitelist(this)" class="w-full py-3.5 px-6 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-bold rounded-xl shadow-lg shadow-amber-500/25 hover:brightness-110 active:scale-95 transition-all text-sm flex items-center justify-center gap-2">
+      <span class="material-symbols-outlined text-lg">stars</span>
+      Erken Erişim Listesine Katıl (Whitelist)
+    </button>
+  </div>
+</div>
+
+<script>
+  // Kısa İpucu Verileri
+  var FEATURE_DATA = {
+    'Karakter': {
+      title: 'Karakter Sistemi',
+      icon: '🧙‍♂️',
+      tip: 'Kendi özel karakterini oluştur, seviye atla, yeteneklerini geliştir ve özel unvanlar kazan! Karakter sınıfın oyundaki kazançlarını ve prestijini etkileyecektir.'
+    },
+    'Envanter': {
+      title: 'Kullanıcı Envanteri',
+      icon: '🎒',
+      tip: 'Kaza-kazan ve etkinliklerden kazandığın tüm eşyaları, kostümleri ve rozetleri burada sakla. İster kullan, ister seviyesini yükselt, ister pazarda sat!'
+    },
+    'Pazar': {
+      title: 'Oyuncu Pazarı',
+      icon: '🏪',
+      tip: 'Oyuncular arası canlı pazar yeri. Envanterindeki nadir eşyaları LT karşılığında satabilir veya diğer oyuncuların ilanlarını satın alabilirsin!'
+    }
+  };
+
+  var currentFeatureKey = 'Karakter';
+  var lastLoggedViewFeature = null;
+  var lastLoggedViewTime = 0;
+
+  function openConstructionModal(featureKey) {
+    var modal = document.getElementById('construction-modal');
+    var card = document.getElementById('construction-modal-card');
+    var featName = document.getElementById('construction-feature-name');
+    var tipPara = document.getElementById('construction-tip');
+    var iconDiv = document.getElementById('construction-icon');
+
+    var key = featureKey || 'Karakter';
+    currentFeatureKey = key;
+    var data = FEATURE_DATA[key] || {
+      title: key,
+      icon: '🚧',
+      tip: 'Bu modül şu anda geliştirme aşamasındadır. Çok yakında hizmetinizde olacaktır!'
+    };
+
+    if (featName) featName.textContent = data.title || key;
+    if (tipPara) tipPara.textContent = data.tip;
+    if (iconDiv) iconDiv.textContent = data.icon;
+
+    var now = Date.now();
+    // Ayni feature 4 saniye icinde 2 kez loglanmasin
+    if (lastLoggedViewFeature !== key || (now - lastLoggedViewTime) > 4000) {
+      lastLoggedViewFeature = key;
+      lastLoggedViewTime = now;
+      try {
+        fetch('/api/whitelist/event', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ feature: data.title || key, eventType: 'view' })
+        });
+      } catch(e) {}
+    }
+
+    if (modal && card) {
+      modal.classList.remove('hidden');
+      setTimeout(function() {
+        card.classList.remove('scale-95', 'opacity-0');
+        card.classList.add('scale-100', 'opacity-100');
+      }, 10);
+    }
+  }
+
+  function closeConstructionModal() {
+    var modal = document.getElementById('construction-modal');
+    var card = document.getElementById('construction-modal-card');
+    if (modal && card) {
+      card.classList.remove('scale-100', 'opacity-100');
+      card.classList.add('scale-95', 'opacity-0');
+      setTimeout(function() {
+        modal.classList.add('hidden');
+      }, 200);
+    }
+  }
+
+  async function joinWhitelist(btn) {
+    var data = FEATURE_DATA[currentFeatureKey] || { title: currentFeatureKey };
+    var name = data.title || currentFeatureKey || 'Bu alan';
+
+    var targetBtn = btn || document.getElementById('btn-join-whitelist');
+    var origText = targetBtn ? targetBtn.innerHTML : '';
+
+    if (targetBtn) {
+      targetBtn.disabled = true;
+      targetBtn.innerHTML = '⌛ Kaydediliyor...';
+    }
+
+    // Log click event (guaranteed completion via await)
+    try {
+      await fetch('/api/whitelist/event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ feature: name, eventType: 'click' })
+      });
+    } catch(e) {
+      console.error('Whitelist click event error:', e);
+    }
+
+    if (targetBtn) {
+      targetBtn.disabled = false;
+      targetBtn.innerHTML = origText;
+    }
+
+    alert('Tebrikler! "' + name + '" için Erken Erişim (Whitelist) bekleme listesine kaydınız başarıyla alındı.');
+    closeConstructionModal();
+  }
+
+  // URL'de ?construction=Pazar gibi parametre varsa otomatik ac
+  document.addEventListener('DOMContentLoaded', function() {
+    var modal = document.getElementById('construction-modal');
+    if (modal) {
+      modal.addEventListener('click', function(e) {
+        if (e.target === modal) closeConstructionModal();
+      });
+    }
+
+    var urlParams = new URLSearchParams(window.location.search);
+    var cParam = urlParams.get('construction');
+    if (cParam) {
+      openConstructionModal(cParam);
+    }
+  });
+</script>
+
 <% if (_footUser) { %>
 <script src="/socket.io/socket.io.js"></script>
 <script src="/js/notify.js?v=1"></script>
