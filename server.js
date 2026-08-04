@@ -781,8 +781,8 @@ app.post(
     if (!item || item.user_id !== req.user.id) {
       return res.redirect('/pazar/ilan?error=' + encodeURIComponent('Lutfen envanterinden gecerli bir esya sec.'));
     }
-    if (!Number.isFinite(priceLt) || priceLt <= 0) {
-      return res.redirect('/pazar/ilan?error=' + encodeURIComponent('Gecerli bir fiyat gir (0dan buyuk).'));
+    if (!Number.isFinite(priceLt) || priceLt <= 0 || priceLt > 2147483647) {
+      return res.redirect('/pazar/ilan?error=' + encodeURIComponent('Gecerli bir fiyat gir (0dan buyuk ve en fazla 2,147,483,647).'));
     }
     const result = await db.createListingFromInventory({
       invId,
@@ -841,9 +841,9 @@ app.post(
     const priceLt = Math.trunc(Number(req.body.price));
     const item = await db.getInventoryItem(invId);
     if (!item || item.user_id !== req.user.id) return res.redirect('/envanter');
-    if (!Number.isFinite(priceLt) || priceLt <= 0) {
+    if (!Number.isFinite(priceLt) || priceLt <= 0 || priceLt > 2147483647) {
       const cfg = await db.getMarketConfig();
-      return res.render('pazar-sat', { user: req.user, item, commission: cfg.commission_percent, error: 'Gecerli bir fiyat gir (0dan buyuk).' });
+      return res.render('pazar-sat', { user: req.user, item, commission: cfg.commission_percent, error: 'Gecerli bir fiyat gir (0dan buyuk ve en fazla 2,147,483,647).' });
     }
     const result = await db.createListingFromInventory({
       invId,
@@ -1423,8 +1423,8 @@ app.post(
       return res.send('<script>alert("Kullanıcı bulunamadı!"); window.location.href="/admin?saved=treasury#treasury";</script>');
     }
     const numAmount = parseInt(amount, 10);
-    if (isNaN(numAmount) || numAmount <= 0) {
-      return res.send('<script>alert("Geçersiz miktar!"); window.location.href="/admin?saved=treasury#treasury";</script>');
+    if (isNaN(numAmount) || numAmount <= 0 || numAmount > 2147483647) {
+      return res.send('<script>alert("Geçersiz miktar (en fazla 2,147,483,647)!"); window.location.href="/admin?saved=treasury#treasury";</script>');
     }
     await db.withdrawCommission(targetUser.id, numAmount, note);
     res.redirect('/admin?saved=treasury#treasury');
@@ -1767,7 +1767,8 @@ app.post('/api/rooms/create', attachUser, requireAuth, asyncHandler(async (req, 
   }
 
   const isVip = req.user.vip_tier > 0;
-  const stake = Number(bet) || 500;
+  const parsedBet = Number(bet) || 500;
+  const stake = (parsedBet <= 0 || parsedBet > 2147483647) ? 500 : parsedBet;
   const roomId = 'room_' + game + '_' + (userRoomCounter++);
   let title = `Masa #${userRoomCounter - 1}`;
   if (isVip && customTitle && typeof customTitle === 'string' && customTitle.trim()) {

@@ -77,30 +77,26 @@
             <div class="grid-container grid-6x13" id="grid2"></div>
           </div>
         </div>
-        <!-- Acilan perlerin dustugu gercek pano (JS bunu doldurur; izgaranin uzerinde durur) -->
-        <div class="ok1-board okey101-board" id="okey101-board"></div>
-
-        <!-- Koltuklar (0=alt,1=sol,2=ust,3=sag) -->
-        <div class="okey-seats" id="okey-seats"></div>
-
-        <!-- Kose iskartalari -->
-        <div class="okey-corner okey-corner-0" id="okey-corner-0"></div>
-        <div class="okey-corner okey-corner-1" id="okey-corner-1"></div>
-        <div class="okey-corner okey-corner-2" id="okey-corner-2"></div>
+        
+        <!-- Staging area for user to drop tiles before opening -->
         <div class="okey-corner okey-corner-3" id="okey-corner-3"></div>
 
         <div class="okey-banner" id="okey-banner"></div>
       
       <!-- Istaka + diz butonlari -->
       <div class="ok1-rackzone">
-        <button type="button" class="ok1-diz-btn ok1-diz-cift" id="okey-cift-diz"><span>&#199;&#304;FT</span><span>D&#304;Z</span></button>
+        <button type="button" class="okey-diz-btn ok1-diz-cift" id="okey-cift-diz"><span>&#199;&#304;FT</span><span>D&#304;Z</span></button>
         <div class="ok1-rack-holder">
           <div class="ok1-diz-total" id="ok1-diz-total" hidden></div>
           <div class="okey-rack" id="okey-rack"></div>
         </div>
-        <button type="button" class="ok1-diz-btn ok1-diz-seri" id="okey-seri-diz"><span>SER&#304;</span><span>D&#304;Z</span></button>
+        <button type="button" class="okey-diz-btn ok1-diz-seri" id="okey-seri-diz"><span>SER&#304;</span><span>D&#304;Z</span></button>
       </div>
-      <div class="okey-action-bar" id="okey-action-bar"></div>
+      <div class="okey-action-bar" id="okey-action-bar">
+        <button type="button" class="btn btn-sm btn-primary" id="btn-seri-ac" style="display:none;">Seri Aç (<span>0</span>)</button>
+        <button type="button" class="btn btn-sm btn-secondary" id="btn-cift-ac" style="display:none;">Çift Aç (<span>0</span>)</button>
+        <button type="button" class="btn btn-sm btn-ghost" id="btn-geri-al" style="display:none;">Geri Al</button>
+      </div>
       </div>
     </section>
   </main>

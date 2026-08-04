@@ -100,7 +100,7 @@
 
   // ==================== 101 OKEY MASASI ====================
   const CURRENT_USER_ID = Number(document.body.dataset.userId);
-  const RACK_COLS = 13;
+  const RACK_COLS = 22;
   const RACK_ROWS = 2;
   const RACK_SLOTS = RACK_COLS * RACK_ROWS;
 
@@ -118,6 +118,7 @@
   const seriDizBtn = document.getElementById('okey-seri-diz');
 
   let rackLayout = new Array(RACK_SLOTS).fill(null);
+  let selectedTileIds = new Set();
   let serverTiles = [];
   let lastState = null;
   let countdownInterval = null;
@@ -219,6 +220,7 @@
         if (tile) {
           const tileEl = document.createElement('div');
           tileEl.className = tileClass(tile, okeySpec);
+          if (selectedTileIds.has(tile.id)) tileEl.classList.add('okey-tile-selected');
           tileEl.dataset.tileId = tile.id;
           tileEl.dataset.slot = String(slotIndex);
           tileEl.draggable = true;
@@ -233,54 +235,70 @@
     attachRackDnD();
   }
 
-  // ---- Surukle-birak ----
-  let dragTileId = null;
-  let dragFromSlot = null;
-
   function attachRackDnD() {
     const tiles = rackEl.querySelectorAll('.okey-tile');
     const slots = rackEl.querySelectorAll('.okey-slot');
 
     tiles.forEach((el) => {
       el.addEventListener('dragstart', (e) => {
-        dragTileId = el.dataset.tileId;
-        dragFromSlot = Number(el.dataset.slot);
         el.classList.add('okey-tile-dragging');
-        e.dataTransfer.effectAllowed = 'move';
-        try { e.dataTransfer.setData('text/plain', dragTileId); } catch (err) {}
+        handleDragStart(e, Number(el.dataset.tileId), Number(el.dataset.slot), 'rack');
       });
-      el.addEventListener('dragend', () => {
+      el.addEventListener('dragend', (e) => {
         el.classList.remove('okey-tile-dragging');
-        document.querySelectorAll('.okey-slot-over').forEach((s) => s.classList.remove('okey-slot-over'));
-        dragTileId = null;
-        dragFromSlot = null;
+      });
+      el.addEventListener('click', (e) => {
+        const id = Number(el.dataset.tileId);
+        if (selectedTileIds.has(id)) {
+          selectedTileIds.delete(id);
+          el.classList.remove('okey-tile-selected');
+        } else {
+          selectedTileIds.add(id);
+          el.classList.add('okey-tile-selected');
+        }
       });
     });
 
-    slots.forEach((slotEl) => {
-      slotEl.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
-        slotEl.classList.add('okey-slot-over');
-      });
-      slotEl.addEventListener('dragleave', () => slotEl.classList.remove('okey-slot-over'));
-      slotEl.addEventListener('drop', (e) => {
-        e.preventDefault();
-        slotEl.classList.remove('okey-slot-over');
-        const targetSlot = Number(slotEl.dataset.slot);
-        if (dragFromSlot === null || Number.isNaN(targetSlot)) return;
-        moveTile(dragFromSlot, targetSlot);
-      });
+    slots.forEach((el) => {
+      el.addEventListener('dragover', handleDragOver);
+      el.addEventListener('drop', (e) => handleDrop(e, Number(el.dataset.slot), 'rack'));
     });
   }
 
-  function moveTile(fromSlot, toSlot) {
-    if (fromSlot === toSlot) return;
-    const moving = rackLayout[fromSlot];
-    if (!moving) return;
-    const target = rackLayout[toSlot];
-    rackLayout[toSlot] = moving;
-    rackLayout[fromSlot] = target;
+  // ---- Surukle-birak ----
+  let dragTileId = null;
+  let dragSourceIndex = null;
+  let dragSourceArea = null;
+
+  function handleDragStart(e, tileId, sourceIndex, area) {
+    if (lastState && lastState.stage !== 'playing') {
+      e.preventDefault();
+      return;
+    }
+    dragTileId = tileId;
+    dragSourceIndex = sourceIndex;
+    dragSourceArea = area;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', tileId);
+    const img = new Image();
+    img.src = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
+    e.dataTransfer.setDragImage(img, 0, 0);
+  }
+
+  function handleDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  }
+
+  function handleDrop(e, targetIndex, targetArea) {
+    e.preventDefault();
+    if (!dragTileId || dragSourceArea !== 'rack' || targetArea !== 'rack') return;
+
+    const srcTile = rackLayout[dragSourceIndex];
+    const dstTile = rackLayout[targetIndex];
+    rackLayout[dragSourceIndex] = dstTile;
+    rackLayout[targetIndex] = srcTile;
+
     renderRack(lastState);
   }
 
@@ -452,6 +470,21 @@
   }
 
   // Istakadaki bosluklarla ayrilmis gruplari cikar (acilis icin)
+  function extractGroups(layout, totalSlots, cols, minLen) {
+    const groups = [];
+    let current = [];
+    for (let i = 0; i < totalSlots; i++) {
+      const t = layout[i];
+      const rowEnd = i % cols === cols - 1;
+      if (t) current.push(t.id);
+      if (!t || rowEnd) {
+        if (current.length >= minLen) groups.push(current);
+        current = [];
+      }
+    }
+    if (current.length >= minLen) groups.push(current);
+    return groups;
+  }
   function extractRackGroups(minLen) {
     const groups = [];
     let current = [];
@@ -708,29 +741,23 @@
       const emptyCount = state.seats.filter((s) => !s).length;
       const botCount = state.seats.filter((s) => s && s.isBot).length;
       if (myIndex !== -1 && emptyCount > 0) {
-        parts.push(`<button type="button" class="btn btn-primary btn-sm" id="okey-fillbots-btn">Bos Koltuklari Botla Doldur & Basla</button>`);
+        parts.push(`<button type="button" class="btn btn-primary btn-sm" id="okey-fillbots-btn">Bot Ekle & Başla</button>`);
       }
       if (botCount > 0) {
-        parts.push(`<button type="button" class="btn btn-ghost btn-sm" id="okey-removebots-btn">Botlari Cikar</button>`);
+        parts.push(`<button type="button" class="btn btn-ghost btn-sm" id="okey-removebots-btn">Botları Çıkar</button>`);
       }
     }
 
     if (myIndex !== -1 && state && state.turnSeat === myIndex && state.stage === 'playing') {
       if (!state.hasDrawn) {
-        const takeHint = mySeat && mySeat.hasOpened
-          ? 'desteden veya sol kosedeki atilan tastan cek.'
-          : 'desteden cek (yerden almak icin once elini acmalisin).';
-        parts.push(`<div class="okey-hint">Ortadaki ${takeHint}</div>`);
+        // Before drawing, we don't show the tooltips, just let them play.
       } else {
         if (mySeat && !mySeat.hasOpened) {
           if (mySeat.mustOpenThisTurn) {
             parts.push(`<button type="button" class="action-btn action-fold" id="okey101-undo-draw-btn">Tasi Geri Birak</button>`);
           }
-          parts.push(`<div class="okey-hint">Gruplarini bosluklarla ayirip ac; ya da tasini sag kosene surukleyip at.</div>`);
-          parts.push(`<button type="button" class="action-btn action-raise" id="okey101-open-seri-btn">Seri Ac (${state.openMin}+)</button>`);
-          parts.push(`<button type="button" class="action-btn action-call" id="okey101-open-cift-btn">Cift Ac (${state.ciftMin}+ cift)</button>`);
-        } else {
-          parts.push(`<div class="okey-hint">Tas islemek icin tasi yerdeki bir gruba surukle; bitirmek icin son tasini sag kosene at.</div>`);
+          parts.push(`<button type="button" class="btn btn-primary btn-sm" id="btn-seri-ac">Seri Ac (${state.openMin}+)</button>`);
+          parts.push(`<button type="button" class="btn btn-secondary btn-sm" id="btn-cift-ac">Cift Ac (${state.ciftMin}+ cift)</button>`);
         }
       }
     }
@@ -746,22 +773,31 @@
     document.getElementById('okey101-undo-draw-btn')?.addEventListener('click', () => {
       socket.emit('okey101:undoDraw');
     });
-    document.getElementById('okey101-open-seri-btn')?.addEventListener('click', () => {
-      const groups = extractRackGroups(3);
+    document.getElementById('btn-seri-ac')?.addEventListener('click', () => {
+      const pool = rackLayout.filter(Boolean);
+      const selected = pool.filter(t => selectedTileIds.has(t.id));
+      const sourcePool = selected.length > 0 ? selected : pool;
+      const groups = autoExtractSeri(sourcePool, lastState.okeySpec);
       if (!groups.length) {
-        showToast('Once acmak istedigin serileri/perleri istakada bosluklarla ayirarak grupla (Seri Diz yardimci olur).');
+        showToast('Seri açmak için geçerli bir grup bulunamadı.');
         return;
       }
       socket.emit('okey101:open', { kind: 'seri', groups });
+      selectedTileIds.clear();
     });
-    document.getElementById('okey101-open-cift-btn')?.addEventListener('click', () => {
-      const groups = extractRackGroups(2).filter((g) => g.length === 2);
-      if (!groups.length) {
-        showToast('Once ciftlerini istakada ikiser ikiser, aralarinda bosluk birakarak diz (Cift Diz yardimci olur).');
+    document.getElementById('btn-cift-ac')?.addEventListener('click', () => {
+      const pool = rackLayout.filter(Boolean);
+      const selected = pool.filter(t => selectedTileIds.has(t.id));
+      const sourcePool = selected.length > 0 ? selected : pool;
+      const groups = autoExtractCift(sourcePool, lastState.okeySpec);
+      if (groups.length < 5) {
+        showToast('Çift açmak için en az 5 çiftiniz olmalı.');
         return;
       }
       socket.emit('okey101:open', { kind: 'cift', groups });
+      selectedTileIds.clear();
     });
+    document.getElementById('btn-geri-al')?.addEventListener('click', geriAl);
 
     const hasTiles = rackLayout.some(Boolean);
     if (ciftDizBtn) ciftDizBtn.disabled = !hasTiles;
@@ -772,6 +808,14 @@
   if (seriDizBtn) seriDizBtn.addEventListener('click', () => seriDiz(lastState ? lastState.okeySpec : null));
 
   let hasAutoSat = false;
+  
+  function geriAl() {
+    // No staging layout anymore. Server error simply triggers state sync.
+    renderRack(lastState);
+  }
+
+  socket.on('okey101:error', (err) => { showToast(err); geriAl(); });
+
   socket.on('okey101:state', (state) => {
     lastState = state;
     const myIndex = state.seats.findIndex((s) => s && s.userId === CURRENT_USER_ID);
@@ -873,6 +917,90 @@
   }
 
   renderRack(null);
+
+  function autoExtractSeri(sourcePool, okeySpec) {
+    let pool = sourcePool.map(t => ({...t}));
+    const wilds = pool.filter((t) => (t.joker || (okeySpec && t.color === okeySpec.color && t.number === okeySpec.number)));
+    pool = pool.filter((t) => !(t.joker || (okeySpec && t.color === okeySpec.color && t.number === okeySpec.number)));
+    const groups = [];
+    const COLORS = ['kirmizi', 'sari', 'mavi', 'siyah'];
+
+    function takeOne(color, number) {
+      const i = pool.findIndex((t) => t.color === color && t.number === number);
+      return i === -1 ? null : pool.splice(i, 1)[0];
+    }
+    function hasTile(color, number) {
+      return pool.some((t) => t.color === color && t.number === number);
+    }
+
+    for (const color of COLORS) {
+      let again = true;
+      while (again) {
+        again = false;
+        const nums = new Set(pool.filter((t) => t.color === color).map((t) => t.number));
+        let bestS = 0, bestLen = 0;
+        for (let s = 1; s <= 13; s++) {
+          if (!nums.has(s) || nums.has(s - 1)) continue;
+          let e = s;
+          while (nums.has(e + 1)) e++;
+          if (e - s + 1 > bestLen) { bestLen = e - s + 1; bestS = s; }
+        }
+        if (bestLen >= 3) {
+          const g = [];
+          for (let n = bestS; n < bestS + bestLen; n++) g.push(takeOne(color, n));
+          groups.push(g.map(t => t.id));
+          again = true;
+        }
+      }
+    }
+
+    for (let n = 1; n <= 13; n++) {
+      let again = true;
+      while (again) {
+        again = false;
+        const avail = COLORS.filter((c) => hasTile(c, n));
+        if (avail.length >= 3) {
+          groups.push(avail.map((c) => takeOne(c, n)).map(t => t.id));
+          again = true;
+        }
+      }
+    }
+    return groups;
+  }
+
+  function autoExtractCift(sourcePool, okeySpec) {
+    let pool = sourcePool.map(t => ({...t}));
+    pool = pool.filter((t) => !(t.joker || (okeySpec && t.color === okeySpec.color && t.number === okeySpec.number)));
+    const groups = [];
+    const COLORS = ['kirmizi', 'sari', 'mavi', 'siyah'];
+
+    function takeOne(color, number) {
+      const i = pool.findIndex((t) => t.color === color && t.number === number);
+      return i === -1 ? null : pool.splice(i, 1)[0];
+    }
+    function hasTile(color, number) {
+      return pool.some((t) => t.color === color && t.number === number);
+    }
+
+    for (let n = 1; n <= 13; n++) {
+      for (const color of COLORS) {
+        let again = true;
+        while (again) {
+          again = false;
+          // We need TWO identical tiles (same color, same number)
+          const count = pool.filter((t) => t.color === color && t.number === n).length;
+          if (count >= 2) {
+            groups.push([
+              takeOne(color, n).id,
+              takeOne(color, n).id
+            ]);
+            again = true;
+          }
+        }
+      }
+    }
+    return groups;
+  }
 })();
 
 
