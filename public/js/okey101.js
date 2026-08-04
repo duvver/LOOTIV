@@ -1,7 +1,8 @@
 (() => {
   console.log('[LOOTIV] okey101.js v1 yuklendi');
 
-  const socket = io({ query: { game: 'okey101' } });
+  const roomId = new URLSearchParams(window.location.search).get('roomId');
+  const socket = io({ query: { game: 'okey101', roomId: roomId || '' } });
 
   const playerList = document.getElementById('player-list');
   const playerCount = document.getElementById('player-count');
@@ -491,6 +492,8 @@
             <div class="okey-seat-avatar ${seat.isBot ? 'okey-seat-avatar-bot' : ''} ${seat.isTurn ? 'okey-seat-avatar-turn' : ''}">
               <span>${escapeHtml(initial)}</span>
               ${seat.isBot ? '<span class="okey-bot-tag">BOT</span>' : ''}
+              <div class="seat-emote-bubble" id="emote-bubble-${seat.userId}"></div>
+              ${!isMe && !seat.isBot ? `<button type="button" class="seat-gift-btn" data-target-id="${seat.userId}" title="Hediye 100 LT gönder">🎁</button>` : ''}
             </div>
             <div class="seat-info ${isMe ? 'seat-info-me' : ''}">
               <div class="seat-name">${escapeHtml(seat.name)}${seat.leavingAfterHand ? ' <span class="seat-leaving">(ayriliyor)</span>' : ''}</div>
@@ -512,6 +515,14 @@
         socket.emit('okey101:addbot', { seatIndex: Number(btn.dataset.botseat) });
       });
     });
+    seatsEl.querySelectorAll('.seat-gift-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        const targetId = Number(btn.dataset.targetId);
+        if (confirm('100 LT hediye etmek istediğinize emin misiniz?')) {
+          socket.emit('okey101:gift', { targetUserId: targetId });
+        }
+      });
+    });
     const standBtn = document.getElementById('stand-btn');
     if (standBtn) standBtn.addEventListener('click', () => socket.emit('okey101:stand'));
   }
@@ -526,18 +537,18 @@
   }
 
   function renderIndicator(state) {
-    if (!state.indicator) {
-      indicatorEl.innerHTML = '';
-      document.getElementById('infoCurrentOkey').innerHTML = '';
+    if (state) {
+      const modeEl = document.getElementById('infoGameMode');
+      if (modeEl && state.gameMode) modeEl.textContent = state.gameMode;
+      const typeEl = document.getElementById('infoGameType');
+      if (typeEl && state.gameType) typeEl.textContent = state.gameType;
+    }
+
+    if (!state || !state.indicator) {
+      if (indicatorEl) indicatorEl.innerHTML = '';
       return;
     }
-    indicatorEl.innerHTML = miniTileHtml(state.indicator, null);
-    
-    // Oyun Modu ve Turunu guncelle (simdilik sabit ancak ileride state'den gelebilir)
-    const modeEl = document.getElementById('infoGameMode');
-    if (modeEl) modeEl.textContent = state.gameMode || 'Tek';
-    const typeEl = document.getElementById('infoGameType');
-    if (typeEl) typeEl.textContent = state.gameType || 'Katlamasız';
+    if (indicatorEl) indicatorEl.innerHTML = miniTileHtml(state.indicator, null);
   }
 
   // ---- Acilan perler panosu (isleme drop hedefi) ----
@@ -760,12 +771,19 @@
   if (ciftDizBtn) ciftDizBtn.addEventListener('click', () => ciftDiz(lastState ? lastState.okeySpec : null));
   if (seriDizBtn) seriDizBtn.addEventListener('click', () => seriDiz(lastState ? lastState.okeySpec : null));
 
+  let hasAutoSat = false;
   socket.on('okey101:state', (state) => {
     lastState = state;
     const myIndex = state.seats.findIndex((s) => s && s.userId === CURRENT_USER_ID);
     if (myIndex === -1 || state.stage === 'waiting') {
       rackLayout = new Array(RACK_SLOTS).fill(null);
       serverTiles = [];
+    }
+    const titleEl = document.getElementById('okey101-title');
+    if (titleEl) {
+      const gMode = state.gameMode || 'Tekli';
+      const gType = state.gameType || 'Katlamasız';
+      titleEl.innerText = `101 Okey - ${gMode} / ${gType}`;
     }
     renderSeats(state);
     renderIndicator(state);
@@ -775,6 +793,16 @@
     renderBanner(state);
     renderRack(state);
     renderActionBar(state);
+
+    if (!hasAutoSat && new URLSearchParams(window.location.search).get('autoSit') === 'true') {
+      hasAutoSat = true;
+      if (myIndex === -1) {
+        const emptyIdx = state.seats.findIndex((s) => !s);
+        if (emptyIdx !== -1) {
+          socket.emit('okey101:sit', { seatIndex: emptyIdx });
+        }
+      }
+    }
   });
 
   socket.on('okey101:tiles', (tiles) => {
@@ -785,6 +813,65 @@
   });
 
   socket.on('okey101:error', (msg) => showToast(msg));
+
+  // --- Emotes & Gifts ---
+  function showEmote(userId, emote) {
+    const bubble = document.getElementById('emote-bubble-' + userId);
+    if (!bubble) return;
+    bubble.textContent = emote;
+    bubble.classList.add('show');
+    if (window.LootivSound) LootivSound.play('notify');
+    setTimeout(() => bubble.classList.remove('show'), 3000);
+  }
+
+  function flyChip(fromUserId, toUserId) {
+    if (!lastState) return;
+    const fromSeat = lastState.seats.findIndex(s => s && s.userId === fromUserId);
+    const toSeat = lastState.seats.findIndex(s => s && s.userId === toUserId);
+    if (fromSeat === -1 || toSeat === -1) return;
+    const fromEl = seatsEl.querySelector('.okey-seat-pos-' + fromSeat);
+    const toEl = seatsEl.querySelector('.okey-seat-pos-' + toSeat);
+    if (!fromEl || !toEl) return;
+
+    const fromRect = fromEl.getBoundingClientRect();
+    const toRect = toEl.getBoundingClientRect();
+    
+    const chip = document.createElement('div');
+    chip.className = 'flying-chip';
+    chip.style.left = (fromRect.left + fromRect.width / 2 - 12) + 'px';
+    chip.style.top = (fromRect.top + fromRect.height / 2 - 12) + 'px';
+    document.body.appendChild(chip);
+
+    if (window.LootivSound) LootivSound.play('chip');
+
+    setTimeout(() => {
+      chip.style.left = (toRect.left + toRect.width / 2 - 12) + 'px';
+      chip.style.top = (toRect.top + toRect.height / 2 - 12) + 'px';
+    }, 50);
+
+    setTimeout(() => {
+      chip.remove();
+      if (window.LootivSound) LootivSound.play('chip');
+    }, 650);
+  }
+
+  socket.on('okey101:emote', (data) => showEmote(data.userId, data.emote));
+  socket.on('okey101:gift', (data) => flyChip(data.fromUserId, data.targetUserId));
+
+  const emoteToggleBtn = document.getElementById('emote-toggle-btn');
+  const emotePicker = document.getElementById('emote-picker');
+  if (emoteToggleBtn && emotePicker) {
+    emoteToggleBtn.addEventListener('click', () => {
+      emotePicker.style.display = emotePicker.style.display === 'none' ? 'flex' : 'none';
+    });
+    document.querySelectorAll('.emote-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        socket.emit('okey101:emote', { emote: btn.dataset.emote });
+        emotePicker.style.display = 'none';
+      });
+    });
+  }
+
   renderRack(null);
 })();
 

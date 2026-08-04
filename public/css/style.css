@@ -3858,3 +3858,79 @@ button {
   }
 }
 
+/* Universal Game Features: Emotes, Gifts, Chips */
+.seat-emote-bubble {
+  position: absolute;
+  top: -40px;
+  left: 50%;
+  transform: translateX(-50%) scale(0);
+  background: white;
+  padding: 8px 12px;
+  border-radius: 20px;
+  font-size: 24px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  z-index: 100;
+  pointer-events: none;
+}
+.seat-emote-bubble.show {
+  transform: translateX(-50%) scale(1);
+  opacity: 1;
+}
+.seat-emote-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 6px 6px 0;
+  border-style: solid;
+  border-color: white transparent transparent transparent;
+}
+.seat-gift-btn {
+  position: absolute;
+  right: -10px;
+  top: -10px;
+  background: #ff4081;
+  border: 2px solid white;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  font-size: 12px;
+  line-height: 20px;
+  color: white;
+  cursor: pointer;
+  z-index: 10;
+  transition: transform 0.2s;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.seat-gift-btn:hover {
+  transform: scale(1.2) rotate(15deg);
+}
+.flying-chip {
+  position: fixed;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #ffd700, #b8860b);
+  border: 2px dashed #8b6508;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.5);
+  z-index: 9999;
+  pointer-events: none;
+  transition: all 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+}
+.emote-btn {
+  font-size: 1.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  transition: transform 0.2s;
+}
+.emote-btn:hover {
+  transform: scale(1.2);
+}

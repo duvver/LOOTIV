@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>101 Okey - LOOTIV</title>
   <link rel="stylesheet" href="/css/style.css?v=6" />
-  <link rel="stylesheet" href="/css/okey101.css?v=4" />
+  <link rel="stylesheet" href="/css/okey101.css?v=5" />
 </head>
 <body class="ok1-body" data-user-id="<%= user.id %>">
 
@@ -50,7 +50,7 @@
     <main class="ok1-main">
       <section class="ok1-tablewrap">
       <div class="ok1-felt" id="okey-felt">
-        <div class="ok1-felt-label">LOOTIV 101 OKEY</div>
+        <div class="ok1-felt-label" id="okey101-title">LOOTIV 101 OKEY</div>
 
         <!-- Yere acilan taslarin golge izgarasi (101 Okey Tema) -->
         <div class="ok1-gridbg">
@@ -116,9 +116,18 @@
     <div class="chat-body">
       <div class="chat-messages" id="chat-messages" data-channel="oyun"></div>
     </div>
-    <form class="chat-input-row" id="chat-form">
-      <input type="text" id="chat-input" class="chat-input" placeholder="Mesajini yaz..." maxlength="500" autocomplete="off" />
-      <button type="submit" class="btn btn-primary btn-sm">Gonder</button>
+    <form class="chat-input-row" id="chat-form" style="position: relative;">
+      <button type="button" class="btn btn-sm" id="emote-toggle-btn" style="padding: 0 8px; font-size: 1.2rem; background: transparent; border: none;">😊</button>
+      <div id="emote-picker" class="glass-panel" style="display: none; position: absolute; bottom: 100%; left: 0; padding: 5px; z-index: 1000; border-radius: 8px; flex-wrap: wrap; width: max-content;">
+        <button type="button" class="emote-btn" data-emote="😊">😊</button>
+        <button type="button" class="emote-btn" data-emote="😂">😂</button>
+        <button type="button" class="emote-btn" data-emote="😎">😎</button>
+        <button type="button" class="emote-btn" data-emote="😡">😡</button>
+        <button type="button" class="emote-btn" data-emote="👍">👍</button>
+        <button type="button" class="emote-btn" data-emote="👎">👎</button>
+      </div>
+      <input type="text" id="chat-input" class="chat-input" placeholder="Mesajını yaz..." maxlength="500" autocomplete="off" />
+      <button type="submit" class="btn btn-primary btn-sm">Gönder</button>
     </form>
     <!-- Canli oyuncu sayaci (gizli tutucu; JS bunu doldurabilir) -->
     <ul id="player-list" class="player-list" hidden></ul>
@@ -127,7 +136,8 @@
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
-  <script src="/js/okey101.js?v=1"></script>
+  <script src="/js/soundEngine.js?v=1"></script>
+  <script src="/js/okey101.js?v=5"></script>
   <script src="/js/notify.js?v=1"></script>
 
   <script>

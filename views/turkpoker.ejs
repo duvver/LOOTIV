@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Türk Pokeri - LOOTIV</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/turkpoker.css?v=1" />
+</head>
+<body class="app-body" data-user-id="<%= user.id %>">
+  <header class="topbar">
+    <div class="topbar-left">
+      <a href="/" class="brand-logo"><img src="/images/lootivlogo.png" alt="LOOTIV" /></a>
+    </div>
+    <div class="topbar-right">
+      <nav class="topbar-nav">
+        <a href="/">Ana Sayfa</a>
+      </nav>
+      <div class="user-chip">
+        <span class="user-name"><%= user.rumuz %></span>
+        <span class="user-points"><span class="coin">&#9679;</span> <%= user.lt_balance %> LT</span>
+      </div>
+      <button class="btn btn-ghost btn-sm" id="btn-leaderboard">Sıralama</button>
+      <a href="/" class="btn btn-ghost btn-sm">Ana Sayfaya Dön</a>
+    </div>
+  </header>
+
+  <main class="poker-layout">
+    <section class="poker-table">
+      <div class="table-felt" id="table-felt">
+        <div class="table-title" id="turkpoker-title">Türk Pokeri</div>
+        <div class="table-status" id="table-status"></div>
+        <div class="table-pot" id="table-pot"></div>
+        <div class="table-seats" id="table-seats"></div>
+        <div class="table-banner" id="table-banner"></div>
+      </div>
+      <div class="action-bar glass-panel" id="action-bar"></div>
+    </section>
+
+    <aside class="players-panel glass-panel">
+      <h3 class="panel-title">Canlı Oynayanlar <span id="player-count" class="panel-count">0</span></h3>
+      <ul id="player-list" class="player-list"></ul>
+    </aside>
+
+  </main>
+
+  <!-- ===== Sohbet paneli (sürekli açık) ===== -->
+  <aside class="ok1-chatpanel glass-panel" id="ok1-chatpanel">
+    <div class="chat-tabs">
+      <button class="chat-tab active" data-channel="oyun">Oyun Lobisi <span class="badge"></span></button>
+      <button class="chat-tab" data-channel="sistem">Sistem Mesajı <span class="badge"></span></button>
+    </div>
+    <div class="chat-body">
+      <div class="chat-messages" id="chat-messages" data-channel="oyun"></div>
+    </div>
+      <form class="chat-input-row" id="chat-form" style="position: relative; display: flex; align-items: center; gap: 8px;">
+        <button type="button" class="btn btn-sm" id="emote-toggle-btn" style="flex-shrink: 0; padding: 4px 8px; font-size: 1.2rem; background: transparent; border: none;">😀</button>
+        <div id="emote-picker" class="glass-panel" style="display: none; position: absolute; bottom: calc(100% + 5px); left: 0; padding: 8px; z-index: 1000; border-radius: 8px; flex-wrap: wrap; width: max-content; gap: 4px;">
+          <button type="button" class="emote-btn" data-emote="👍">👍</button>
+          <button type="button" class="emote-btn" data-emote="👎">👎</button>
+          <button type="button" class="emote-btn" data-emote="😂">😂</button>
+          <button type="button" class="emote-btn" data-emote="😡">😡</button>
+          <button type="button" class="emote-btn" data-emote="👋">👋</button>
+        </div>
+        <input type="text" id="chat-input" class="chat-input" style="flex: 1; min-width: 0;" placeholder="Mesajinizi yazin..." autocomplete="off">
+        <button type="submit" class="btn btn-primary btn-sm" style="flex-shrink: 0;">Gonder</button>
+      </form>
+  </aside>
+
+  <!-- ===== Liderlik Tablosu Modali ===== -->
+  <div class="modal-overlay" id="leaderboard-modal" style="display: none;">
+    <div class="modal-content glass-panel" style="max-width: 900px;">
+      <div class="modal-header">
+        <h2 class="modal-title">Türk Pokeri Sıralaması (Liderler)</h2>
+        <button class="modal-close" id="leaderboard-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="leaderboard-table-container">
+          <table class="leaderboard-table" style="width: 100%; text-align: left; border-collapse: collapse;">
+            <thead>
+              <tr style="border-bottom: 2px solid var(--neon-blue);">
+                <th style="padding: 10px;">Sıra</th>
+                <th style="padding: 10px;">Oyuncu</th>
+                <th style="padding: 10px;">Kazanç (LT)</th>
+                <th style="padding: 10px;">En Büyük Pot</th>
+                <th style="padding: 10px;">En İyi El</th>
+                <th style="padding: 10px;">Oynanan</th>
+                <th style="padding: 10px;">Kazanma %</th>
+                <th style="padding: 10px;">Agresiflik</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboard-body">
+              <tr><td colspan="8" style="text-align: center; padding: 20px;">Yükleniyor...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/turkpoker.js?v=3"></script>
+  <script src="/js/notify.js?v=1"></script>
+</body>
+</html>

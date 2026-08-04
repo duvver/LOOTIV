@@ -30,73 +30,22 @@
       <div class="flex-1">
         <!-- Liste başlığı + masa oluştur -->
         <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
-          <h2 class="font-headline-lg text-headline-lg text-primary">Acik Masalar</h2>
+          <h2 class="font-headline-lg text-headline-lg text-primary">Masalar</h2>
           <button type="button" id="create-table-btn" class="px-5 py-2.5 bg-secondary-container text-white rounded-lg font-label-md text-label-md hover:opacity-90 transition-all flex items-center gap-2">
             <span class="material-symbols-outlined text-sm">add_circle</span> Masa Olustur
           </button>
         </div>
 
-        <!-- Masa kartları (temsili) -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-          <!-- Masa 1 -->
-          <div class="bg-white rounded-xl border border-outline-variant/30 shadow-sm p-5 flex flex-col gap-4">
-            <div class="flex items-center justify-between">
-              <span class="font-headline-md text-primary">Masa #12</span>
-              <span class="px-2 py-1 bg-secondary-container/20 text-on-secondary-container rounded font-label-md text-label-sm">20 LT</span>
-            </div>
-            <div class="flex gap-2">
-              <span class="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm">A</span>
-              <span class="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm">M</span>
-              <span class="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm">K</span>
-              <span class="w-9 h-9 rounded-full border-2 border-dashed border-outline-variant"></span>
-            </div>
-            <div class="flex items-center justify-between pt-3 border-t border-outline-variant/20">
-              <span class="text-label-sm text-outline">3/4 oyuncu</span>
-              <a href="<%= meta.playUrl %>" class="px-4 py-1.5 bg-primary text-white rounded-lg font-label-md text-label-sm hover:bg-secondary-container transition-colors">Otur</a>
-            </div>
-          </div>
-
-          <!-- Masa 2 -->
-          <div class="bg-white rounded-xl border border-outline-variant/30 shadow-sm p-5 flex flex-col gap-4">
-            <div class="flex items-center justify-between">
-              <span class="font-headline-md text-primary">Masa #13</span>
-              <span class="px-2 py-1 bg-secondary-container/20 text-on-secondary-container rounded font-label-md text-label-sm">20 LT</span>
-            </div>
-            <div class="flex gap-2">
-              <span class="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm">S</span>
-              <span class="w-9 h-9 rounded-full border-2 border-dashed border-outline-variant"></span>
-              <span class="w-9 h-9 rounded-full border-2 border-dashed border-outline-variant"></span>
-              <span class="w-9 h-9 rounded-full border-2 border-dashed border-outline-variant"></span>
-            </div>
-            <div class="flex items-center justify-between pt-3 border-t border-outline-variant/20">
-              <span class="text-label-sm text-outline">1/4 oyuncu</span>
-              <a href="<%= meta.playUrl %>" class="px-4 py-1.5 bg-primary text-white rounded-lg font-label-md text-label-sm hover:bg-secondary-container transition-colors">Otur</a>
-            </div>
-          </div>
-
-          <!-- Masa 3: dolu -->
-          <div class="bg-white rounded-xl border border-outline-variant/30 shadow-sm p-5 flex flex-col gap-4 opacity-80">
-            <div class="flex items-center justify-between">
-              <span class="font-headline-md text-primary">Masa #14</span>
-              <span class="px-2 py-1 bg-secondary-container text-white rounded font-label-md text-label-sm">100 LT</span>
-            </div>
-            <div class="flex gap-2">
-              <span class="w-9 h-9 rounded-full bg-slate-dark text-white flex items-center justify-center font-bold text-sm">D</span>
-              <span class="w-9 h-9 rounded-full bg-slate-dark text-white flex items-center justify-center font-bold text-sm">O</span>
-              <span class="w-9 h-9 rounded-full bg-slate-dark text-white flex items-center justify-center font-bold text-sm">T</span>
-              <span class="w-9 h-9 rounded-full bg-slate-dark text-white flex items-center justify-center font-bold text-sm">B</span>
-            </div>
-            <div class="flex items-center justify-between pt-3 border-t border-outline-variant/20">
-              <span class="text-label-sm text-error">Dolu (4/4)</span>
-              <a href="<%= meta.playUrl %>" class="px-4 py-1.5 border border-silver-light text-primary rounded-lg font-label-md text-label-sm hover:bg-surface-container-low transition-colors">Izle</a>
-            </div>
-          </div>
-
-          <!-- Boş masa ipucu -->
-          <div class="bg-surface-container-low rounded-xl border-2 border-dashed border-outline-variant/50 p-5 flex flex-col items-center justify-center text-center gap-2">
-            <span class="material-symbols-outlined text-4xl text-primary">add_circle</span>
-            <p class="text-body-sm text-outline">Bos masa mi ariyorsun?<br/>Kendi masani olustur.</p>
-            <button type="button" id="create-table-btn-2" class="px-4 py-2 border border-silver-light text-primary rounded-lg font-label-md text-label-sm hover:bg-white transition-all">Masa Olustur</button>
+        <!-- Masa kartları -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4" id="table-list-container">
+          <!-- Boş masa durumu -->
+          <div class="col-span-full bg-surface-container-low rounded-2xl border-2 border-dashed border-outline-variant/50 p-10 flex flex-col items-center justify-center text-center gap-3">
+            <span class="material-symbols-outlined text-5xl text-primary/60">meeting_room</span>
+            <h3 class="font-headline-sm text-on-surface">Şu An Açık Masa Bulunmuyor</h3>
+            <p class="text-body-sm text-outline max-w-sm">Dilediğiniz bahis ve kurallar ile yeni bir masa oluşturarak hemen oyuna başlayabilirsiniz.</p>
+            <button type="button" onclick="openCreateModal()" class="mt-2 px-6 py-3 bg-primary text-white rounded-xl font-label-md hover:bg-primary/90 transition-all shadow-md flex items-center gap-2 cursor-pointer">
+              <span class="material-symbols-outlined text-sm">add_circle</span> Masa Oluştur
+            </button>
           </div>
         </div>
       </div> <!-- /Sol Kısım -->
@@ -252,6 +201,28 @@
                 </div>
               </div>
             </div>
+          </section>
+
+          <!-- 5. Masa Adı (VIP Özel) -->
+          <section>
+            <h3 class="font-headline-md text-on-surface mb-4">5. Masa Adı</h3>
+            <% if (user.vip_tier > 0) { %>
+              <div class="relative">
+                <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-energetic-purple text-xl">workspace_premium</span>
+                <input type="text" name="title" placeholder="Özel Masa Adı Girin (Örn: Şampiyonlar Masası)" class="w-full pl-11 pr-4 py-3 bg-energetic-purple/5 border-2 border-energetic-purple/40 rounded-xl outline-none focus:border-energetic-purple font-label-md text-on-surface transition-all" />
+              </div>
+              <p class="text-xs text-energetic-purple font-semibold mt-1.5 flex items-center gap-1">
+                <span>👑</span> VIP üye olduğunuz için özel masa adı belirleyebilirsiniz.
+              </p>
+            <% } else { %>
+              <div class="relative opacity-70">
+                <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-outline text-xl">lock</span>
+                <input type="text" disabled placeholder="Masa Adı Otomatik Belirlenir (Örn: Masa #1)" class="w-full pl-11 pr-4 py-3 bg-surface-container border border-outline-variant/30 rounded-xl text-outline font-label-md cursor-not-allowed" />
+              </div>
+              <p class="text-xs text-outline mt-1.5 flex items-center gap-1">
+                <span class="material-symbols-outlined text-xs">info</span> Masa adı sıradaki numaraya göre otomatik verilir. Özel isim için VIP üye olun.
+              </p>
+            <% } %>
           </section>
 
           <!-- Oluştur Butonu -->
@@ -429,8 +400,113 @@
           chatInput.value = '';
         });
       }
+
+      // ---- User-Created Rooms Renderer ----
+      var tableListContainer = document.getElementById('table-list-container');
+      
+      function renderRoomsList(rooms) {
+        if (!tableListContainer) return;
+        if (!rooms || !rooms.length) {
+          tableListContainer.innerHTML = 
+            '<div class="col-span-full bg-surface-container-low rounded-2xl border-2 border-dashed border-outline-variant/50 p-10 flex flex-col items-center justify-center text-center gap-3">' +
+              '<span class="material-symbols-outlined text-5xl text-primary/60">meeting_room</span>' +
+              '<h3 class="font-headline-sm text-on-surface">Şu An Açık Masa Bulunmuyor</h3>' +
+              '<p class="text-body-sm text-outline max-w-sm">Dilediğiniz bahis ve kurallar ile yeni bir masa oluşturarak hemen oyuna başlayabilirsiniz.</p>' +
+              '<button type="button" onclick="openCreateModal()" class="mt-2 px-6 py-3 bg-primary text-white rounded-xl font-label-md hover:bg-primary/90 transition-all shadow-md flex items-center gap-2 cursor-pointer">' +
+                '<span class="material-symbols-outlined text-sm">add_circle</span> Masa Oluştur' +
+              '</button>' +
+            '</div>';
+          return;
+        }
+
+        tableListContainer.innerHTML = rooms.map(function(room) {
+          var isFull = room.seatedCount >= (room.seatCount || 4);
+          var stake = Number(room.stake || 500).toLocaleString('tr-TR') + ' LT';
+
+          var avatarsHtml = room.seats.map(function(s) {
+            if (!s) {
+              return '<span class="w-9 h-9 rounded-full border-2 border-dashed border-outline-variant/60 flex items-center justify-center text-xs text-outline font-semibold">Boş</span>';
+            }
+            var initial = escapeHtml((s.name || '?').charAt(0).toUpperCase());
+            return '<span class="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm shadow-sm" title="' + escapeHtml(s.name) + '">' + initial + '</span>';
+          }).join('');
+
+          var statusText = isFull ? 'Dolu (4/4)' : room.seatedCount + '/' + (room.seatCount || 4) + ' Oyuncu';
+          var statusColor = isFull ? 'text-error font-bold' : 'text-primary font-bold';
+
+          var isPrivate = room.privacy === 'private';
+          var titleIcon = isPrivate ? '<span class="material-symbols-outlined text-amber-500 text-base" title="Şifreli Masa">lock</span>' : '<span class="material-symbols-outlined text-primary text-base">table_restaurant</span>';
+          
+          var actionBtnHtml = isPrivate 
+            ? '<button type="button" onclick="openJoinPasswordModal(\'' + escapeHtml(room.id) + '\')" class="px-5 py-2 bg-amber-600 text-white rounded-xl font-label-md text-label-sm hover:bg-amber-700 transition-all shadow-md flex items-center gap-1.5 cursor-pointer">' +
+                '<span class="material-symbols-outlined text-sm">lock</span> ' + (isFull ? 'İzle' : 'Otur') +
+              '</button>'
+            : '<a href="<%= meta.playUrl %>?roomId=' + encodeURIComponent(room.id) + '&autoSit=true" class="px-5 py-2 bg-primary text-white rounded-xl font-label-md text-label-sm hover:bg-primary/90 transition-all shadow-md flex items-center gap-1.5 cursor-pointer">' +
+                '<span class="material-symbols-outlined text-sm">login</span> ' + (isFull ? 'İzle' : 'Otur') +
+              '</a>';
+
+          var badgesHtml = '<div class="flex gap-1.5 flex-wrap mt-2">';
+          if (room.gameMode) {
+             var modeLabel = room.gameMode === 'esli' ? 'Eşli' : (room.gameMode === 'solo' || room.gameMode === 'tekli' ? 'Tekli' : room.gameMode);
+             var modeIcon = (modeLabel === 'Eşli' || modeLabel === 'esli') ? 'group' : 'person';
+             badgesHtml += '<span class="px-2 py-0.5 bg-surface-variant text-on-surface-variant rounded-md text-[10px] font-bold tracking-wider flex items-center gap-1"><span class="material-symbols-outlined text-[12px]">' + modeIcon + '</span> ' + escapeHtml(modeLabel) + '</span>';
+          }
+          if (room.gameType) {
+             var typeLabel = room.gameType === 'katlamali' ? 'Katlamalı' : (room.gameType === 'katlamasiz' ? 'Katlamasız' : room.gameType);
+             badgesHtml += '<span class="px-2 py-0.5 bg-surface-variant text-on-surface-variant rounded-md text-[10px] font-bold tracking-wider">' + escapeHtml(typeLabel) + '</span>';
+          }
+          badgesHtml += '</div>';
+
+          return (
+            '<div class="bg-white rounded-2xl border border-outline-variant/30 shadow-md p-5 flex flex-col gap-4 hover:shadow-lg transition-all">' +
+              '<div class="flex items-center justify-between">' +
+                '<div>' +
+                  '<span class="font-headline-md text-primary font-bold text-lg flex items-center gap-2">' + titleIcon + ' ' + escapeHtml(room.title) + '</span>' +
+                  badgesHtml +
+                '</div>' +
+                '<span class="px-3 py-1 bg-amber-500/15 text-amber-700 rounded-full font-label-md text-xs font-extrabold shrink-0">' + stake + '</span>' +
+              '</div>' +
+              '<div class="flex gap-2 items-center py-2">' + avatarsHtml + '</div>' +
+              '<div class="flex items-center justify-between pt-3 border-t border-outline-variant/20">' +
+                '<span class="text-label-sm ' + statusColor + '">' + statusText + '</span>' +
+                actionBtnHtml +
+              '</div>' +
+            '</div>'
+          );
+        }).join('');
+      }
+
+      socket.on('rooms:list', renderRoomsList);
+      socket.emit('rooms:get', '<%= meta.slug %>');
     });
   </script>
+
+  <!-- ===== Şifreli Masa Giriş Modalı ===== -->
+  <div id="join-password-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl border border-outline-variant/30 shadow-2xl max-w-sm w-full p-6 flex flex-col gap-4">
+      <div class="flex items-center justify-between border-b border-outline-variant/20 pb-3">
+        <h3 class="font-headline-sm text-primary flex items-center gap-2 font-bold">
+          <span class="material-symbols-outlined text-amber-500">lock</span> Şifreli Masa Girişi
+        </h3>
+        <button type="button" onclick="closeJoinPasswordModal()" class="text-outline hover:text-on-surface cursor-pointer">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <p class="text-body-sm text-outline">Bu masa şifrelidir. Masaya oturmak için oda şifresini girin:</p>
+      <input type="hidden" id="pass-modal-room-id" />
+      <div class="relative">
+        <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-outline">key</span>
+        <input type="password" id="pass-modal-input" placeholder="Oda Şifresi" class="w-full pl-11 pr-4 py-3 border border-outline-variant/40 rounded-xl outline-none focus:border-primary font-label-md" />
+      </div>
+      <div id="pass-modal-error" class="hidden text-error text-xs font-bold bg-error/10 p-2.5 rounded-lg border border-error/20"></div>
+      <div class="flex gap-3 justify-end mt-2">
+        <button type="button" onclick="closeJoinPasswordModal()" class="px-4 py-2.5 bg-surface-container text-on-surface-variant rounded-xl font-label-md hover:bg-surface-container-high cursor-pointer">İptal</button>
+        <button type="button" id="pass-modal-submit" class="px-5 py-2.5 bg-primary text-white rounded-xl font-label-md hover:bg-primary/90 flex items-center gap-1.5 shadow-md cursor-pointer">
+          <span class="material-symbols-outlined text-sm">login</span> Giriş Yap
+        </button>
+      </div>
+    </div>
+  </div>
 
   <script>
     (function () {
@@ -448,15 +524,103 @@
         tablesView.hidden = false; 
       }
       
+      window.openCreateModal = openCreate;
+
       document.getElementById('create-table-btn').addEventListener('click', openCreate);
       var btn2 = document.getElementById('create-table-btn-2');
       if (btn2) btn2.addEventListener('click', openCreate);
       document.getElementById('create-cancel').addEventListener('click', closeCreate);
       
+      window.openJoinPasswordModal = function (roomId) {
+        document.getElementById('pass-modal-room-id').value = roomId;
+        document.getElementById('pass-modal-input').value = '';
+        document.getElementById('pass-modal-error').classList.add('hidden');
+        document.getElementById('join-password-modal').classList.remove('hidden');
+      };
+
+      window.closeJoinPasswordModal = function () {
+        document.getElementById('join-password-modal').classList.add('hidden');
+      };
+
+      var passSubmitBtn = document.getElementById('pass-modal-submit');
+      if (passSubmitBtn) {
+        passSubmitBtn.addEventListener('click', async function () {
+          var roomId = document.getElementById('pass-modal-room-id').value;
+          var password = document.getElementById('pass-modal-input').value;
+          var errEl = document.getElementById('pass-modal-error');
+          errEl.classList.add('hidden');
+          if (!password) {
+            errEl.textContent = 'Lütfen masa şifresini girin!';
+            errEl.classList.remove('hidden');
+            return;
+          }
+          try {
+            passSubmitBtn.disabled = true;
+            var res = await fetch('/api/rooms/verify-password', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ roomId: roomId, password: password })
+            });
+            var data = await res.json();
+            if (data.ok && data.playUrl) {
+              window.location.href = data.playUrl;
+            } else {
+              errEl.textContent = data.error || 'Girdiğiniz şifre hatalı!';
+              errEl.classList.remove('hidden');
+              passSubmitBtn.disabled = false;
+            }
+          } catch (err) {
+            errEl.textContent = 'Sunucu bağlantı hatası!';
+            errEl.classList.remove('hidden');
+            passSubmitBtn.disabled = false;
+          }
+        });
+      }
+
       var confirmBtn = document.getElementById('create-confirm-btn');
       if (confirmBtn) {
-        confirmBtn.addEventListener('click', function () {
-          window.location.href = '<%= meta.playUrl %>';
+        confirmBtn.addEventListener('click', async function (e) {
+          e.preventDefault();
+          var form = document.getElementById('create-room-form');
+          var formData = new FormData(form);
+          var selectedBet = formData.get('bet') || formData.get('manual_bet') || 500;
+          var selectedMode = formData.get('mode') || 'solo';
+          var selectedPrivacy = formData.get('privacy') || 'public';
+          var selectedPassword = formData.get('password') || '';
+          var selectedTitle = formData.get('title') || '';
+          var selectedRules = formData.getAll('rules[]');
+
+          try {
+            confirmBtn.disabled = true;
+            confirmBtn.innerHTML = '<span class="material-symbols-outlined animate-spin">progress_activity</span> Masa Oluşturuluyor...';
+
+            var response = await fetch('/api/rooms/create', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                game: '<%= meta.slug %>',
+                bet: selectedBet,
+                mode: selectedMode,
+                privacy: selectedPrivacy,
+                password: selectedPassword,
+                title: selectedTitle,
+                rules: selectedRules
+              })
+            });
+            var data = await response.json();
+            if (data.ok && data.playUrl) {
+              window.location.href = data.playUrl;
+            } else {
+              alert(data.error || 'Masa oluşturulurken bir hata oluştu.');
+              confirmBtn.disabled = false;
+              confirmBtn.innerHTML = '<span class="material-symbols-outlined">play_arrow</span> Masayı Oluştur ve Otur';
+            }
+          } catch (err) {
+            console.error('Masa oluşturma hatası:', err);
+            alert('Sunucu hatası. Lütfen tekrar deneyin.');
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = '<span class="material-symbols-outlined">play_arrow</span> Masayı Oluştur ve Otur';
+          }
         });
       }
     })();

@@ -524,6 +524,9 @@
       <a class="adm-nav-link" data-page="announcements" onclick="showPage('announcements',this)">
         <span class="adm-nav-icon">&#128226;</span> Duyurular
       </a>
+      <a class="adm-nav-link" data-page="treasury" onclick="showPage('treasury',this)">
+        <span class="adm-nav-icon">&#128176;</span> Site Kasasi & Komisyon
+      </a>
 
       <div class="adm-nav-group">Oyun Ayarları</div>
       <a class="adm-nav-link" data-page="dailytasks" onclick="showPage('dailytasks',this)">
@@ -1586,6 +1589,130 @@
                     </td>
                   </tr>
                 <% }); %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== SAYFA: Site Kasası & Komisyon ========== -->
+    <div class="adm-page" id="page-treasury">
+      <div class="adm-stats">
+        <div class="adm-stat">
+          <div class="adm-stat-icon">🏦</div>
+          <div class="adm-stat-val"><%= typeof treasuryBalance !== 'undefined' ? Math.floor(treasuryBalance.grandTotal).toLocaleString('tr-TR') : '0' %></div>
+          <div class="adm-stat-label">Toplam Kasa (LT)</div>
+        </div>
+        <div class="adm-stat">
+          <div class="adm-stat-icon">📈</div>
+          <div class="adm-stat-val">
+            <%= (typeof treasuryBalance !== 'undefined' && treasuryBalance.balances) ? treasuryBalance.balances.length : '0' %>
+          </div>
+          <div class="adm-stat-label">Aktif Oyun Kestiği</div>
+        </div>
+      </div>
+
+      <div class="adm-section">
+        <div class="adm-section-head" onclick="toggleSection(this)">
+          <div class="adm-section-head-icon">⚙️</div>
+          <div class="adm-section-head-text">
+            <div class="adm-section-head-title">Komisyon Oranları</div>
+            <div class="adm-section-head-sub">Oyunlara göre kesinti oranlarını ayarlayın</div>
+          </div>
+          <div class="adm-chevron">&#9660;</div>
+        </div>
+        <div class="adm-section-body" style="display: block;">
+          <div class="adm-section-inner">
+            <table class="adm-table">
+              <thead>
+                <tr>
+                  <th>Oyun</th>
+                  <th>Biriken Miktar</th>
+                  <th>Mevcut Kesinti Oranı (%)</th>
+                  <th>Güncelle</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if(typeof commissionSettings !== 'undefined' && commissionSettings.length > 0) { %>
+                  <% commissionSettings.forEach(function(s) { %>
+                    <% var b = (typeof treasuryBalance !== 'undefined' && treasuryBalance.balances) ? treasuryBalance.balances.find(x => x.game === s.game) : null; %>
+                    <tr>
+                      <td><span class="adm-section-badge"><%= s.game.toUpperCase() %></span></td>
+                      <td style="color:#8b949e;"><%= b ? Math.floor(b.total).toLocaleString('tr-TR') : '0' %> LT</td>
+                      <td style="color:var(--green-bright); font-weight:bold;"><%= (s.rate * 100).toFixed(2) %>%</td>
+                      <td>
+                        <form action="/admin/treasury/update-commission" method="POST" style="display:flex; gap:10px; align-items:center;">
+                          <input type="hidden" name="game" value="<%= s.game %>">
+                          <input type="number" name="rate" step="0.1" min="0" max="100" class="adm-input" value="<%= (s.rate * 100).toFixed(2) %>" style="width:100px; padding:6px; font-size:13px;" required>
+                          <button type="submit" class="adm-btn" style="padding:6px 12px; font-size:12px;">Uygula</button>
+                        </form>
+                      </td>
+                    </tr>
+                  <% }); %>
+                <% } else { %>
+                  <tr><td colspan="4" style="text-align:center; color:#8b949e; padding:20px;">Henüz komisyon ayarı yok.</td></tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="adm-section">
+        <div class="adm-section-head" onclick="toggleSection(this)">
+          <div class="adm-section-head-icon">💸</div>
+          <div class="adm-section-head-text">
+            <div class="adm-section-head-title">Kasadan LT Transferi</div>
+            <div class="adm-section-head-sub">Site kasasındaki LT'yi bir kullanıcıya gönderin</div>
+          </div>
+          <div class="adm-chevron">&#9660;</div>
+        </div>
+        <div class="adm-section-body" style="display: block;">
+          <div class="adm-section-inner">
+            <form action="/admin/treasury/transfer" method="POST" class="adm-form">
+              <div class="adm-form-row" style="grid-template-columns: repeat(3, 1fr);">
+                <div class="adm-field">
+                  <label>Alıcı Kullanıcı Rumuzu</label>
+                  <input type="text" name="rumuz" placeholder="Örn: XxxLootivxxX" required>
+                </div>
+                <div class="adm-field">
+                  <label>Miktar (LT)</label>
+                  <input type="number" name="amount" required>
+                </div>
+                <div class="adm-field">
+                  <label>İşlem Notu (İsteğe bağlı)</label>
+                  <input type="text" name="note" placeholder="Örn: Ödül Dağıtımı">
+                </div>
+              </div>
+              <div class="adm-form-footer">
+                <button type="submit" class="adm-save-btn">Transferi Gerçekleştir</button>
+              </div>
+            </form>
+
+            <h4 style="margin-top:24px; margin-bottom:12px; font-size:14px; font-weight:700; color:#e6edf3;">Son Transferler</h4>
+            <table class="adm-table">
+              <thead>
+                <tr>
+                  <th>Tarih</th>
+                  <th>Kime</th>
+                  <th>Miktar</th>
+                  <th>Not</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if(typeof withdrawalHistory !== 'undefined' && withdrawalHistory.length > 0) { %>
+                  <% withdrawalHistory.forEach(function(w) { %>
+                    <tr>
+                      <td style="color:#8b949e;"><%= new Date(w.created_at).toLocaleString('tr-TR') %></td>
+                      <td><span class="adm-section-badge"><%= w.rumuz %> (ID: <%= w.to_user_id %>)</span></td>
+                      <td style="color:var(--green-bright); font-weight:bold;">-<%= w.amount.toLocaleString('tr-TR') %> LT</td>
+                      <td style="color:#8b949e;"><%= w.admin_note || '-' %></td>
+                    </tr>
+                  <% }); %>
+                <% } else { %>
+                  <tr><td colspan="4" style="text-align:center; color:#8b949e; padding:20px;">Henüz transfer işlemi yapılmadı.</td></tr>
+                <% } %>
               </tbody>
             </table>
           </div>

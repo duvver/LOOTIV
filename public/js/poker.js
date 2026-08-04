@@ -1,5 +1,6 @@
 (() => {
-  const socket = io({ query: { game: 'poker' } });
+  const roomId = new URLSearchParams(window.location.search).get('roomId');
+  const socket = io({ query: { game: 'poker', roomId: roomId || '' } });
 
   const playerList = document.getElementById('player-list');
   const playerCount = document.getElementById('player-count');
@@ -171,11 +172,13 @@
           <div class="seat seat-pos-${i} ${seat.folded ? 'seat-folded' : ''} ${seat.isTurn ? 'seat-turn' : ''}">
             ${seat.isDealer ? '<div class="seat-dealer-badge">D</div>' : ''}
             ${seat.allIn ? '<div class="seat-allin-tag">ALL-IN</div>' : ''}
+            <div class="seat-emote-bubble" id="emote-bubble-${seat.userId}"></div>
             <div class="seat-cards">${cardsHtml}</div>
             <div class="seat-info ${isMe ? 'seat-info-me' : ''}">
               <div class="seat-name">${escapeHtml(seat.name)}${seat.leavingAfterHand ? ' <span class="seat-leaving">(ayriliyor)</span>' : ''}</div>
               <div class="seat-stack">${seat.stack} LT</div>
               ${isMe ? '<button type="button" class="seat-stand-btn" id="stand-btn">Kalk</button>' : ''}
+              ${!isMe ? `<button type="button" class="seat-gift-btn" data-userid="${seat.userId}" title="Hediye Gönder (100 LT)"><span class="material-symbols-outlined">featured_seasonal_and_gifts</span></button>` : ''}
             </div>
             ${seat.bet > 0 ? `<div class="seat-bet-chip">${seat.bet}</div>` : ''}
           </div>
@@ -186,6 +189,13 @@
     seatsEl.querySelectorAll('.seat-sit-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
         socket.emit('table:sit', { seatIndex: Number(btn.dataset.seat) });
+      });
+    });
+    seatsEl.querySelectorAll('.seat-gift-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        if (confirm('Bu oyuncuya 100 LT değerinde hediye göndermek istiyor musunuz?')) {
+          socket.emit('table:gift', { targetUserId: parseInt(btn.dataset.userid) });
+        }
       });
     });
     const standBtn = document.getElementById('stand-btn');
@@ -293,4 +303,71 @@
   });
 
   socket.on('table:error', (msg) => showToast(msg));
+
+  socket.on('table:emote', (payload) => {
+    showEmote(payload.userId, payload.emote);
+    if (typeof LootivSound !== 'undefined') LootivSound.play('notify');
+  });
+
+  socket.on('table:gift', (payload) => {
+    flyChip(payload.fromUserId, payload.targetUserId, payload.amount);
+    if (typeof LootivSound !== 'undefined') LootivSound.play('chip');
+    showToast(`${payload.fromUserId} nolu oyuncu ${payload.targetUserId} nolu oyuncuya hediye gönderdi!`);
+  });
+
+  function showEmote(userId, emote) {
+    const bubble = document.getElementById(`emote-bubble-${userId}`);
+    if (bubble) {
+      bubble.textContent = emote;
+      bubble.classList.add('show');
+      setTimeout(() => bubble.classList.remove('show'), 3000);
+    }
+  }
+
+  function flyChip(fromUserId, toUserId, amount) {
+    const seats = Array.from(document.querySelectorAll('.seat')).map(s => {
+      const info = s.querySelector('.seat-info');
+      const giftBtn = s.querySelector('.seat-gift-btn');
+      if (giftBtn && parseInt(giftBtn.dataset.userid) === fromUserId) return { id: fromUserId, el: s };
+      if (giftBtn && parseInt(giftBtn.dataset.userid) === toUserId) return { id: toUserId, el: s };
+      if (!giftBtn && info && info.classList.contains('seat-info-me')) {
+        const id = CURRENT_USER_ID;
+        if (id === fromUserId) return { id, el: s };
+        if (id === toUserId) return { id, el: s };
+      }
+      return null;
+    }).filter(Boolean);
+
+    const fromSeat = seats.find(s => s.id === fromUserId);
+    const toSeat = seats.find(s => s.id === toUserId);
+
+    if (fromSeat && toSeat) {
+      const fromRect = fromSeat.el.getBoundingClientRect();
+      const toRect = toSeat.el.getBoundingClientRect();
+      const chip = document.createElement('div');
+      chip.className = 'flying-chip';
+      chip.style.left = fromRect.left + fromRect.width / 2 + 'px';
+      chip.style.top = fromRect.top + fromRect.height / 2 + 'px';
+      document.body.appendChild(chip);
+      
+      requestAnimationFrame(() => {
+        chip.style.left = toRect.left + toRect.width / 2 + 'px';
+        chip.style.top = toRect.top + toRect.height / 2 + 'px';
+      });
+
+      setTimeout(() => {
+        chip.remove();
+      }, 500);
+    }
+  }
+
+  window.sendEmote = function(emote) {
+    socket.emit('table:emote', { emote });
+    document.getElementById('emote-picker').classList.add('hidden');
+  };
+
+  window.closeEmotePicker = function() {
+    document.getElementById('emote-picker').classList.add('hidden');
+  };
+
 })();

@@ -27,7 +27,7 @@
   <main class="okey-layout">
     <section class="okey-table">
       <div class="okey-felt" id="okey-felt">
-        <div class="okey-title">Canak Okey</div>
+        <div class="okey-title" id="okey-title">Canak Okey</div>
         <div class="okey-status" id="okey-status"></div>
         <div class="okey-seats" id="okey-seats"></div>
         <div class="okey-middle">
@@ -69,13 +69,23 @@
     <div class="chat-body">
       <div class="chat-messages" id="chat-messages" data-channel="oyun"></div>
     </div>
-    <form class="chat-input-row" id="chat-form">
-      <input type="text" id="chat-input" class="chat-input" placeholder="Mesajini yaz..." maxlength="500" autocomplete="off" />
-      <button type="submit" class="btn btn-primary btn-sm">Gonder</button>
+    <form class="chat-input-row" id="chat-form" style="position: relative;">
+      <button type="button" class="btn btn-sm" id="emote-toggle-btn" style="padding: 0 8px; font-size: 1.2rem; background: transparent; border: none;">😊</button>
+      <div id="emote-picker" class="glass-panel" style="display: none; position: absolute; bottom: 100%; left: 0; padding: 5px; z-index: 1000; border-radius: 8px; flex-wrap: wrap; width: max-content;">
+        <button type="button" class="emote-btn" data-emote="😊">😊</button>
+        <button type="button" class="emote-btn" data-emote="😂">😂</button>
+        <button type="button" class="emote-btn" data-emote="😎">😎</button>
+        <button type="button" class="emote-btn" data-emote="😡">😡</button>
+        <button type="button" class="emote-btn" data-emote="👍">👍</button>
+        <button type="button" class="emote-btn" data-emote="👎">👎</button>
+      </div>
+      <input type="text" id="chat-input" class="chat-input" placeholder="Mesajını yaz..." maxlength="500" autocomplete="off" />
+      <button type="submit" class="btn btn-primary btn-sm">Gönder</button>
     </form>
   </aside>
 
   <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/soundEngine.js?v=1"></script>
   <script src="/js/okey.js?v=3"></script>
   <script src="/js/notify.js?v=1"></script>
 </body>

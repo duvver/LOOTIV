@@ -56,13 +56,41 @@
       <div class="chat-messages" id="chat-messages" data-channel="oyun"></div>
     </div>
     <form class="chat-input-row" id="chat-form">
+      <button type="button" class="btn btn-sm" onclick="document.getElementById('emote-picker').classList.remove('hidden')" style="padding: 0 8px; font-size: 1.2rem; background: transparent; border: none; cursor: pointer;">😀</button>
       <input type="text" id="chat-input" class="chat-input" placeholder="Mesajini yaz..." maxlength="500" autocomplete="off" />
       <button type="submit" class="btn btn-primary btn-sm">Gonder</button>
     </form>
   </aside>
 
+  <!-- ===== Emote Picker Modal ===== -->
+  <div id="emote-picker" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div class="bg-surface-container rounded-2xl p-4 shadow-xl border border-outline-variant/30 max-w-sm w-full flex flex-col gap-3">
+      <div class="flex items-center justify-between">
+        <h3 class="text-primary font-bold text-lg">Emoji Gönder</h3>
+        <button type="button" onclick="closeEmotePicker()" class="text-outline hover:text-on-surface">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="grid grid-cols-4 gap-2 mt-2">
+        <button type="button" class="text-3xl hover:scale-110 transition-transform p-2 bg-surface-container-high rounded-xl" onclick="sendEmote('😀')">😀</button>
+        <button type="button" class="text-3xl hover:scale-110 transition-transform p-2 bg-surface-container-high rounded-xl" onclick="sendEmote('😂')">😂</button>
+        <button type="button" class="text-3xl hover:scale-110 transition-transform p-2 bg-surface-container-high rounded-xl" onclick="sendEmote('😍')">😍</button>
+        <button type="button" class="text-3xl hover:scale-110 transition-transform p-2 bg-surface-container-high rounded-xl" onclick="sendEmote('😎')">😎</button>
+        <button type="button" class="text-3xl hover:scale-110 transition-transform p-2 bg-surface-container-high rounded-xl" onclick="sendEmote('😭')">😭</button>
+        <button type="button" class="text-3xl hover:scale-110 transition-transform p-2 bg-surface-container-high rounded-xl" onclick="sendEmote('😡')">😡</button>
+        <button type="button" class="text-3xl hover:scale-110 transition-transform p-2 bg-surface-container-high rounded-xl" onclick="sendEmote('👍')">👍</button>
+        <button type="button" class="text-3xl hover:scale-110 transition-transform p-2 bg-surface-container-high rounded-xl" onclick="sendEmote('👏')">👏</button>
+        <button type="button" class="text-3xl hover:scale-110 transition-transform p-2 bg-surface-container-high rounded-xl" onclick="sendEmote('🎉')">🎉</button>
+        <button type="button" class="text-3xl hover:scale-110 transition-transform p-2 bg-surface-container-high rounded-xl" onclick="sendEmote('💩')">💩</button>
+        <button type="button" class="text-3xl hover:scale-110 transition-transform p-2 bg-surface-container-high rounded-xl" onclick="sendEmote('🔥')">🔥</button>
+        <button type="button" class="text-3xl hover:scale-110 transition-transform p-2 bg-surface-container-high rounded-xl" onclick="sendEmote('💔')">💔</button>
+      </div>
+    </div>
+  </div>
+
   <script src="/socket.io/socket.io.js"></script>
-  <script src="/js/poker.js"></script>
+  <script src="/js/soundEngine.js"></script>
+  <script src="/js/poker.js?v=2"></script>
   <script src="/js/notify.js?v=1"></script>
 </body>
 </html>
