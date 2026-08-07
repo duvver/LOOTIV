@@ -898,7 +898,7 @@ function requireRoomAccess(req, res, next) {
     return next();
   }
   
-  res.redirect(`/oyun/salon_${room.game}?error=private`);
+  res.redirect(`/oyun/${room.game}?error=private`);
 }
 
 // ---- Texas Hold'em odasi ----
@@ -1989,9 +1989,16 @@ io.on('connection', (socket) => {
 
     const currentRoom = reqRoomId ? activeUserRooms.get(reqRoomId) : null;
     if (reqRoomId && !currentRoom) {
-      socket.emit('turkpoker:error', 'Oda bulunamadı veya kapatılmış. Lobiye yönlendiriliyorsunuz.');
+      const errorEvent = game === 'okey101' ? 'okey101:error' : 
+                         game === 'okey' ? 'okey:error' : 
+                         game === 'turkpoker' ? 'turkpoker:error' : 'table:error';
+      const redirectUrl = game === 'okey101' ? '/oyun/okey101' :
+                          game === 'okey' ? '/oyun/okey' :
+                          game === 'turkpoker' ? '/oyun/turkpoker' : '/oyun/poker';
+                          
+      socket.emit(errorEvent, 'Oda bulunamadı veya kapatılmış. Lobiye yönlendiriliyorsunuz.');
       setTimeout(() => {
-        socket.emit('redirect', '/salon_turkpoker');
+        socket.emit('redirect', redirectUrl);
       }, 1500);
       return;
     }
@@ -2200,6 +2207,11 @@ io.on('connection', (socket) => {
         if (reqRoomId) checkUserRoomCleanup(reqRoomId);
       });
 
+      socket.on('okey101:showIndicator', () => {
+        const res = currentTable101.handleShowIndicator(user.id);
+        if (res && res.error) socket.emit('okey101:error', res.error);
+      });
+
       socket.on('okey101:draw', (payload) => {
         const res = currentTable101.handleDraw(user.id, payload && payload.source);
         if (res.error) socket.emit('okey101:error', res.error);
@@ -2218,9 +2230,17 @@ io.on('connection', (socket) => {
         const res = currentTable101.handleProcess(
           user.id,
           payload && payload.tileId,
-          payload && payload.meldId
+          payload && payload.meldId,
+          payload && payload.targetJokerId
         );
-        if (res.error) socket.emit('okey101:error', res.error);
+        if (res.error) {
+          socket.emit('okey101:error', res.error);
+        } else if (res.jokerStolen) {
+          io.to(`okey101_${tableId}`).emit('okey101:jokerStolen', {
+            userId: user.id,
+            meldId: res.meldId
+          });
+        }
       });
 
       socket.on('okey101:discard', (payload) => {

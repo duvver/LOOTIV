@@ -4,1056 +4,373 @@
   const roomId = new URLSearchParams(window.location.search).get('roomId');
   const socket = io({ query: { game: 'okey101', roomId: roomId || '' } });
 
-  const playerList = document.getElementById('player-list');
-  const playerCount = document.getElementById('player-count');
-  const chatMessages = document.getElementById('chat-messages');
-  const chatForm = document.getElementById('chat-form');
-  const chatInput = document.getElementById('chat-input');
-  const tabs = Array.from(document.querySelectorAll('.chat-tab'));
-
-  const messagesByChannel = { oyun: [], sistem: [] };
-  let activeChannel = 'oyun';
-
-  function formatTime(isoLike) {
-    const d = new Date(isoLike.replace(' ', 'T') + 'Z');
-    if (Number.isNaN(d.getTime())) return '';
-    return d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
-  }
-
-  function escapeHtml(str) {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-  }
-
-  function renderMessages() {
-    const list = messagesByChannel[activeChannel] || [];
-    chatMessages.innerHTML = list
-      .map((m) => {
-        const isSystem = m.channel === 'sistem';
-        return `
-          <div class="chat-message ${isSystem ? 'chat-message-system' : ''}">
-            ${isSystem ? '' : `<span class="chat-message-author">${escapeHtml(m.username)}</span>`}
-            <span class="chat-message-text">${escapeHtml(m.content)}</span>
-            <span class="chat-message-time">${formatTime(m.created_at)}</span>
-          </div>
-        `;
-      })
-      .join('');
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-  }
-
-  tabs.forEach((tab) => {
-    tab.addEventListener('click', () => {
-      tabs.forEach((t) => t.classList.remove('active'));
-      tab.classList.add('active');
-      tab.classList.remove('has-new');
-      activeChannel = tab.dataset.channel;
-      chatMessages.dataset.channel = activeChannel;
-
-      const isSystem = activeChannel === 'sistem';
-      chatInput.disabled = isSystem;
-      chatInput.placeholder = isSystem ? 'Sistem mesajlari salt okunurdur' : 'Mesajini yaz...';
-      chatForm.querySelector('button').disabled = isSystem;
-
-      renderMessages();
-    });
-  });
-
-  chatForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const text = chatInput.value.trim();
-    if (!text || activeChannel === 'sistem') return;
-    socket.emit('chat:message', { channel: activeChannel, text });
-    chatInput.value = '';
-  });
-
-  socket.on('chat:history', (history) => {
-    // Sunucudan genel, okey101, vs. gelirse onu oyun kanalına yönlendirelim
-    const histOyun = [...(history.genel || []), ...(history.okey101 || []), ...(history.oyun || [])]
-      .sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
-    messagesByChannel['oyun'] = histOyun;
-    if (history.sistem) messagesByChannel['sistem'] = history.sistem;
-    
-    renderMessages();
-  });
-
-  socket.on('chat:message', (msg) => {
-    const ch = msg.channel === 'sistem' ? 'sistem' : 'oyun';
-    messagesByChannel[ch].push(msg);
-    if (messagesByChannel[ch].length > 200) messagesByChannel[ch].shift();
-    
-    if (ch === activeChannel) {
-      renderMessages();
-    } else {
-      const tab = tabs.find((t) => t.dataset.channel === ch);
-      if (tab) tab.classList.add('has-new');
-    }
-  });
-
-  socket.on('poker:players', (players) => {
-    playerCount.textContent = String(players.length);
-    playerList.innerHTML = players
-      .map((name) => `<li class="player-item"><span class="player-dot"></span>${escapeHtml(name)}</li>`)
-      .join('');
-  });
-
-  // ==================== 101 OKEY MASASI ====================
-  const CURRENT_USER_ID = Number(document.body.dataset.userId);
-  const RACK_COLS = 22;
-  const RACK_ROWS = 2;
-  const RACK_SLOTS = RACK_COLS * RACK_ROWS;
-
-  const seatsEl = document.getElementById('okey-seats');
-  const statusEl = document.getElementById('okey-status');
-  const indicatorEl = document.getElementById('okey-indicator');
-  const deckPileEl = document.getElementById('okey-deck-pile');
-  const deckCountEl = document.getElementById('okey-deck-count');
-  const cornerEls = [0, 1, 2, 3].map((i) => document.getElementById('okey-corner-' + i));
-  const boardEl = document.getElementById('okey101-board');
-  const bannerEl = document.getElementById('okey-banner');
-  const rackEl = document.getElementById('okey-rack');
-  const actionBarEl = document.getElementById('okey-action-bar');
-  const ciftDizBtn = document.getElementById('okey-cift-diz');
-  const seriDizBtn = document.getElementById('okey-seri-diz');
-
-  let rackLayout = new Array(RACK_SLOTS).fill(null);
-  let selectedTileIds = new Set();
-  let serverTiles = [];
-  let lastState = null;
-  let countdownInterval = null;
-  let toastTimer = null;
-
-  function showToast(msg) {
-    let toast = document.getElementById('okey-toast');
-    if (!toast) {
-      toast = document.createElement('div');
-      toast.id = 'okey-toast';
-      toast.className = 'table-toast';
-      document.body.appendChild(toast);
-    }
-    toast.textContent = msg;
-    toast.classList.add('visible');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => toast.classList.remove('visible'), 3500);
-  }
-
-  function isOkeyTile(tile, okeySpec) {
-    if (!okeySpec) return false;
-    return tile.joker || (tile.color === okeySpec.color && tile.number === okeySpec.number);
-  }
-
-  // ---- Istaka senkronu ----
-  function syncRackLayout(tiles) {
-    const currentIds = new Set(tiles.map((t) => t.id));
-    const placedIds = new Set();
-
-    for (let i = 0; i < rackLayout.length; i++) {
-      const cell = rackLayout[i];
-      if (cell && !currentIds.has(cell.id)) rackLayout[i] = null;
-    }
-    for (let i = 0; i < rackLayout.length; i++) {
-      const cell = rackLayout[i];
-      if (cell) {
-        const fresh = tiles.find((t) => t.id === cell.id);
-        if (fresh) {
-          rackLayout[i] = fresh;
-          placedIds.add(fresh.id);
-        }
-      }
-    }
-    const newTiles = tiles.filter((t) => !placedIds.has(t.id));
-
-    const layoutEmpty = rackLayout.every((c) => c === null);
-    if (layoutEmpty && newTiles.length >= 20) {
-      const colorOrder = { kirmizi: 0, sari: 1, mavi: 2, siyah: 3 };
-      const sorted = newTiles.slice().sort((a, b) => {
-        if (a.joker !== b.joker) return a.joker ? 1 : -1;
-        if (a.color !== b.color) return (colorOrder[a.color] ?? 9) - (colorOrder[b.color] ?? 9);
-        return a.number - b.number;
-      });
-      let slot = 0;
-      for (const t of sorted) {
-        while (slot < RACK_SLOTS && rackLayout[slot] !== null) slot++;
-        if (slot >= RACK_SLOTS) break;
-        rackLayout[slot] = t;
-        slot++;
-      }
-    } else {
-      for (const t of newTiles) {
-        let slot = 0;
-        while (slot < RACK_SLOTS && rackLayout[slot] !== null) slot++;
-        if (slot >= RACK_SLOTS) break;
-        rackLayout[slot] = t;
-      }
-    }
-  }
-
-  function tileInnerHtml(tile) {
-    if (tile.joker) return `<span class="okey-tile-num">★</span>`;
-    return `<span class="okey-tile-num">${tile.number}</span><span class="okey-tile-dot"></span>`;
-  }
-
-  function tileClass(tile, okeySpec) {
-    let cls = 'okey-tile';
-    if (tile.joker) cls += ' okey-tile-joker';
-    else cls += ' okey-tile-' + tile.color;
-    if (isOkeyTile(tile, okeySpec)) cls += ' okey-tile-wild';
-    return cls;
-  }
-
-  // ---- Istaka cizimi ----
-  function renderRack(state) {
-    const okeySpec = state ? state.okeySpec : null;
-
-    rackEl.innerHTML = '';
-    for (let row = 0; row < RACK_ROWS; row++) {
-      const rowEl = document.createElement('div');
-      rowEl.className = 'okey-rack-row';
-      for (let col = 0; col < RACK_COLS; col++) {
-        const slotIndex = row * RACK_COLS + col;
-        const slotEl = document.createElement('div');
-        slotEl.className = 'okey-slot';
-        slotEl.dataset.slot = String(slotIndex);
-
-        const tile = rackLayout[slotIndex];
-        if (tile) {
-          const tileEl = document.createElement('div');
-          tileEl.className = tileClass(tile, okeySpec);
-          if (selectedTileIds.has(tile.id)) tileEl.classList.add('okey-tile-selected');
-          tileEl.dataset.tileId = tile.id;
-          tileEl.dataset.slot = String(slotIndex);
-          tileEl.draggable = true;
-          tileEl.innerHTML = tileInnerHtml(tile);
-          slotEl.appendChild(tileEl);
-        }
-        rowEl.appendChild(slotEl);
-      }
-      rackEl.appendChild(rowEl);
-    }
-
-    attachRackDnD();
-  }
-
-  function attachRackDnD() {
-    const tiles = rackEl.querySelectorAll('.okey-tile');
-    const slots = rackEl.querySelectorAll('.okey-slot');
-
-    tiles.forEach((el) => {
-      el.addEventListener('dragstart', (e) => {
-        el.classList.add('okey-tile-dragging');
-        handleDragStart(e, Number(el.dataset.tileId), Number(el.dataset.slot), 'rack');
-      });
-      el.addEventListener('dragend', (e) => {
-        el.classList.remove('okey-tile-dragging');
-      });
-      el.addEventListener('click', (e) => {
-        const id = Number(el.dataset.tileId);
-        if (selectedTileIds.has(id)) {
-          selectedTileIds.delete(id);
-          el.classList.remove('okey-tile-selected');
-        } else {
-          selectedTileIds.add(id);
-          el.classList.add('okey-tile-selected');
-        }
-      });
-    });
-
-    slots.forEach((el) => {
-      el.addEventListener('dragover', handleDragOver);
-      el.addEventListener('drop', (e) => handleDrop(e, Number(el.dataset.slot), 'rack'));
-    });
-  }
-
-  // ---- Surukle-birak ----
-  let dragTileId = null;
-  let dragSourceIndex = null;
-  let dragSourceArea = null;
-
-  function handleDragStart(e, tileId, sourceIndex, area) {
-    if (lastState && lastState.stage !== 'playing') {
-      e.preventDefault();
-      return;
-    }
-    dragTileId = tileId;
-    dragSourceIndex = sourceIndex;
-    dragSourceArea = area;
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', tileId);
-    const img = new Image();
-    img.src = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
-    e.dataTransfer.setDragImage(img, 0, 0);
-  }
-
-  function handleDragOver(e) {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  }
-
-  function handleDrop(e, targetIndex, targetArea) {
-    e.preventDefault();
-    if (!dragTileId || dragSourceArea !== 'rack' || targetArea !== 'rack') return;
-
-    const srcTile = rackLayout[dragSourceIndex];
-    const dstTile = rackLayout[targetIndex];
-    rackLayout[dragSourceIndex] = dstTile;
-    rackLayout[targetIndex] = srcTile;
-
-    renderRack(lastState);
-  }
-
-  // ---- Dizme algoritmalari (canak okey ile ayni) ----
-  const COLOR_ORDER = { kirmizi: 0, sari: 1, mavi: 2, siyah: 3 };
-
-  function isWild(t, okeySpec) {
-    return t.joker || (okeySpec && t.color === okeySpec.color && t.number === okeySpec.number);
-  }
-
-  function applyGroupsToRack(groups) {
-    function layout(useGaps, useRowShift) {
-      const arr = new Array(RACK_SLOTS).fill(null);
-      let slot = 0;
-      let overflow = false;
-      groups.forEach((group, gi) => {
-        if (group.length === 0) return;
-        if (useRowShift && group.length <= RACK_COLS) {
-          const col = slot % RACK_COLS;
-          if (col + group.length > RACK_COLS) {
-            slot = (Math.floor(slot / RACK_COLS) + 1) * RACK_COLS;
-          }
-        }
-        for (const t of group) {
-          if (slot >= RACK_SLOTS) { overflow = true; return; }
-          arr[slot++] = t;
-        }
-        if (useGaps && gi < groups.length - 1 && slot < RACK_SLOTS && slot % RACK_COLS !== 0) {
-          slot++;
-        }
-      });
-      return { arr, overflow };
-    }
-
-    let result = layout(true, true);
-    if (result.overflow) result = layout(true, false);
-    if (result.overflow) result = layout(false, false);
-    rackLayout = result.arr;
-    renderRack(lastState);
-  }
-
-  function seriDiz(okeySpec) {
-    const tiles = rackLayout.filter(Boolean);
-    const wilds = tiles.filter((t) => isWild(t, okeySpec));
-    let pool = tiles.filter((t) => !isWild(t, okeySpec));
-    const groups = [];
-    const COLORS = ['kirmizi', 'sari', 'mavi', 'siyah'];
-
-    function takeOne(color, number) {
-      const i = pool.findIndex((t) => t.color === color && t.number === number);
-      return i === -1 ? null : pool.splice(i, 1)[0];
-    }
-    function hasTile(color, number) {
-      return pool.some((t) => t.color === color && t.number === number);
-    }
-
-    for (const color of COLORS) {
-      let again = true;
-      while (again) {
-        again = false;
-        const nums = new Set(pool.filter((t) => t.color === color).map((t) => t.number));
-        let bestS = 0, bestLen = 0;
-        for (let s = 1; s <= 13; s++) {
-          if (!nums.has(s) || nums.has(s - 1)) continue;
-          let e = s;
-          while (nums.has(e + 1)) e++;
-          if (e - s + 1 > bestLen) { bestLen = e - s + 1; bestS = s; }
-        }
-        if (bestLen >= 3) {
-          const g = [];
-          for (let n = bestS; n < bestS + bestLen; n++) g.push(takeOne(color, n));
-          groups.push(g);
-          again = true;
-        }
-      }
-    }
-
-    for (let n = 1; n <= 13; n++) {
-      let again = true;
-      while (again) {
-        again = false;
-        const avail = COLORS.filter((c) => hasTile(c, n));
-        if (avail.length >= 3) {
-          groups.push(avail.map((c) => takeOne(c, n)));
-          again = true;
-        }
-      }
-    }
-
-    for (const color of COLORS) {
-      let again = true;
-      while (again) {
-        again = false;
-        const nums = [...new Set(pool.filter((t) => t.color === color).map((t) => t.number))].sort((a, b) => a - b);
-        for (let i = 0; i < nums.length - 1; i++) {
-          if (nums[i + 1] === nums[i] + 1) {
-            groups.push([takeOne(color, nums[i]), takeOne(color, nums[i] + 1)]);
-            again = true;
-            break;
-          }
-        }
-      }
-    }
-
-    for (let n = 1; n <= 13; n++) {
-      let again = true;
-      while (again) {
-        again = false;
-        const avail = COLORS.filter((c) => hasTile(c, n));
-        if (avail.length >= 2) {
-          groups.push([takeOne(avail[0], n), takeOne(avail[1], n)]);
-          again = true;
-        }
-      }
-    }
-
-    if (pool.length) {
-      pool.sort((a, b) => {
-        if (a.color !== b.color) return (COLOR_ORDER[a.color] ?? 9) - (COLOR_ORDER[b.color] ?? 9);
-        return a.number - b.number;
-      });
-      groups.push(pool.slice());
-      pool = [];
-    }
-
-    for (const g of groups) {
-      if (!wilds.length) break;
-      if (g.length === 2) g.push(wilds.shift());
-    }
-
-    if (wilds.length) groups.push(wilds);
-    applyGroupsToRack(groups);
-  }
-
-  function ciftDiz(okeySpec) {
-    const tiles = rackLayout.filter(Boolean);
-    const wilds = tiles.filter((t) => isWild(t, okeySpec));
-    const normals = tiles.filter((t) => !isWild(t, okeySpec));
-
-    const byKey = new Map();
-    for (const t of normals) {
-      const k = t.color + '|' + t.number;
-      if (!byKey.has(k)) byKey.set(k, []);
-      byKey.get(k).push(t);
-    }
-
-    const pairGroups = [];
-    const singles = [];
-    const sortedKeys = [...byKey.keys()].sort((a, b) => {
-      const [ca, na] = a.split('|');
-      const [cb, nb] = b.split('|');
-      if (ca !== cb) return (COLOR_ORDER[ca] ?? 9) - (COLOR_ORDER[cb] ?? 9);
-      return Number(na) - Number(nb);
-    });
-    for (const k of sortedKeys) {
-      const arr = byKey.get(k);
-      while (arr.length >= 2) pairGroups.push([arr.shift(), arr.shift()]);
-      if (arr.length) singles.push(arr.shift());
-    }
-
-    while (wilds.length && singles.length) {
-      pairGroups.push([singles.shift(), wilds.shift()]);
-    }
-
-    const groups = [...pairGroups];
-    if (singles.length) groups.push(singles);
-    if (wilds.length) groups.push(wilds);
-    applyGroupsToRack(groups);
-  }
-
-  // Istakadaki bosluklarla ayrilmis gruplari cikar (acilis icin)
-  function extractGroups(layout, totalSlots, cols, minLen) {
-    const groups = [];
-    let current = [];
-    for (let i = 0; i < totalSlots; i++) {
-      const t = layout[i];
-      const rowEnd = i % cols === cols - 1;
-      if (t) current.push(t.id);
-      if (!t || rowEnd) {
-        if (current.length >= minLen) groups.push(current);
-        current = [];
-      }
-    }
-    if (current.length >= minLen) groups.push(current);
-    return groups;
-  }
-  function extractRackGroups(minLen) {
-    const groups = [];
-    let current = [];
-    for (let i = 0; i < RACK_SLOTS; i++) {
-      const t = rackLayout[i];
-      const rowEnd = i % RACK_COLS === RACK_COLS - 1;
-      if (t) current.push(t.id);
-      if (!t || rowEnd) {
-        if (current.length >= minLen) groups.push(current);
-        current = [];
-      }
-    }
-    if (current.length >= minLen) groups.push(current);
-    return groups;
-  }
-
-  // ---- Koltuklar ----
-  function renderSeats(state) {
-    seatsEl.innerHTML = state.seats
-      .map((seat, i) => {
-        if (!seat) {
-          const iAmSeated = state.seats.some((s) => s && s.userId === CURRENT_USER_ID);
-          const canSit = !iAmSeated;
-          const canBot = state.stage === 'waiting';
-          return `
-            <div class="okey-seat okey-seat-pos-${i} okey-seat-empty">
-              ${canSit ? `<button type="button" class="seat-sit-btn" data-seat="${i}">Otur</button>` : ''}
-              ${canBot ? `<button type="button" class="seat-bot-btn" data-botseat="${i}">+ Bot</button>` : ''}
-              ${!canSit && !canBot ? '<div class="seat-empty-label">Bos</div>' : ''}
-            </div>
-          `;
-        }
-        const isMe = seat.userId === CURRENT_USER_ID;
-        const initial = (seat.name || '?').charAt(0).toUpperCase();
-        return `
-          <div class="okey-seat okey-seat-pos-${i} ${seat.isTurn ? 'okey-seat-turn' : ''}">
-            ${seat.isDealer ? '<div class="seat-dealer-badge">D</div>' : ''}
-            <div class="okey-seat-avatar ${seat.isBot ? 'okey-seat-avatar-bot' : ''} ${seat.isTurn ? 'okey-seat-avatar-turn' : ''}">
-              <span>${escapeHtml(initial)}</span>
-              ${seat.isBot ? '<span class="okey-bot-tag">BOT</span>' : ''}
-              <div class="seat-emote-bubble" id="emote-bubble-${seat.userId}"></div>
-              ${!isMe && !seat.isBot ? `<button type="button" class="seat-gift-btn" data-target-id="${seat.userId}" title="Hediye 100 LT gönder">🎁</button>` : ''}
-            </div>
-            <div class="seat-info ${isMe ? 'seat-info-me' : ''}">
-              <div class="seat-name">${escapeHtml(seat.name)}${seat.leavingAfterHand ? ' <span class="seat-leaving">(ayriliyor)</span>' : ''}</div>
-              <div class="okey-seat-tilecount">${seat.tileCount} tas${seat.hasOpened ? ' &middot; <span class="okey-opened-tag">ACTI</span>' : ''}</div>
-              ${isMe ? '<button type="button" class="seat-stand-btn" id="stand-btn">Kalk</button>' : ''}
-            </div>
-          </div>
-        `;
-      })
-      .join('');
-
-    seatsEl.querySelectorAll('.seat-sit-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        socket.emit('okey101:sit', { seatIndex: Number(btn.dataset.seat) });
-      });
-    });
-    seatsEl.querySelectorAll('.seat-bot-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        socket.emit('okey101:addbot', { seatIndex: Number(btn.dataset.botseat) });
-      });
-    });
-    seatsEl.querySelectorAll('.seat-gift-btn').forEach((btn) => {
-      btn.addEventListener('click', (e) => {
-        const targetId = Number(btn.dataset.targetId);
-        if (confirm('100 LT hediye etmek istediğinize emin misiniz?')) {
-          socket.emit('okey101:gift', { targetUserId: targetId });
-        }
-      });
-    });
-    const standBtn = document.getElementById('stand-btn');
-    if (standBtn) standBtn.addEventListener('click', () => socket.emit('okey101:stand'));
-  }
-
-  function miniTileHtml(tile, okeySpec) {
-    if (!tile) return '';
-    let cls = 'okey-tile okey-tile-mini';
-    if (tile.joker) cls += ' okey-tile-joker';
-    else cls += ' okey-tile-' + tile.color;
-    if (isOkeyTile(tile, okeySpec)) cls += ' okey-tile-wild';
-    return `<div class="${cls}">${tile.joker ? '★' : tile.number}</div>`;
-  }
-
-  function renderIndicator(state) {
-    if (state) {
-      const modeEl = document.getElementById('infoGameMode');
-      if (modeEl && state.gameMode) modeEl.textContent = state.gameMode;
-      const typeEl = document.getElementById('infoGameType');
-      if (typeEl && state.gameType) typeEl.textContent = state.gameType;
-    }
-
-    if (!state || !state.indicator) {
-      if (indicatorEl) indicatorEl.innerHTML = '';
-      return;
-    }
-    if (indicatorEl) indicatorEl.innerHTML = miniTileHtml(state.indicator, null);
-  }
-
-  // ---- Acilan perler panosu (isleme drop hedefi) ----
-  function renderBoard(state) {
-    const melds = state.boardMelds || [];
-    if (!melds.length) {
-      boardEl.innerHTML = '';
-      boardEl.classList.remove('okey101-board-active');
-      return;
-    }
-    boardEl.classList.add('okey101-board-active');
-
-    const myIndex = state.seats.findIndex((s) => s && s.userId === CURRENT_USER_ID);
-    const mySeat = myIndex !== -1 ? state.seats[myIndex] : null;
-    const canProcess =
-      mySeat && mySeat.hasOpened && state.turnSeat === myIndex && state.hasDrawn && state.stage === 'playing';
-
-    boardEl.innerHTML = melds
-      .map((m) => {
-        const owner = state.seats[m.ownerSeat] ? escapeHtml(state.seats[m.ownerSeat].name) : '';
-        const droppable = canProcess && m.kind !== 'cift';
-        return `
-          <div class="board-meld ${droppable ? 'board-meld-droppable' : ''}" data-meld-id="${m.id}">
-            <div class="board-meld-tiles">${m.tiles.map((t) => miniTileHtml(t, state.okeySpec)).join('')}</div>
-            <div class="board-meld-owner">${owner}</div>
-          </div>
-        `;
-      })
-      .join('');
-
-    boardEl.querySelectorAll('.board-meld-droppable').forEach((el) => {
-      el.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        el.classList.add('okey-slot-over');
-      });
-      el.addEventListener('dragleave', () => el.classList.remove('okey-slot-over'));
-      el.addEventListener('drop', (e) => {
-        e.preventDefault();
-        el.classList.remove('okey-slot-over');
-        if (dragTileId) {
-          socket.emit('okey101:process', { tileId: dragTileId, meldId: Number(el.dataset.meldId) });
-        }
-      });
-    });
-  }
-
-  // ---- Deste + kose iskartalari ----
-  function renderDeckAndCorners(state) {
-    deckCountEl.textContent = `${state.deckCount} tas`;
-
-    const myIndex = state.seats.findIndex((s) => s && s.userId === CURRENT_USER_ID);
-    const mySeat = myIndex !== -1 ? state.seats[myIndex] : null;
-    const myTurn = myIndex !== -1 && state.turnSeat === myIndex && state.stage === 'playing';
-    const canDrawDeck = myTurn && !state.hasDrawn && state.deckCount > 0;
-    deckPileEl.classList.toggle('okey-drawable', canDrawDeck);
-    deckPileEl.onclick = canDrawDeck ? () => socket.emit('okey101:draw', { source: 'deck' }) : null;
-
-    const piles = state.discardPiles || [];
-    for (let i = 0; i < cornerEls.length; i++) {
-      const el = cornerEls[i];
-      if (!el) continue;
-      const pile = piles[i] || { count: 0, top: null };
-
-      const canTake =
-        myTurn &&
-        !state.hasDrawn &&
-        mySeat &&
-        mySeat.hasOpened && // 101 kurali: acmadan yerden tas alinamaz
-        state.lastDiscard &&
-        state.lastDiscard.availableToSeat === myIndex &&
-        state.lastDiscard.fromSeat === i;
-
-      const canDrop = myTurn && state.hasDrawn && i === myIndex;
-
-      if (pile.top) {
-        el.innerHTML =
-          miniTileHtml(pile.top, state.okeySpec) +
-          (pile.count > 1 ? `<span class="okey-corner-count">${pile.count}</span>` : '');
-      } else {
-        el.innerHTML = canDrop ? '<div class="okey-corner-hint">Tasi buraya birak</div>' : '';
-      }
-
-      el.classList.toggle('okey-drawable', canTake);
-      el.classList.toggle('okey-corner-droppable', canDrop);
-      el.onclick = canTake ? () => socket.emit('okey101:draw', { source: 'discard' }) : null;
-
-      el.ondragover = canDrop
-        ? (e) => { e.preventDefault(); el.classList.add('okey-slot-over'); }
-        : null;
-      el.ondragleave = canDrop ? () => el.classList.remove('okey-slot-over') : null;
-      el.ondrop = canDrop
-        ? (e) => {
-            e.preventDefault();
-            el.classList.remove('okey-slot-over');
-            if (dragTileId) socket.emit('okey101:discard', { tileId: dragTileId });
-          }
-        : null;
-    }
-  }
-
-  function renderStatus(state) {
-    clearInterval(countdownInterval);
-    if (state.stage === 'waiting') {
-      if (state.nextHandAt) {
-        const tick = () => {
-          const remain = Math.max(0, Math.ceil((state.nextHandAt - Date.now()) / 1000));
-          statusEl.textContent = `Yeni el ${remain} saniye icinde basliyor...`;
-          if (remain <= 0) clearInterval(countdownInterval);
-        };
-        tick();
-        countdownInterval = setInterval(tick, 500);
-      } else {
-        statusEl.textContent = 'Bir koltuga otur; bos koltuklari botla doldurup hemen baslayabilirsin.';
-      }
-    } else if (state.stage === 'playing') {
-      const tick = () => {
-        if (!state.turnDeadline) {
-          statusEl.textContent = `El #${state.handNumber}`;
-          return;
-        }
-        const remain = Math.max(0, Math.ceil((state.turnDeadline - Date.now()) / 1000));
-        const turnName = state.seats[state.turnSeat] ? state.seats[state.turnSeat].name : '';
-        statusEl.textContent = `El #${state.handNumber} — Sira: ${turnName} (${remain}s)`;
-      };
-      tick();
-      countdownInterval = setInterval(tick, 500);
-    } else {
-      statusEl.textContent = `El #${state.handNumber} bitti.`;
-    }
-  }
-
-  function renderBanner(state) {
-    if (state.stage === 'finished' && state.lastHandSummary) {
-      const s = state.lastHandSummary;
-      const rows = (s.results || [])
-        .slice()
-        .sort((a, b) => a.penalty - b.penalty)
-        .map(
-          (r) =>
-            `${escapeHtml(r.name)}: ${r.opened ? 'ceza ' + r.penalty : 'acmadi'} (${r.ltChange >= 0 ? '+' : ''}${r.ltChange} LT)`
-        )
-        .join('<br/>');
-      bannerEl.innerHTML = `<div class="banner-inner">${escapeHtml(s.reason || 'El bitti')}${s.note ? '<br/>' + escapeHtml(s.note) : ''}<br/><br/>${rows}</div>`;
-      bannerEl.classList.add('visible');
-    } else {
-      bannerEl.classList.remove('visible');
-      bannerEl.innerHTML = '';
-    }
-  }
-
-  function renderActionBar(state) {
-    const myIndex = state ? state.seats.findIndex((s) => s && s.userId === CURRENT_USER_ID) : -1;
-    const mySeat = myIndex !== -1 && state ? state.seats[myIndex] : null;
-    const parts = [];
-
-    if (state && state.stage === 'waiting') {
-      const emptyCount = state.seats.filter((s) => !s).length;
-      const botCount = state.seats.filter((s) => s && s.isBot).length;
-      if (myIndex !== -1 && emptyCount > 0) {
-        parts.push(`<button type="button" class="btn btn-primary btn-sm" id="okey-fillbots-btn">Bot Ekle & Başla</button>`);
-      }
-      if (botCount > 0) {
-        parts.push(`<button type="button" class="btn btn-ghost btn-sm" id="okey-removebots-btn">Botları Çıkar</button>`);
-      }
-    }
-
-    if (myIndex !== -1 && state && state.turnSeat === myIndex && state.stage === 'playing') {
-      if (!state.hasDrawn) {
-        // Before drawing, we don't show the tooltips, just let them play.
-      } else {
-        if (mySeat && !mySeat.hasOpened) {
-          if (mySeat.mustOpenThisTurn) {
-            parts.push(`<button type="button" class="action-btn action-fold" id="okey101-undo-draw-btn">Tasi Geri Birak</button>`);
-          }
-          parts.push(`<button type="button" class="btn btn-primary btn-sm" id="btn-seri-ac">Seri Ac (${state.openMin}+)</button>`);
-          parts.push(`<button type="button" class="btn btn-secondary btn-sm" id="btn-cift-ac">Cift Ac (${state.ciftMin}+ cift)</button>`);
-        }
-      }
-    }
-
-    actionBarEl.innerHTML = parts.join('');
-
-    document.getElementById('okey-fillbots-btn')?.addEventListener('click', () => {
-      socket.emit('okey101:fillbots');
-    });
-    document.getElementById('okey-removebots-btn')?.addEventListener('click', () => {
-      socket.emit('okey101:removebots');
-    });
-    document.getElementById('okey101-undo-draw-btn')?.addEventListener('click', () => {
-      socket.emit('okey101:undoDraw');
-    });
-    document.getElementById('btn-seri-ac')?.addEventListener('click', () => {
-      const pool = rackLayout.filter(Boolean);
-      const selected = pool.filter(t => selectedTileIds.has(t.id));
-      const sourcePool = selected.length > 0 ? selected : pool;
-      const groups = autoExtractSeri(sourcePool, lastState.okeySpec);
-      if (!groups.length) {
-        showToast('Seri açmak için geçerli bir grup bulunamadı.');
-        return;
-      }
-      socket.emit('okey101:open', { kind: 'seri', groups });
-      selectedTileIds.clear();
-    });
-    document.getElementById('btn-cift-ac')?.addEventListener('click', () => {
-      const pool = rackLayout.filter(Boolean);
-      const selected = pool.filter(t => selectedTileIds.has(t.id));
-      const sourcePool = selected.length > 0 ? selected : pool;
-      const groups = autoExtractCift(sourcePool, lastState.okeySpec);
-      if (groups.length < 5) {
-        showToast('Çift açmak için en az 5 çiftiniz olmalı.');
-        return;
-      }
-      socket.emit('okey101:open', { kind: 'cift', groups });
-      selectedTileIds.clear();
-    });
-    document.getElementById('btn-geri-al')?.addEventListener('click', geriAl);
-
-    const hasTiles = rackLayout.some(Boolean);
-    if (ciftDizBtn) ciftDizBtn.disabled = !hasTiles;
-    if (seriDizBtn) seriDizBtn.disabled = !hasTiles;
-  }
-
-  if (ciftDizBtn) ciftDizBtn.addEventListener('click', () => ciftDiz(lastState ? lastState.okeySpec : null));
-  if (seriDizBtn) seriDizBtn.addEventListener('click', () => seriDiz(lastState ? lastState.okeySpec : null));
-
-  let hasAutoSat = false;
+  // ---------------- DOM ELEMENTS ----------------
+  const elTableBadge = document.getElementById('table-badge-id');
+  const elInfoElCount = document.getElementById('info-el-count');
+  const elInfoPuan = document.getElementById('info-puan');
   
-  function geriAl() {
-    // No staging layout anymore. Server error simply triggers state sync.
-    renderRack(lastState);
+  const seats = {
+    top: { 
+      seatEl: document.getElementById('seat-top'),
+      name: document.getElementById('name-top'), 
+      avatar: document.getElementById('avatar-top'), 
+      score: document.getElementById('score-top'),
+      discard: document.getElementById('discard-top')
+    },
+    left: { 
+      seatEl: document.getElementById('seat-left'),
+      name: document.getElementById('name-left'), 
+      avatar: document.getElementById('avatar-left'), 
+      score: document.getElementById('score-left'),
+      discard: document.getElementById('discard-left')
+    },
+    right: { 
+      seatEl: document.getElementById('seat-right'),
+      name: document.getElementById('name-right'), 
+      avatar: document.getElementById('avatar-right'), 
+      score: document.getElementById('score-right'),
+      discard: document.getElementById('discard-right')
+    },
+    bottom: { 
+      seatEl: document.getElementById('seat-bottom'),
+      name: document.getElementById('name-bottom'), 
+      avatar: document.getElementById('avatar-bottom'), 
+      score: document.getElementById('score-bottom'),
+      discard: document.getElementById('discard-bottom')
+    }
+  };
+
+  const centerGridMain = document.getElementById('grid-main');
+  const centerGridSide = document.getElementById('grid-side');
+
+  const btnSortPairs = document.getElementById('btn-sort-pairs');
+  const btnSortSeries = document.getElementById('btn-sort-series');
+  const btnOpenPairs = document.getElementById('btn-open-pairs');
+  const btnOpenSeries = document.getElementById('btn-open-series');
+  
+  const deckCountEl = document.getElementById('deck-count');
+  const indicatorTileEl = document.getElementById('indicator-tile');
+  
+  const playerRack = document.getElementById('player-rack');
+  const rackRow1 = document.getElementById('rack-row-1');
+  const rackRow2 = document.getElementById('rack-row-2');
+
+  const turnAvatar = document.getElementById('turn-avatar');
+  const turnName = document.getElementById('turn-name');
+  const turnScore = document.getElementById('turn-score');
+  const turnNotif = document.getElementById('turn-notif');
+
+  const CURRENT_USER_ID = document.body.dataset.userId ? Number(document.body.dataset.userId) : 0;
+
+  // ---------------- STATE ----------------
+  let lastState = null;
+  let rackTiles = []; 
+  let selectedTiles = new Set();
+  let dragTileId = null;
+
+  // ---------------- RENDER HELPERS ----------------
+  function getTileHtml(tile, isMini = false) {
+    if (!tile) return '';
+    let cls = isMini ? 'tile mini' : 'tile'; 
+    if (selectedTiles.has(tile.id) && !isMini) cls += ' selected';
+    
+    if (tile.color === 'red') cls += ' red';
+    if (tile.color === 'black') cls += ' black';
+    if (tile.color === 'blue') cls += ' blue';
+    if (tile.color === 'orange') cls += ' orange';
+
+    if (tile.joker) {
+      return `<div class="${cls} black" data-id="${tile.id}">★<span class="dotmark">▾</span></div>`;
+    }
+    return `<div class="${cls}" data-id="${tile.id}">${tile.number}<span class="dotmark">▾</span></div>`;
   }
 
-  socket.on('okey101:error', (err) => { showToast(err); geriAl(); });
+  // ---------------- SOCKET EVENTS ----------------
+  socket.on('connect', () => {
+    console.log('[LOOTIV] Connected to Okey 101 server.');
+  });
 
   socket.on('okey101:state', (state) => {
     lastState = state;
-    const myIndex = state.seats.findIndex((s) => s && s.userId === CURRENT_USER_ID);
-    if (myIndex === -1 || state.stage === 'waiting') {
-      rackLayout = new Array(RACK_SLOTS).fill(null);
-      serverTiles = [];
-    }
-    const titleEl = document.getElementById('okey101-title');
-    if (titleEl) {
-      const gMode = state.gameMode || 'Tekli';
-      const gType = state.gameType || 'Katlamasız';
-      titleEl.innerText = `101 Okey - ${gMode} / ${gType}`;
-    }
-    renderSeats(state);
-    renderIndicator(state);
-    renderBoard(state);
-    renderDeckAndCorners(state);
-    renderStatus(state);
-    renderBanner(state);
-    renderRack(state);
-    renderActionBar(state);
-
-    if (!hasAutoSat && new URLSearchParams(window.location.search).get('autoSit') === 'true') {
-      hasAutoSat = true;
-      if (myIndex === -1) {
-        const emptyIdx = state.seats.findIndex((s) => !s);
-        if (emptyIdx !== -1) {
-          socket.emit('okey101:sit', { seatIndex: emptyIdx });
-        }
-      }
-    }
+    renderState(state);
   });
 
   socket.on('okey101:tiles', (tiles) => {
-    serverTiles = tiles;
-    syncRackLayout(tiles);
-    renderRack(lastState);
-    renderActionBar(lastState);
+    rackTiles = tiles;
+    // Remove selected tiles that are no longer in hand
+    const currentIds = new Set(tiles.map(t => t.id));
+    for (const id of selectedTiles) {
+      if (!currentIds.has(id)) selectedTiles.delete(id);
+    }
+    renderRack();
   });
 
-  socket.on('okey101:error', (msg) => showToast(msg));
+  socket.on('okey101:error', (msg) => {
+    alert('Hata: ' + msg);
+  });
 
-  // --- Emotes & Gifts ---
-  function showEmote(userId, emote) {
-    const bubble = document.getElementById('emote-bubble-' + userId);
-    if (!bubble) return;
-    bubble.textContent = emote;
-    bubble.classList.add('show');
-    if (window.LootivSound) LootivSound.play('notify');
-    setTimeout(() => bubble.classList.remove('show'), 3000);
-  }
-
-  function flyChip(fromUserId, toUserId) {
-    if (!lastState) return;
-    const fromSeat = lastState.seats.findIndex(s => s && s.userId === fromUserId);
-    const toSeat = lastState.seats.findIndex(s => s && s.userId === toUserId);
-    if (fromSeat === -1 || toSeat === -1) return;
-    const fromEl = seatsEl.querySelector('.okey-seat-pos-' + fromSeat);
-    const toEl = seatsEl.querySelector('.okey-seat-pos-' + toSeat);
-    if (!fromEl || !toEl) return;
-
-    const fromRect = fromEl.getBoundingClientRect();
-    const toRect = toEl.getBoundingClientRect();
+  // ---------------- RENDERING ----------------
+  function renderState(state) {
+    // 1. Table Info
+    elTableBadge.innerHTML = `#${state.tableId}<span class="x">✕</span>`;
+    document.getElementById('bottom-table-id').textContent = `#${state.tableId}`;
     
-    const chip = document.createElement('div');
-    chip.className = 'flying-chip';
-    chip.style.left = (fromRect.left + fromRect.width / 2 - 12) + 'px';
-    chip.style.top = (fromRect.top + fromRect.height / 2 - 12) + 'px';
-    document.body.appendChild(chip);
-
-    if (window.LootivSound) LootivSound.play('chip');
-
-    setTimeout(() => {
-      chip.style.left = (toRect.left + toRect.width / 2 - 12) + 'px';
-      chip.style.top = (toRect.top + toRect.height / 2 - 12) + 'px';
-    }, 50);
-
-    setTimeout(() => {
-      chip.remove();
-      if (window.LootivSound) LootivSound.play('chip');
-    }, 650);
-  }
-
-  socket.on('okey101:emote', (data) => showEmote(data.userId, data.emote));
-  socket.on('okey101:gift', (data) => flyChip(data.fromUserId, data.targetUserId));
-
-  const emoteToggleBtn = document.getElementById('emote-toggle-btn');
-  const emotePicker = document.getElementById('emote-picker');
-  if (emoteToggleBtn && emotePicker) {
-    emoteToggleBtn.addEventListener('click', () => {
-      emotePicker.style.display = emotePicker.style.display === 'none' ? 'flex' : 'none';
-    });
-    document.querySelectorAll('.emote-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        socket.emit('okey101:emote', { emote: btn.dataset.emote });
-        emotePicker.style.display = 'none';
-      });
-    });
-  }
-
-  renderRack(null);
-
-  function autoExtractSeri(sourcePool, okeySpec) {
-    let pool = sourcePool.map(t => ({...t}));
-    const wilds = pool.filter((t) => (t.joker || (okeySpec && t.color === okeySpec.color && t.number === okeySpec.number)));
-    pool = pool.filter((t) => !(t.joker || (okeySpec && t.color === okeySpec.color && t.number === okeySpec.number)));
-    const groups = [];
-    const COLORS = ['kirmizi', 'sari', 'mavi', 'siyah'];
-
-    function takeOne(color, number) {
-      const i = pool.findIndex((t) => t.color === color && t.number === number);
-      return i === -1 ? null : pool.splice(i, 1)[0];
-    }
-    function hasTile(color, number) {
-      return pool.some((t) => t.color === color && t.number === number);
+    deckCountEl.textContent = state.deckCount || 0;
+    
+    if (state.indicator) {
+      indicatorTileEl.innerHTML = getTileHtml(state.indicator, true);
+    } else {
+      indicatorTileEl.innerHTML = '--';
     }
 
-    for (const color of COLORS) {
-      let again = true;
-      while (again) {
-        again = false;
-        const nums = new Set(pool.filter((t) => t.color === color).map((t) => t.number));
-        let bestS = 0, bestLen = 0;
-        for (let s = 1; s <= 13; s++) {
-          if (!nums.has(s) || nums.has(s - 1)) continue;
-          let e = s;
-          while (nums.has(e + 1)) e++;
-          if (e - s + 1 > bestLen) { bestLen = e - s + 1; bestS = s; }
+    // 2. Seats
+    let myIndex = state.seats.findIndex(s => s && s.userId === CURRENT_USER_ID);
+    if (myIndex === -1) myIndex = 0; 
+    
+    const posMap = {
+      bottom: state.seats[myIndex],
+      right: state.seats[(myIndex + 1) % 4],
+      top: state.seats[(myIndex + 2) % 4],
+      left: state.seats[(myIndex + 3) % 4]
+    };
+
+    for (const [pos, seat] of Object.entries(posMap)) {
+      const el = seats[pos];
+      if (seat) {
+        el.name.textContent = seat.name || `Oyuncu ${seat.userId}`;
+        el.avatar.textContent = (seat.name || '?').substring(0,2).toUpperCase();
+        el.score.textContent = seat.score || 0;
+        
+        // Render discard pile top tile
+        if (seat.discardPile && seat.discardPile.length > 0) {
+           const topTile = seat.discardPile[seat.discardPile.length - 1];
+           el.discard.innerHTML = getTileHtml(topTile, true);
+        } else {
+           el.discard.innerHTML = '';
         }
-        if (bestLen >= 3) {
-          const g = [];
-          for (let n = bestS; n < bestS + bestLen; n++) g.push(takeOne(color, n));
-          groups.push(g.map(t => t.id));
-          again = true;
+
+        // Highlight turn
+        if (state.turnSeat !== null && state.seats[state.turnSeat] && state.seats[state.turnSeat].userId === seat.userId) {
+           el.avatar.style.border = "3px solid #f5b942"; 
+           if (turnName && turnAvatar && turnScore && turnNotif) {
+             turnName.textContent = seat.name;
+             turnAvatar.textContent = (seat.name || '?').substring(0,2).toUpperCase();
+             turnScore.textContent = seat.score || 0;
+             turnNotif.style.display = 'block';
+           }
+        } else {
+           el.avatar.style.border = "";
         }
+
+      } else {
+        el.name.textContent = 'Bos';
+        el.avatar.textContent = '--';
+        el.score.textContent = '0';
+        el.discard.innerHTML = '';
       }
     }
-
-    for (let n = 1; n <= 13; n++) {
-      let again = true;
-      while (again) {
-        again = false;
-        const avail = COLORS.filter((c) => hasTile(c, n));
-        if (avail.length >= 3) {
-          groups.push(avail.map((c) => takeOne(c, n)).map(t => t.id));
-          again = true;
-        }
-      }
-    }
-    return groups;
+    
+    // 3. Center Area Grid
+    renderCenterGrid(state.boardMelds);
   }
 
-  function autoExtractCift(sourcePool, okeySpec) {
-    let pool = sourcePool.map(t => ({...t}));
-    pool = pool.filter((t) => !(t.joker || (okeySpec && t.color === okeySpec.color && t.number === okeySpec.number)));
-    const groups = [];
-    const COLORS = ['kirmizi', 'sari', 'mavi', 'siyah'];
-
-    function takeOne(color, number) {
-      const i = pool.findIndex((t) => t.color === color && t.number === number);
-      return i === -1 ? null : pool.splice(i, 1)[0];
-    }
-    function hasTile(color, number) {
-      return pool.some((t) => t.color === color && t.number === number);
-    }
-
-    for (let n = 1; n <= 13; n++) {
-      for (const color of COLORS) {
-        let again = true;
-        while (again) {
-          again = false;
-          // We need TWO identical tiles (same color, same number)
-          const count = pool.filter((t) => t.color === color && t.number === n).length;
-          if (count >= 2) {
-            groups.push([
-              takeOne(color, n).id,
-              takeOne(color, n).id
-            ]);
-            again = true;
-          }
-        }
-      }
-    }
-    return groups;
-  }
-})();
-
-
-function calculateRackScore(okeySpec) {
-  const groups = extractRackGroups(3);
-  let seriTotal = 0;
-  for (const g of groups) {
-    const tiles = g.map(id => rackLayout.find(t => t && t.id === id));
-    if (tiles.some(t => !t)) continue;
-    const wilds = tiles.filter(t => t.joker || (okeySpec && t.color === okeySpec.color && t.number === okeySpec.number));
-    const normals = tiles.filter(t => !t.joker && !(okeySpec && t.color === okeySpec.color && t.number === okeySpec.number));
-    if (normals.length === 0) continue;
-    
-    // Per check
-    const isPer = normals.every(t => t.number === normals[0].number) && new Set(normals.map(t => t.color)).size === normals.length;
-    if (isPer && tiles.length <= 4) {
-        seriTotal += normals[0].number * tiles.length;
-        continue;
-    }
-    
-    // Seri check
-    if (normals.every(t => t.color === normals[0].color)) {
-        const nums = normals.map(t => t.number).sort((a,b) => a-b);
-        let valid = true;
-        for (let i=1; i<nums.length; i++) if (nums[i] === nums[i-1]) valid = false;
-        if (valid) {
-            let lo = nums[0];
-            let hi = nums[nums.length-1];
-            let freeWilds = wilds.length;
-            const span = hi - lo + 1;
-            const gaps = span - nums.length;
-            if (gaps <= freeWilds) {
-                freeWilds -= gaps;
-                while (freeWilds > 0 && hi < 13) { hi++; freeWilds--; }
-                while (freeWilds > 0 && lo > 1) { lo--; freeWilds--; }
-                if (freeWilds === 0) {
-                    seriTotal += ((lo + hi) * (hi - lo + 1)) / 2;
-                }
+  function renderCenterGrid(boardMelds) {
+     const cells = centerGridMain.querySelectorAll('.cell');
+     cells.forEach(c => {
+         c.innerHTML = '';
+         c.removeAttribute('data-meld-id');
+     });
+     
+     if (!boardMelds) return;
+     
+     let cellIdx = 0;
+     boardMelds.forEach(meld => {
+        meld.tiles.forEach(tile => {
+            if (cellIdx < cells.length) {
+                cells[cellIdx].innerHTML = getTileHtml(tile, true);
+                cells[cellIdx].setAttribute('data-meld-id', meld.id);
             }
-        }
-    }
+            cellIdx++;
+        });
+        cellIdx++; // Gap between melds
+     });
+  }
+
+  function renderRack() {
+    rackRow1.innerHTML = '';
+    rackRow2.innerHTML = '';
+    
+    rackTiles.forEach((tile, index) => {
+       const html = getTileHtml(tile, false);
+       const wrapper = document.createElement('div');
+       wrapper.innerHTML = html;
+       const tileEl = wrapper.firstElementChild;
+       
+       tileEl.draggable = true;
+       
+       // Drag Handlers
+       tileEl.ondragstart = (e) => {
+           dragTileId = tile.id;
+           tileEl.classList.add('dragging');
+           e.dataTransfer.setData('text/plain', tile.id);
+       };
+       tileEl.ondragend = () => {
+           dragTileId = null;
+           tileEl.classList.remove('dragging');
+       };
+
+       // Click Handler for Selection
+       tileEl.onclick = () => {
+           if (selectedTiles.has(tile.id)) {
+               selectedTiles.delete(tile.id);
+               tileEl.classList.remove('selected');
+           } else {
+               selectedTiles.add(tile.id);
+               tileEl.classList.add('selected');
+           }
+       };
+
+       // Drop Handler for sorting (dropping onto another tile to insert before it)
+       tileEl.ondragover = (e) => e.preventDefault();
+       tileEl.ondrop = (e) => {
+           e.preventDefault();
+           if (!dragTileId || dragTileId === tile.id) return;
+           
+           const draggedIdx = rackTiles.findIndex(t => t.id === dragTileId);
+           const targetIdx = rackTiles.findIndex(t => t.id === tile.id);
+           
+           if (draggedIdx !== -1 && targetIdx !== -1) {
+               const [draggedTile] = rackTiles.splice(draggedIdx, 1);
+               // If dragged from before target, target index shifted by -1
+               const insertIdx = (draggedIdx < targetIdx) ? targetIdx : targetIdx;
+               rackTiles.splice(insertIdx, 0, draggedTile);
+               renderRack(); // Re-render to show new order
+           }
+       };
+
+       if (index < rackTiles.length / 2) {
+           rackRow1.appendChild(tileEl);
+       } else {
+           rackRow2.appendChild(tileEl);
+       }
+    });
+  }
+
+  // ---------------- UI ACTIONS ----------------
+  
+  // Sort Buttons
+  if (btnSortSeries) {
+    btnSortSeries.addEventListener('click', () => {
+        rackTiles.sort((a,b) => (a.color === b.color ? a.number - b.number : a.color.localeCompare(b.color)));
+        renderRack();
+    });
+  }
+
+  if (btnSortPairs) {
+    btnSortPairs.addEventListener('click', () => {
+        rackTiles.sort((a,b) => a.number - b.number);
+        renderRack();
+    });
+  }
+
+  // Helper: Group selected tiles based on adjacency in the rackTiles array
+  function getSelectedGroups() {
+      if (selectedTiles.size === 0) return [];
+      
+      const groups = [];
+      let currentGroup = [];
+      
+      for (let i = 0; i < rackTiles.length; i++) {
+          const tile = rackTiles[i];
+          if (selectedTiles.has(tile.id)) {
+              currentGroup.push(tile.id);
+          } else {
+              if (currentGroup.length > 0) {
+                  groups.push(currentGroup);
+                  currentGroup = [];
+              }
+          }
+      }
+      if (currentGroup.length > 0) {
+          groups.push(currentGroup);
+      }
+      return groups;
+  }
+
+  // Open Buttons
+  if (btnOpenSeries) {
+      btnOpenSeries.addEventListener('click', () => {
+          const groups = getSelectedGroups();
+          if (groups.length === 0) return alert('Once acmak istediginiz taslari secin.');
+          socket.emit('okey101:open', { kind: 'seri', groups });
+          selectedTiles.clear();
+          renderRack();
+      });
+  }
+
+  if (btnOpenPairs) {
+      btnOpenPairs.addEventListener('click', () => {
+          const groups = getSelectedGroups();
+          if (groups.length === 0) return alert('Once acmak istediginiz taslari secin.');
+          socket.emit('okey101:open', { kind: 'cift', groups });
+          selectedTiles.clear();
+          renderRack();
+      });
+  }
+
+  // Discard Drop Zone
+  const myDiscardEl = seats.bottom.discard; 
+  if (myDiscardEl) {
+      myDiscardEl.ondragover = (e) => {
+          e.preventDefault();
+          myDiscardEl.classList.add('drag-over');
+      };
+      myDiscardEl.ondragleave = () => {
+          myDiscardEl.classList.remove('drag-over');
+      };
+      myDiscardEl.ondrop = (e) => {
+          e.preventDefault();
+          myDiscardEl.classList.remove('drag-over');
+          if (dragTileId) {
+              socket.emit('okey101:discard', { tileId: dragTileId });
+              dragTileId = null;
+          }
+      };
+  }
+
+  // Process (İşleme) Drop Zone
+  if (centerGridMain) {
+      centerGridMain.ondragover = (e) => {
+          e.preventDefault(); // allow drop
+      };
+      centerGridMain.ondrop = (e) => {
+          e.preventDefault();
+          if (!dragTileId) return;
+          
+          // Find the closest cell with a data-meld-id
+          const targetCell = e.target.closest('.cell[data-meld-id]');
+          if (targetCell) {
+              const meldId = targetCell.getAttribute('data-meld-id');
+              if (meldId) {
+                  socket.emit('okey101:process', { tileId: dragTileId, meldId: meldId });
+                  dragTileId = null;
+              }
+          }
+      };
+  }
+
+  // Center deck draw
+  if (deckCountEl) {
+      deckCountEl.addEventListener('click', () => {
+          socket.emit('okey101:draw', { source: 'deck' });
+      });
   }
   
-  let badge = document.getElementById('rack-score-badge');
-  if (!badge) {
-      badge = document.createElement('div');
-      badge.id = 'rack-score-badge';
-      badge.className = 'rack-score-badge';
-      const rackZone = document.querySelector('.ok1-rackzone');
-      if (rackZone) rackZone.appendChild(badge);
+  // Previous discard draw (click left discard)
+  if (seats.left.discard) {
+      seats.left.discard.addEventListener('click', () => {
+          socket.emit('okey101:draw', { source: 'discard' });
+      });
   }
-  if (badge) {
-      badge.innerHTML = `Seri Puani: <strong>${seriTotal}</strong>`;
-  }
-}
 
+})();
