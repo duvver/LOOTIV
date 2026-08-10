@@ -65,6 +65,8 @@
   // ---------------- STATE ----------------
   let lastState = null;
   let rackSlots = new Array(34).fill(null); // 2 rows of 17
+  let currentTableId = null;
+  let currentHandNumber = -1;
   let selectedTiles = new Set();
   let dragTileId = null;
   let currentOkeySpec = null;
@@ -86,10 +88,13 @@
         cls += ' okey-tile';
     }
 
+    const isWild = tile.joker || isRealOkey;
+    const wildAttr = isWild ? ' data-is-wild="true"' : '';
+
     if (tile.joker) {
-      return `<div class="${cls} black" data-id="${tile.id}">★<span class="dotmark">▾</span></div>`;
+      return `<div class="${cls} black" data-id="${tile.id}"${wildAttr}>★<span class="dotmark">▾</span></div>`;
     }
-    return `<div class="${cls}" data-id="${tile.id}">${tile.number}<span class="dotmark">▾</span></div>`;
+    return `<div class="${cls}" data-id="${tile.id}"${wildAttr}>${tile.number}<span class="dotmark">▾</span></div>`;
   }
 
   // ---------------- SOCKET EVENTS ----------------
@@ -97,7 +102,41 @@
     console.log('[LOOTIV] Connected to Okey 101 server.');
   });
 
+  socket.on('okey101:reconnect', () => {
+    // Show a simple toast message
+    let toast = document.getElementById('reconnect-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'reconnect-toast';
+      toast.style.position = 'fixed';
+      toast.style.top = '20px';
+      toast.style.left = '50%';
+      toast.style.transform = 'translateX(-50%)';
+      toast.style.backgroundColor = '#4caf50';
+      toast.style.color = 'white';
+      toast.style.padding = '10px 20px';
+      toast.style.borderRadius = '5px';
+      toast.style.zIndex = '9999';
+      toast.style.transition = 'opacity 0.5s';
+      toast.innerText = 'Yeniden bağlandınız!';
+      document.body.appendChild(toast);
+    }
+    toast.style.opacity = '1';
+    setTimeout(() => {
+      toast.style.opacity = '0';
+    }, 3000);
+  });
+
   socket.on('okey101:state', (state) => {
+    // Reset rack if joining a new room or a new hand starts
+    if (state.tableId !== currentTableId || state.handNumber !== currentHandNumber) {
+        rackSlots = new Array(34).fill(null);
+        selectedTiles.clear();
+        dragTileId = null;
+        currentTableId = state.tableId;
+        currentHandNumber = state.handNumber;
+    }
+
     lastState = state;
     
     if (state.indicator) {
@@ -165,8 +204,41 @@
     alert('Hata: ' + msg);
   });
 
-  // ---------------- RENDERING ----------------
+  let currentTurnDeadline = null;
+  let gameOverOverlay = null;
+
+  setInterval(() => {
+    if (!currentTurnDeadline) {
+      document.querySelectorAll('.seat-timer-display').forEach(el => el.textContent = '');
+      return;
+    }
+    const ms = currentTurnDeadline - Date.now();
+    const secs = Math.max(0, Math.floor(ms / 1000));
+    document.querySelectorAll('.seat-turn-active .seat-timer-display').forEach(el => {
+      el.textContent = `${secs}s`;
+    });
+  }, 1000);
+
   function renderState(state) {
+    currentTurnDeadline = state.turnDeadline;
+
+    if (state.stage === 'finished') {
+      if (!gameOverOverlay) {
+        gameOverOverlay = document.createElement('div');
+        gameOverOverlay.id = 'game-over-overlay';
+        gameOverOverlay.innerHTML = `
+          <div class="go-box">
+            <h2>Oyun Bitti!</h2>
+            <p>Bu el sona erdi. Puan tablosu güncelleniyor...</p>
+            <button onclick="window.location.reload()" style="margin-top:20px; padding:10px 20px; background:#f5b942; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">Yenile</button>
+          </div>
+        `;
+        document.body.appendChild(gameOverOverlay);
+      }
+      gameOverOverlay.style.display = 'flex';
+    } else {
+      if (gameOverOverlay) gameOverOverlay.style.display = 'none';
+    }
     // 1. Table Info
     elTableBadge.innerHTML = `#${state.tableId}<span class="x">✕</span>`;
     document.getElementById('bottom-table-id').textContent = `#${state.tableId}`;
@@ -201,9 +273,9 @@
         el.score.textContent = seat.score || 0;
         
         // Render discard pile top tile
-        if (seat.discardPile && seat.discardPile.length > 0) {
-           const topTile = seat.discardPile[seat.discardPile.length - 1];
-           el.discard.innerHTML = getTileHtml(topTile, true);
+        const pile = state.discardPiles && state.discardPiles[actualIndex];
+        if (pile && pile.top) {
+           el.discard.innerHTML = getTileHtml(pile.top, true);
         } else {
            el.discard.innerHTML = '';
         }
@@ -211,6 +283,14 @@
         // Highlight turn
         if (state.turnSeat !== null && state.seats[state.turnSeat] && state.seats[state.turnSeat].userId === seat.userId) {
            el.avatar.style.border = "3px solid #f5b942"; 
+           el.seatEl.classList.add('seat-turn-active');
+           let timerEl = el.seatEl.querySelector('.seat-timer-display');
+           if (!timerEl) {
+               timerEl = document.createElement('div');
+               timerEl.className = 'seat-timer-display';
+               el.name.parentNode.appendChild(timerEl);
+           }
+
            if (turnName && turnAvatar && turnScore && turnNotif) {
              turnName.textContent = seat.name;
              turnAvatar.textContent = (seat.name || '?').substring(0,2).toUpperCase();
@@ -219,6 +299,9 @@
            }
         } else {
            el.avatar.style.border = "";
+           el.seatEl.classList.remove('seat-turn-active');
+           let timerEl = el.seatEl.querySelector('.seat-timer-display');
+           if (timerEl) timerEl.remove();
         }
 
       } else {
@@ -235,24 +318,47 @@
   }
 
   function renderCenterGrid(boardMelds) {
-     const cells = centerGridMain.querySelectorAll('.cell');
-     cells.forEach(c => {
+     const mainCells = centerGridMain.querySelectorAll('.cell');
+     mainCells.forEach(c => {
          c.innerHTML = '';
          c.removeAttribute('data-meld-id');
      });
      
+     let sideCells = null;
+     if (centerGridSide) {
+         sideCells = centerGridSide.querySelectorAll('.cell');
+         sideCells.forEach(c => {
+             c.innerHTML = '';
+             c.removeAttribute('data-meld-id');
+         });
+     }
+     
      if (!boardMelds) return;
      
-     let cellIdx = 0;
+     let mainRowIdx = 0;
+     let sideRowIdx = 0;
+     
      boardMelds.forEach(meld => {
+        let colIdx = 0;
+        const isCift = meld.kind === 'cift';
+        const targetCells = isCift && sideCells ? sideCells : mainCells;
+        const targetRow = isCift && sideCells ? sideRowIdx : mainRowIdx;
+        const colsPerRow = isCift && sideCells ? 6 : 26; // Side grid has 6 columns
+        
         meld.tiles.forEach(tile => {
-            if (cellIdx < cells.length) {
-                cells[cellIdx].innerHTML = getTileHtml(tile, true);
-                cells[cellIdx].setAttribute('data-meld-id', meld.id);
+            let cellIdx = (targetRow * colsPerRow) + colIdx;
+            if (cellIdx < targetCells.length) {
+                targetCells[cellIdx].innerHTML = getTileHtml(tile, true);
+                targetCells[cellIdx].setAttribute('data-meld-id', meld.id);
             }
-            cellIdx++;
+            colIdx += 2; // Mini tile (28px) spans 2 grid cells (14px each)
         });
-        cellIdx++; // Gap between melds
+        
+        if (isCift && sideCells) {
+            sideRowIdx++;
+        } else {
+            mainRowIdx++;
+        }
      });
   }
 
@@ -630,12 +736,23 @@
           e.preventDefault();
           if (!dragTileId) return;
           
+          // Find the closest tile element inside the dropped area
+          const targetTile = e.target.closest('.tile');
+          let isWild = false;
+          if (targetTile && targetTile.getAttribute('data-is-wild') === 'true') {
+              isWild = true;
+          }
+
           // Find the closest cell with a data-meld-id
           const targetCell = e.target.closest('.cell[data-meld-id]');
           if (targetCell) {
               const meldId = targetCell.getAttribute('data-meld-id');
               if (meldId) {
-                  socket.emit('okey101:process', { tileId: dragTileId, meldId: meldId });
+                  if (isWild) {
+                      socket.emit('okey101:swapJoker', { tileId: dragTileId, meldId: meldId });
+                  } else {
+                      socket.emit('okey101:process', { tileId: dragTileId, meldId: meldId });
+                  }
                   dragTileId = null;
               }
           }

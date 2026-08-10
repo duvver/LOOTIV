@@ -431,18 +431,21 @@
             return '<span class="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm shadow-sm" title="' + escapeHtml(s.name) + '">' + initial + '</span>';
           }).join('');
 
-          var statusText = isFull ? 'Dolu (4/4)' : room.seatedCount + '/' + (room.seatCount || 4) + ' Oyuncu';
-          var statusColor = isFull ? 'text-error font-bold' : 'text-primary font-bold';
+          var isPlaying = room.stage === 'playing';
+          var statusText = isPlaying ? 'Oynanıyor' : (isFull ? 'Dolu (4/4)' : room.seatedCount + '/' + (room.seatCount || 4) + ' Oyuncu');
+          var statusColor = isPlaying ? 'text-amber-600 font-bold' : (isFull ? 'text-error font-bold' : 'text-primary font-bold');
 
           var isPrivate = room.privacy === 'private';
           var titleIcon = isPrivate ? '<span class="material-symbols-outlined text-amber-500 text-base" title="Şifreli Masa">lock</span>' : '<span class="material-symbols-outlined text-primary text-base">table_restaurant</span>';
           
+          var canSit = !isFull && !isPlaying;
+          var btnLabel = isPlaying ? 'İzle' : (isFull ? 'İzle' : 'Otur');
           var actionBtnHtml = isPrivate 
             ? '<button type="button" onclick="openJoinPasswordModal(\'' + escapeHtml(room.id) + '\')" class="px-5 py-2 bg-amber-600 text-white rounded-xl font-label-md text-label-sm hover:bg-amber-700 transition-all shadow-md flex items-center gap-1.5 cursor-pointer">' +
-                '<span class="material-symbols-outlined text-sm">lock</span> ' + (isFull ? 'İzle' : 'Otur') +
+                '<span class="material-symbols-outlined text-sm">lock</span> ' + btnLabel +
               '</button>'
-            : '<a href="<%= meta.playUrl %>?roomId=' + encodeURIComponent(room.id) + '&autoSit=true" class="px-5 py-2 bg-primary text-white rounded-xl font-label-md text-label-sm hover:bg-primary/90 transition-all shadow-md flex items-center gap-1.5 cursor-pointer">' +
-                '<span class="material-symbols-outlined text-sm">login</span> ' + (isFull ? 'İzle' : 'Otur') +
+            : '<a href="<%= meta.playUrl %>?roomId=' + encodeURIComponent(room.id) + '&autoSit=' + (canSit ? 'true' : 'false') + '" class="px-5 py-2 bg-primary text-white rounded-xl font-label-md text-label-sm hover:bg-primary/90 transition-all shadow-md flex items-center gap-1.5 cursor-pointer">' +
+                '<span class="material-symbols-outlined text-sm">login</span> ' + btnLabel +
               '</a>';
 
           var badgesHtml = '<div class="flex gap-1.5 flex-wrap mt-2">';
