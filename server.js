@@ -1537,10 +1537,35 @@ async function gameLogMessage(text, channel = 'oyun', room = null) {
 
 const table = new PokerTable();
 const turkPokerTable = new TurkPokerTable();
-const pendingStandTimers = new Map();
-const pendingStandTimersTurkPoker = new Map();
+const pendingStands = new Map();
 const RECONNECT_GRACE_MS = 8000;
 
+function handleDisconnectGracePeriod(table, gameStr, userId, reqRoomId) {
+  if (!table) return;
+  const idx = typeof table.findSeatByUser === 'function' ? table.findSeatByUser(userId) : -1;
+  if (idx !== -1) {
+    const timerKey = `${userId}_${gameStr}_${reqRoomId || 'global'}`;
+    const timer = setTimeout(() => {
+      pendingStands.delete(timerKey);
+      let res;
+      try {
+        if (gameStr === 'poker' || gameStr === 'turkpoker') {
+          res = table.stand(userId);
+          if (res && res.catch) res.catch(console.error);
+        } else {
+          res = table.stand(userId);
+          if (res && res.error) console.error(`${gameStr} otomatik kalkma hatasi:`, res.error);
+        }
+      } catch (err) {
+        console.error('Stand error:', err);
+      }
+      if (reqRoomId && typeof checkUserRoomCleanup === 'function') {
+        checkUserRoomCleanup(reqRoomId);
+      }
+    }, RECONNECT_GRACE_MS);
+    pendingStands.set(timerKey, timer);
+  }
+}
 table.on('log', (text) => gameLogMessage(text, 'oyun', 'poker').catch(console.error));
 table.on('update', (state) => {
   io.to('poker').emit('table:state', state);
@@ -1628,7 +1653,7 @@ turkPokerTable.on('hand-result', ({ handNumber, participants }) => {
 });
 
 const okeyTable = new OkeyTable();
-const pendingStandTimersOkey = new Map();
+
 
 okeyTable.on('log', (text) => gameLogMessage(text, 'okey', 'okey').catch(console.error));
 okeyTable.on('update', (state) => {
@@ -1672,7 +1697,7 @@ okeyTable.on('hand-result', ({ handNumber, participants }) => {
 
 // ---- 101 Okey masasi ----
 const okey101Table = new Okey101Table();
-const pendingStandTimers101 = new Map();
+
 
 okey101Table.on('log', (text) => gameLogMessage(text, 'okey101', 'okey101').catch(console.error));
 okey101Table.on('update', (state) => {
@@ -1733,6 +1758,7 @@ function getPublicRoomsList(gameSlug) {
         creatorName: r.creatorName,
         gameMode: r.table.gameMode || 'Tek',
         gameType: r.table.gameType || 'Katlamasız',
+        stage: r.table.stage || 'waiting',
         seatedCount: seated.length,
         seatCount: r.table.seats.length,
         seats: r.table.seats.map((s) => (s ? { name: s.name, isBot: !!s.isBot } : null)),
@@ -1940,25 +1966,12 @@ io.on('connection', (socket) => {
 
     onlinePlayers.set(socket.id, { userId: user.id, name, game });
 
-    const pendingStand = pendingStandTimers.get(user.id);
-    if (pendingStand) {
-      clearTimeout(pendingStand);
-      pendingStandTimers.delete(user.id);
-    }
-    const pendingStandTurkPoker = pendingStandTimersTurkPoker.get(user.id);
-    if (pendingStandTurkPoker) {
-      clearTimeout(pendingStandTurkPoker);
-      pendingStandTimersTurkPoker.delete(user.id);
-    }
-    const pendingStandOkey = pendingStandTimersOkey.get(user.id);
-    if (pendingStandOkey) {
-      clearTimeout(pendingStandOkey);
-      pendingStandTimersOkey.delete(user.id);
-    }
-    const pendingStand101 = pendingStandTimers101.get(user.id);
-    if (pendingStand101) {
-      clearTimeout(pendingStand101);
-      pendingStandTimers101.delete(user.id);
+    // Clear any pending stands for this user across all games/rooms
+    for (const [key, timer] of pendingStands.entries()) {
+      if (key.startsWith(`${user.id}_`)) {
+        clearTimeout(timer);
+        pendingStands.delete(key);
+      }
     }
 
     {
@@ -2193,6 +2206,7 @@ io.on('connection', (socket) => {
       if (mySeat101 && mySeat101.tiles.length) {
         socket.emit('okey101:tiles', mySeat101.tiles);
       }
+      socket.emit('okey101:reconnect');
 
       socket.on('okey101:sit', async (payload) => {
         const seatIndex = Number(payload && payload.seatIndex);
@@ -2227,12 +2241,12 @@ io.on('connection', (socket) => {
       });
 
       socket.on('okey101:process', (payload) => {
-        const res = currentTable101.handleProcess(
-          user.id,
-          payload && payload.tileId,
-          payload && payload.meldId,
-          payload && payload.targetJokerId
-        );
+        const res = currentTable101.handleProcess({
+          userId: user.id,
+          tileId: payload && payload.tileId,
+          meldId: payload && payload.meldId,
+          targetJokerId: payload && payload.targetJokerId
+        });
         if (res.error) {
           socket.emit('okey101:error', res.error);
         } else if (res.jokerStolen) {
@@ -2245,6 +2259,11 @@ io.on('connection', (socket) => {
 
       socket.on('okey101:discard', (payload) => {
         const res = currentTable101.handleDiscard(user.id, payload && payload.tileId);
+        if (res.error) socket.emit('okey101:error', res.error);
+      });
+
+      socket.on('okey101:swapJoker', (payload) => {
+        const res = currentTable101.handleSwapJoker(user.id, payload.meldId, payload.tileId);
         if (res.error) socket.emit('okey101:error', res.error);
       });
 
@@ -2319,40 +2338,23 @@ io.on('connection', (socket) => {
         systemMessage(`${name} masadan ayrildi.`, game).catch(console.error);
       }
       const stillConnected = Array.from(onlinePlayers.values()).some((p) => p.userId === user.id);
-      if (!stillConnected && game === 'poker' && table.findSeatByUser(user.id) !== -1) {
-        const timer = setTimeout(() => {
-          pendingStandTimers.delete(user.id);
-          table.stand(user.id).catch(console.error);
-        }, RECONNECT_GRACE_MS);
-        pendingStandTimers.set(user.id, timer);
-      }
-      if (!stillConnected && game === 'turkpoker' && turkPokerTable.findSeatByUser(user.id) !== -1) {
-        const timer = setTimeout(() => {
-          pendingStandTimersTurkPoker.delete(user.id);
-          turkPokerTable.stand(user.id).catch(console.error);
-        }, RECONNECT_GRACE_MS);
-        pendingStandTimersTurkPoker.set(user.id, timer);
-      }
-      if (!stillConnected && game === 'okey' && okeyTable.findSeatByUser(user.id) !== -1) {
-        const timer = setTimeout(() => {
-          pendingStandTimersOkey.delete(user.id);
-          const res = okeyTable.stand(user.id);
-          if (res.error) console.error('Okey otomatik kalkma hatasi:', res.error);
-        }, RECONNECT_GRACE_MS);
-        pendingStandTimersOkey.set(user.id, timer);
-      }
-      if (!stillConnected && game === 'okey101' && okey101Table.findSeatByUser(user.id) !== -1) {
-        const timer = setTimeout(() => {
-          pendingStandTimers101.delete(user.id);
-          const res = okey101Table.stand(user.id);
-          if (res.error) console.error('Okey101 otomatik kalkma hatasi:', res.error);
-        }, RECONNECT_GRACE_MS);
-        pendingStandTimers101.set(user.id, timer);
-      }
+      let currentTable = null;
       if (reqRoomId && activeUserRooms.has(reqRoomId)) {
-        const room = activeUserRooms.get(reqRoomId);
-        room.table.stand(user.id);
-        checkUserRoomCleanup(reqRoomId);
+        currentTable = activeUserRooms.get(reqRoomId).table;
+      } else {
+        if (game === 'poker') currentTable = table;
+        else if (game === 'turkpoker') currentTable = turkPokerTable;
+        else if (game === 'okey') currentTable = okeyTable;
+        else if (game === 'okey101') currentTable = okey101Table;
+      }
+
+      if (currentTable) {
+        if (!stillConnected) {
+          handleDisconnectGracePeriod(currentTable, game, user.id, reqRoomId);
+        } else if (reqRoomId) {
+          currentTable.stand(user.id);
+          checkUserRoomCleanup(reqRoomId);
+        }
       }
     });
   })().catch((err) => {
