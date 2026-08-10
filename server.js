@@ -2341,6 +2341,14 @@ io.on('connection', (socket) => {
         }, RECONNECT_GRACE_MS);
         pendingStandTimersOkey.set(user.id, timer);
       }
+      if (!stillConnected && game === 'okey101' && okey101Table.findSeatByUser(user.id) !== -1) {
+        const timer = setTimeout(() => {
+          pendingStandTimers101.delete(user.id);
+          const res = okey101Table.stand(user.id);
+          if (res.error) console.error('Okey101 otomatik kalkma hatasi:', res.error);
+        }, RECONNECT_GRACE_MS);
+        pendingStandTimers101.set(user.id, timer);
+      }
       if (reqRoomId && activeUserRooms.has(reqRoomId)) {
         const room = activeUserRooms.get(reqRoomId);
         room.table.stand(user.id);

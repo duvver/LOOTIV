@@ -166,6 +166,51 @@
       <span class="bell" role="button" tabindex="0" aria-label="Bildirimler">🔔<span class="n" id="notif-count" aria-hidden="true">1</span></span>
     </div>
 
+    <!-- MODALS -->
+    <!-- Market Modal -->
+    <div id="modal-market" class="game-modal" style="display: none;">
+      <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h2>Market</h2>
+        <p>Market çok yakında aktif olacak!</p>
+      </div>
+    </div>
+
+    <!-- Ayarlar Modal -->
+    <div id="modal-settings" class="game-modal" style="display: none;">
+      <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h2>Oyun Ayarları</h2>
+        <div class="settings-opts">
+          <label><input type="checkbox" id="chk-sound" checked> Ses Efektleri</label><br>
+          <label><input type="checkbox" id="chk-dark"> Karanlık Tema (Gelecekte)</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bildirimler Dropdown/Modal -->
+    <div id="modal-notifs" class="game-modal" style="display: none;">
+      <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h2>Bildirimler</h2>
+        <p>Henüz yeni bildirim yok.</p>
+      </div>
+    </div>
+
+    <!-- Sohbet Paneli -->
+    <div id="panel-chat" class="chat-panel" style="display: none;">
+      <div class="chat-header">
+        Masa Sohbeti <span class="close-chat">&times;</span>
+      </div>
+      <div class="chat-body" id="chat-body">
+        <div class="chat-msg system">Sohbet odasına katıldınız. Küfür etmek yasaktır.</div>
+      </div>
+      <div class="chat-input">
+        <input type="text" id="chat-inp" placeholder="Mesaj yaz...">
+        <button id="btn-send-chat">Gönder</button>
+      </div>
+    </div>
+
   </div>
   </div>
 </div>

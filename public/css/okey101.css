@@ -73,6 +73,12 @@
     border-radius: 50%;
     font-size: 10px;
     display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+  }
+.okey101 .table-badge .x:hover {
+    background: #e05a6a;
+    color: #fff;
   }
 .okey101 .btn-play {
     background: linear-gradient(#f0463a, #c62828);
@@ -384,4 +390,132 @@
     background: rgba(23, 178, 196, 0.2) !important;
     outline: 2px dashed #17b2c4;
     outline-offset: -2px;
+}
+
+.okey101 .btn-add-bot {
+    background: #0f2a3d;
+    color: #8fe6f0;
+    border: 1px solid #17b2c4;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: bold;
+    display: inline-block;
+}
+.okey101 .btn-add-bot:hover {
+    background: #17b2c4;
+    color: #0f2a3d;
+}
+
+.okey101 .rack-slot {
+    width: 38px; height: 50px;
+    border-radius: 5px;
+    background: transparent;
+    display: flex; align-items: center; justify-content: center;
+    flex: 0 0 auto;
+}
+.okey101 .rack-slot.drag-over {
+    background: rgba(255, 255, 255, 0.1);
+    outline: 2px dashed rgba(255, 255, 255, 0.4);
+    outline-offset: -2px;
+}
+
+/* Modals */
+.game-modal {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.6);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.game-modal .modal-content {
+  background: #2a2a2a;
+  border-radius: 8px;
+  padding: 20px;
+  min-width: 300px;
+  color: #fff;
+  position: relative;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  border: 1px solid #444;
+}
+.game-modal .close-modal {
+  position: absolute;
+  top: 10px; right: 15px;
+  font-size: 24px;
+  cursor: pointer;
+  color: #aaa;
+}
+.game-modal .close-modal:hover { color: #fff; }
+
+.chat-panel {
+  position: absolute;
+  bottom: 60px; right: 20px;
+  width: 300px; height: 350px;
+  background: rgba(30, 30, 30, 0.95);
+  border: 1px solid #444;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  z-index: 999;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+.chat-panel .chat-header {
+  padding: 10px;
+  background: #222;
+  border-bottom: 1px solid #444;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 8px 8px 0 0;
+  color: #fff;
+}
+.chat-panel .close-chat {
+  cursor: pointer;
+  font-size: 20px;
+}
+.chat-panel .chat-body {
+  flex: 1;
+  padding: 10px;
+  overflow-y: auto;
+  font-size: 14px;
+  color: #ddd;
+}
+.chat-panel .chat-msg {
+  margin-bottom: 5px;
+}
+.chat-panel .chat-msg.system {
+  color: #ff9; font-style: italic;
+}
+.chat-panel .chat-input {
+  display: flex;
+  padding: 10px;
+  border-top: 1px solid #444;
+}
+.chat-panel .chat-input input {
+  flex: 1;
+  padding: 5px;
+  border: none;
+  border-radius: 4px;
+  margin-right: 5px;
+  background: #333;
+  color: #fff;
+}
+.chat-panel .chat-input button {
+  padding: 5px 10px;
+  background: #d4af37;
+  color: #000;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+/* Okey taşı belirteci */
+.tile.okey-tile {
+  transform: rotate(180deg);
+  box-shadow: 0 0 10px 2px gold;
 }
