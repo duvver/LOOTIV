@@ -333,10 +333,10 @@
   }
 .okey101 .row:last-child { margin-bottom:0; }
 .okey101 .tile {
-    width:38px; height:50px; border-radius:5px;
+    width:34px; height:46px; border-radius:5px;
     background:linear-gradient(#fdfaf1,#f0ead8);
     display:flex; align-items:flex-start; justify-content:center;
-    padding-top:4px; font-weight:800; font-size:19px;
+    padding-top:4px; font-weight:800; font-size:17px;
     box-shadow:0 2px 3px rgba(0,0,0,.35), inset 0 1px 0 #fff;
     position:relative; flex:0 0 auto;
   }
@@ -392,7 +392,7 @@
     box-shadow: 0 4px 8px rgba(0,0,0,.5), 0 0 0 2px #ffcf3f, inset 0 1px 0 #fff;
 }
 .okey101 .tile.dragging {
-    opacity: 0.5;
+    opacity: 0.3;
     transform: scale(1.05);
 }
 .okey101 .drag-over {
@@ -419,7 +419,7 @@
 }
 
 .okey101 .rack-slot {
-    width: 38px; height: 50px;
+    width: 35px; height: 48px;
     border-radius: 5px;
     background: transparent;
     display: flex; align-items: center; justify-content: center;
@@ -652,6 +652,11 @@
     transform: translateY(-20px);
 }
 
+.rack-is-dragging .tile {
+    pointer-events: none;
+}
+
+
 /* --- Shift Animations for Rack Tiles --- */
 .okey101 .tile {
     transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -662,8 +667,3 @@
 .okey101 .rack-slot.shift-left .tile {
     transform: translateX(-110%);
 }
-.rack-is-dragging .tile {
-    pointer-events: none;
-}
-
-
