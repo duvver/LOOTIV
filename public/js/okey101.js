@@ -47,6 +47,7 @@
   const btnSortSeries = document.getElementById('btn-sort-series');
   const btnOpenPairs = document.getElementById('btn-open-pairs');
   const btnOpenSeries = document.getElementById('btn-open-series');
+  const btnShowIndicator = document.getElementById('btn-show-indicator');
   
   const deckCountEl = document.getElementById('deck-count');
   const indicatorTileEl = document.getElementById('indicator-tile');
@@ -72,10 +73,13 @@
   let currentOkeySpec = null;
 
   // ---------------- RENDER HELPERS ----------------
-  function getTileHtml(tile, isMini = false) {
+  function getTileHtml(tile, sizeMode = 'normal') {
     if (!tile) return '';
-    let cls = isMini ? 'tile mini' : 'tile'; 
-    if (selectedTiles.has(tile.id) && !isMini) cls += ' selected';
+    let cls = 'tile';
+    if (sizeMode === 'mini') cls += ' mini';
+    else if (sizeMode === 'small') cls += ' small';
+    
+    if (selectedTiles.has(tile.id) && sizeMode === 'normal') cls += ' selected';
     
     if (tile.color === 'red' || tile.color === 'kirmizi') cls += ' red';
     if (tile.color === 'black' || tile.color === 'siyah') cls += ' black';
@@ -201,7 +205,48 @@
   });
 
   socket.on('okey101:error', (msg) => {
-    alert('Hata: ' + msg);
+    // alert yerine şık bir toast (Glow/Navy theme uyumlu)
+    const container = document.getElementById('toast-container');
+    if (!container) {
+        alert('Hata: ' + msg); // Fallback
+        return;
+    }
+    const toast = document.createElement('div');
+    toast.className = 'toast-msg';
+    toast.textContent = msg;
+    
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.classList.add('fade-out');
+        setTimeout(() => toast.remove(), 500);
+    }, 3000);
+  });
+
+  socket.on('okey101:game-over', (data) => {
+      let finalScores = data && data.totalScores ? data.totalScores : {};
+      if (!gameOverOverlay) {
+        gameOverOverlay = document.createElement('div');
+        gameOverOverlay.id = 'game-over-overlay';
+        document.body.appendChild(gameOverOverlay);
+      }
+      let html = `
+          <div class="go-box">
+            <h2>Oyun Bitti!</h2>
+            <p>Tüm eller tamamlandı. Sonuçlar:</p>
+            <ol style="text-align:left; padding-left:40px; margin-bottom:20px;">
+      `;
+      const seats = lastState && lastState.seats ? lastState.seats : [];
+      const scoresArr = Object.entries(finalScores).map(([uid, score]) => {
+          const seat = seats.find(s => s && s.userId == uid);
+          return { name: seat ? seat.name : `Oyuncu ${uid}`, score };
+      }).sort((a,b) => a.score - b.score);
+      scoresArr.forEach(s => {
+          html += `<li>${s.name}: ${s.score} Puan</li>`;
+      });
+      html += `</ol><button onclick="window.location.href='/lobiler'" style="margin-top:20px; padding:10px 20px; background:#f5b942; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">Ana Menüye Dön</button></div>`;
+      gameOverOverlay.innerHTML = html;
+      gameOverOverlay.style.display = 'flex';
   });
 
   let currentTurnDeadline = null;
@@ -222,7 +267,7 @@
   function renderState(state) {
     currentTurnDeadline = state.turnDeadline;
 
-    if (state.stage === 'finished') {
+    if (state.stage === 'finished' || state.stage === 'game-over') {
       if (!gameOverOverlay) {
         gameOverOverlay = document.createElement('div');
         gameOverOverlay.id = 'game-over-overlay';
@@ -235,18 +280,40 @@
         `;
         document.body.appendChild(gameOverOverlay);
       }
+      
+      if (state.stage === 'game-over') {
+          let html = `<h2>Oyun Bitti!</h2><p>Tüm eller tamamlandı. Sonuçlar:</p>`;
+          if (state.totalScores) {
+              const scores = Object.entries(state.totalScores).map(([uid, score]) => {
+                  const seat = state.seats.find(s => s && s.userId == uid);
+                  return { name: seat ? seat.name : `Oyuncu ${uid}`, score };
+              }).sort((a,b) => a.score - b.score);
+              html += `<ol style="text-align:left; padding-left:40px; margin-bottom:20px;">`;
+              scores.forEach(s => html += `<li>${s.name}: ${s.score} Puan</li>`);
+              html += `</ol>`;
+          }
+          html += `<button onclick="window.location.href='/lobiler'" style="margin-top:20px; padding:10px 20px; background:#f5b942; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">Lobiler</button>`;
+          gameOverOverlay.querySelector('.go-box').innerHTML = html;
+      }
+      
       gameOverOverlay.style.display = 'flex';
     } else {
       if (gameOverOverlay) gameOverOverlay.style.display = 'none';
     }
+    
     // 1. Table Info
+    const myCurrentSeat = state.seats ? state.seats.find(s => s && s.userId === CURRENT_USER_ID) : null;
+    
+    if (elInfoElCount) elInfoElCount.textContent = state.handNumber || 0;
+    if (elInfoPuan) elInfoPuan.textContent = (myCurrentSeat ? myCurrentSeat.totalScore : 0) + ' PUAN';
+
     elTableBadge.innerHTML = `#${state.tableId}<span class="x">✕</span>`;
     document.getElementById('bottom-table-id').textContent = `#${state.tableId}`;
     
     deckCountEl.textContent = state.deckCount || 0;
     
     if (state.indicator) {
-      indicatorTileEl.innerHTML = getTileHtml(state.indicator, true);
+      indicatorTileEl.innerHTML = getTileHtml(state.indicator, 'small');
     } else {
       indicatorTileEl.innerHTML = '--';
     }
@@ -270,12 +337,12 @@
       if (seat) {
         el.name.innerHTML = seat.name || `Oyuncu ${seat.userId}`;
         el.avatar.innerHTML = (seat.name || '?').substring(0,2).toUpperCase();
-        el.score.textContent = seat.score || 0;
+        el.score.textContent = seat.totalScore || 0;
         
         // Render discard pile top tile
         const pile = state.discardPiles && state.discardPiles[actualIndex];
         if (pile && pile.top) {
-           el.discard.innerHTML = getTileHtml(pile.top, true);
+           el.discard.innerHTML = getTileHtml(pile.top, 'small');
         } else {
            el.discard.innerHTML = '';
         }
@@ -294,7 +361,7 @@
            if (turnName && turnAvatar && turnScore && turnNotif) {
              turnName.textContent = seat.name;
              turnAvatar.textContent = (seat.name || '?').substring(0,2).toUpperCase();
-             turnScore.textContent = seat.score || 0;
+             turnScore.textContent = seat.totalScore || 0;
              turnNotif.style.display = 'block';
            }
         } else {
@@ -315,6 +382,52 @@
     
     // 3. Center Area Grid
     renderCenterGrid(state.boardMelds);
+    
+    // Bug-L: Disable open buttons if opened
+    if (btnOpenPairs) btnOpenPairs.disabled = myCurrentSeat && myCurrentSeat.hasOpened;
+    if (btnOpenSeries) btnOpenSeries.disabled = myCurrentSeat && myCurrentSeat.hasOpened;
+    [btnOpenPairs, btnOpenSeries].forEach(btn => {
+        if (btn) {
+            if (btn.disabled) {
+                btn.style.opacity = '0.5';
+                btn.style.pointerEvents = 'none';
+            } else {
+                btn.style.opacity = '1';
+                btn.style.pointerEvents = 'auto';
+            }
+        }
+    });
+
+    // Bug-M: mustOpenThisTurn banner
+    let banner = document.getElementById('must-open-banner');
+    if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'must-open-banner';
+        banner.style.position = 'absolute';
+        banner.style.top = '15%';
+        banner.style.left = '50%';
+        banner.style.transform = 'translateX(-50%)';
+        banner.style.background = 'rgba(231, 76, 60, 0.9)';
+        banner.style.color = 'white';
+        banner.style.padding = '10px 20px';
+        banner.style.borderRadius = '5px';
+        banner.style.zIndex = '1000';
+        banner.style.fontWeight = 'bold';
+        document.body.appendChild(banner);
+    }
+    
+    if (myCurrentSeat && myCurrentSeat.mustOpenThisTurn) {
+        const undoBtnHtml = `<button id="btn-undo-draw" onclick="socket.emit('okey101:undoDraw')" style="margin-left:10px; padding:5px; background:#c0392b; color:#fff; border:none; border-radius:3px; cursor:pointer;">Geri Bırak</button>`;
+        banner.innerHTML = `Yerden taş aldınız — elinizi açmanız veya geri bırakmanız gerekiyor! ${undoBtnHtml}`;
+        banner.style.display = 'block';
+    } else {
+        banner.style.display = 'none';
+    }
+
+    // Bug-N: Show indicator button
+    if (btnShowIndicator) {
+        btnShowIndicator.style.display = (myCurrentSeat && myCurrentSeat.canShowIndicator && !myCurrentSeat.hasShownIndicator) ? '' : 'none';
+    }
   }
 
   function renderCenterGrid(boardMelds) {
@@ -343,15 +456,21 @@
         const isCift = meld.kind === 'cift';
         const targetCells = isCift && sideCells ? sideCells : mainCells;
         const targetRow = isCift && sideCells ? sideRowIdx : mainRowIdx;
-        const colsPerRow = isCift && sideCells ? 6 : 26; // Side grid has 6 columns
+        const colsPerRow = isCift && sideCells ? 6 : 26; // Side grid has 6 columns, main 26
         
+        for (let c = 0; c < colsPerRow; c++) {
+            let cellIdx = (targetRow * colsPerRow) + c;
+            if (cellIdx < targetCells.length) {
+                targetCells[cellIdx].setAttribute('data-meld-id', meld.id);
+            }
+        }
+
         meld.tiles.forEach(tile => {
             let cellIdx = (targetRow * colsPerRow) + colIdx;
             if (cellIdx < targetCells.length) {
-                targetCells[cellIdx].innerHTML = getTileHtml(tile, true);
-                targetCells[cellIdx].setAttribute('data-meld-id', meld.id);
+                targetCells[cellIdx].innerHTML = getTileHtml(tile, 'mini');
             }
-            colIdx += 2; // Mini tile (28px) spans 2 grid cells (14px each)
+            colIdx++; // Mini tile (16x22) spans exactly 1 grid cell now
         });
         
         if (isCift && sideCells) {
@@ -371,19 +490,113 @@
         slotEl.className = 'rack-slot';
         slotEl.dataset.index = i;
         
-        slotEl.ondragover = (e) => { e.preventDefault(); slotEl.classList.add('drag-over'); };
-        slotEl.ondragleave = () => slotEl.classList.remove('drag-over');
+        slotEl.ondragover = (e) => { 
+            e.preventDefault(); 
+            if (window.currentDragTarget === i) return;
+            window.currentDragTarget = i;
+
+            document.querySelectorAll('.rack-slot').forEach(el => {
+                el.classList.remove('shift-left', 'shift-right');
+            });
+            slotEl.classList.add('drag-over');
+
+            if (dragTileId) {
+                const srcIdx = rackSlots.findIndex(t => t && t.id === dragTileId);
+                const targetIdx = i;
+                if (srcIdx !== -1 && srcIdx !== targetIdx && rackSlots[targetIdx]) {
+                    const vSlots = [...rackSlots];
+                    vSlots[srcIdx] = null;
+                    
+                    let leftEmpty = -1;
+                    for (let step = 1; step <= 34; step++) {
+                        if (targetIdx - step >= 0 && vSlots[targetIdx - step] === null) { leftEmpty = targetIdx - step; break; }
+                    }
+                    let rightEmpty = -1;
+                    for (let step = 1; step <= 34; step++) {
+                        if (targetIdx + step < 34 && vSlots[targetIdx + step] === null) { rightEmpty = targetIdx + step; break; }
+                    }
+
+                    let E = -1;
+                    if (leftEmpty !== -1 && rightEmpty !== -1) {
+                        E = (targetIdx - leftEmpty) <= (rightEmpty - targetIdx) ? leftEmpty : rightEmpty;
+                    } else if (leftEmpty !== -1) {
+                        E = leftEmpty;
+                    } else if (rightEmpty !== -1) {
+                        E = rightEmpty;
+                    }
+
+                    if (E !== -1) {
+                        if (E < targetIdx) {
+                            for (let k = E + 1; k <= targetIdx; k++) {
+                                const el = document.querySelector(`.rack-slot[data-index="${k}"]`);
+                                if (el) el.classList.add('shift-left');
+                            }
+                        } else if (E > targetIdx) {
+                            for (let k = targetIdx; k <= E - 1; k++) {
+                                const el = document.querySelector(`.rack-slot[data-index="${k}"]`);
+                                if (el) el.classList.add('shift-right');
+                            }
+                        }
+                    }
+                }
+            }
+        };
+        
+        slotEl.ondragleave = () => {
+            slotEl.classList.remove('drag-over');
+        };
+        
         slotEl.ondrop = (e) => {
             e.preventDefault();
             slotEl.classList.remove('drag-over');
+            window.currentDragTarget = null;
+            
             if (dragTileId) {
                 const srcIdx = rackSlots.findIndex(t => t && t.id === dragTileId);
                 const targetIdx = i;
                 if (srcIdx !== -1 && srcIdx !== targetIdx) {
-                    // Swap tiles
-                    const temp = rackSlots[targetIdx];
-                    rackSlots[targetIdx] = rackSlots[srcIdx];
-                    rackSlots[srcIdx] = temp;
+                    if (!rackSlots[targetIdx]) {
+                        rackSlots[targetIdx] = rackSlots[srcIdx];
+                        rackSlots[srcIdx] = null;
+                    } else {
+                        const tileToMove = rackSlots[srcIdx];
+                        rackSlots[srcIdx] = null; 
+
+                        let leftEmpty = -1;
+                        for (let step = 1; step <= 34; step++) {
+                            if (targetIdx - step >= 0 && rackSlots[targetIdx - step] === null) { leftEmpty = targetIdx - step; break; }
+                        }
+                        let rightEmpty = -1;
+                        for (let step = 1; step <= 34; step++) {
+                            if (targetIdx + step < 34 && rackSlots[targetIdx + step] === null) { rightEmpty = targetIdx + step; break; }
+                        }
+
+                        let E = -1;
+                        if (leftEmpty !== -1 && rightEmpty !== -1) {
+                            E = (targetIdx - leftEmpty) <= (rightEmpty - targetIdx) ? leftEmpty : rightEmpty;
+                        } else if (leftEmpty !== -1) {
+                            E = leftEmpty;
+                        } else if (rightEmpty !== -1) {
+                            E = rightEmpty;
+                        }
+
+                        if (E !== -1) {
+                            if (E < targetIdx) {
+                                for (let k = E; k < targetIdx; k++) {
+                                    rackSlots[k] = rackSlots[k + 1];
+                                }
+                            } else if (E > targetIdx) {
+                                for (let k = E; k > targetIdx; k--) {
+                                    rackSlots[k] = rackSlots[k - 1];
+                                }
+                            }
+                            rackSlots[targetIdx] = tileToMove;
+                        } else {
+                            const temp = rackSlots[targetIdx];
+                            rackSlots[targetIdx] = tileToMove;
+                            rackSlots[srcIdx] = temp;
+                        }
+                    }
                     renderRack();
                 }
             }
@@ -392,18 +605,24 @@
         const tile = rackSlots[i];
         if (tile) {
             const wrapper = document.createElement('div');
-            wrapper.innerHTML = getTileHtml(tile, false);
+            wrapper.innerHTML = getTileHtml(tile, 'normal');
             const tileEl = wrapper.firstElementChild;
             
             tileEl.draggable = true;
             tileEl.ondragstart = (e) => {
                 dragTileId = tile.id;
+                const container = document.getElementById('rack-container');
+                if (container) container.classList.add('rack-is-dragging');
                 setTimeout(() => tileEl.classList.add('dragging'), 0);
                 e.dataTransfer.setData('text/plain', tile.id);
             };
             tileEl.ondragend = () => {
                 dragTileId = null;
+                const container = document.getElementById('rack-container');
+                if (container) container.classList.remove('rack-is-dragging');
                 tileEl.classList.remove('dragging');
+                document.querySelectorAll('.rack-slot').forEach(el => el.classList.remove('shift-left', 'shift-right', 'drag-over'));
+                window.currentDragTarget = null;
             };
             tileEl.onclick = () => {
                 if (selectedTiles.has(tile.id)) {
@@ -421,6 +640,54 @@
             rackRow1.appendChild(slotEl);
         } else {
             rackRow2.appendChild(slotEl);
+        }
+    }
+    
+    // Anlık 101 Puan Hesaplaması
+    calculateHandPoints();
+  }
+
+  function calculateHandPoints() {
+    let totalScore = 0;
+    const groups = [];
+    let currentGroup = [];
+
+    // Yan yana duran taşları grupla (boşluklarla ayrılmış)
+    for (let i = 0; i < rackSlots.length; i++) {
+        const tile = rackSlots[i];
+        if (tile) {
+            currentGroup.push(tile);
+        } else {
+            if (currentGroup.length > 0) {
+                groups.push(currentGroup);
+                currentGroup = [];
+            }
+        }
+    }
+    if (currentGroup.length > 0) {
+        groups.push(currentGroup);
+    }
+
+    // Basit Puan Hesaplaması (Prototip: Geçerli perlerin değerlerini topla)
+    groups.forEach(g => {
+        if (g.length >= 3) {
+            // Gerçek 101 mantığı sunucuda çalışır, bu sadece UI mock hesabı
+            let groupScore = g.reduce((sum, t) => sum + (t.number || 0), 0);
+            totalScore += groupScore;
+        }
+    });
+
+    const handScoreEl = document.getElementById('hand-score');
+    if (handScoreEl) {
+        handScoreEl.textContent = totalScore;
+    }
+
+    // Masaya Aç butonu parlatma efekti
+    if (btnOpenSeries) {
+        if (totalScore >= 101) {
+            btnOpenSeries.classList.add('btn-glow-active');
+        } else {
+            btnOpenSeries.classList.remove('btn-glow-active');
         }
     }
   }
@@ -647,7 +914,12 @@
       return groups;
   }
 
-  // Sort Buttons
+  if (btnShowIndicator) {
+      btnShowIndicator.addEventListener('click', () => {
+          socket.emit('okey101:showIndicator');
+      });
+  }
+
   if (btnSortSeries) {
       btnSortSeries.addEventListener('click', () => {
           const tiles = rackSlots.filter(t => t !== null);
@@ -663,34 +935,54 @@
   }
 
   // Helper: Group selected tiles based on adjacency in the rackSlots array
-  function getSelectedGroups() {
-      if (selectedTiles.size === 0) return [];
-      
-      const groups = [];
-      let currentGroup = [];
-      
-      for (let i = 0; i < rackSlots.length; i++) {
-          const tile = rackSlots[i];
-          if (tile && selectedTiles.has(tile.id)) {
-              currentGroup.push(tile.id);
-          } else {
-              if (currentGroup.length > 0) {
-                  groups.push(currentGroup);
+  function getGroupsFromRack(type) {
+      if (selectedTiles.size > 0) {
+          const groups = [];
+          let currentGroup = [];
+          for (let i = 0; i < rackSlots.length; i++) {
+              const tile = rackSlots[i];
+              if (tile && selectedTiles.has(tile.id)) {
+                  currentGroup.push(tile.id);
+              } else {
+                  if (currentGroup.length > 0) {
+                      groups.push(currentGroup);
+                      currentGroup = [];
+                  }
+              }
+          }
+          if (currentGroup.length > 0) groups.push(currentGroup);
+          return groups;
+      } else {
+          // Auto-detect based on empty slots
+          const groups = [];
+          let currentGroup = [];
+          for (let i = 0; i < rackSlots.length; i++) {
+              const tile = rackSlots[i];
+              if (tile) {
+                  currentGroup.push(tile.id);
+              } else {
+                  if (type === 'cift' && currentGroup.length === 2) {
+                      groups.push(currentGroup);
+                  } else if (type === 'seri' && currentGroup.length >= 3) {
+                      groups.push(currentGroup);
+                  }
                   currentGroup = [];
               }
           }
+          if (type === 'cift' && currentGroup.length === 2) {
+              groups.push(currentGroup);
+          } else if (type === 'seri' && currentGroup.length >= 3) {
+              groups.push(currentGroup);
+          }
+          return groups;
       }
-      if (currentGroup.length > 0) {
-          groups.push(currentGroup);
-      }
-      return groups;
   }
 
   // Open Buttons
   if (btnOpenSeries) {
       btnOpenSeries.addEventListener('click', () => {
-          const groups = getSelectedGroups();
-          if (groups.length === 0) return alert('Once acmak istediginiz taslari secin.');
+          const groups = getGroupsFromRack('seri');
+          if (groups.length === 0) return alert('Açılacak en az 3 taşlı geçerli bir grup bulunamadı.');
           socket.emit('okey101:open', { kind: 'seri', groups });
           selectedTiles.clear();
           renderRack();
@@ -699,8 +991,8 @@
 
   if (btnOpenPairs) {
       btnOpenPairs.addEventListener('click', () => {
-          const groups = getSelectedGroups();
-          if (groups.length === 0) return alert('Once acmak istediginiz taslari secin.');
+          const groups = getGroupsFromRack('cift');
+          if (groups.length === 0) return alert('Açılacak 2 taşlı çift grupları bulunamadı.');
           socket.emit('okey101:open', { kind: 'cift', groups });
           selectedTiles.clear();
           renderRack();

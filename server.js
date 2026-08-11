@@ -1854,6 +1854,9 @@ app.post('/api/rooms/create', attachUser, requireAuth, asyncHandler(async (req, 
         }
       }
     });
+    tableInstance.on('game-over', (data) => {
+      io.to(roomId).emit(game + ':game-over', data);
+    });
   } else if (game === 'poker' || game === 'turkpoker') {
     tableInstance.on('animation', (payload) => {
       io.to(roomId).emit(game + ':animation', payload);
@@ -2203,8 +2206,12 @@ io.on('connection', (socket) => {
       // ---- 101 Okey ----
       socket.emit('okey101:state', currentTable101.getPublicState());
       const mySeat101 = currentTable101.seats.find((s) => s && s.userId === user.id);
-      if (mySeat101 && mySeat101.tiles.length) {
-        socket.emit('okey101:tiles', mySeat101.tiles);
+      if (mySeat101) {
+        // Reconnect: leavingAfterHand flag'ini temizle (BUG-F)
+        mySeat101.leavingAfterHand = false;
+        if (mySeat101.tiles.length) {
+          socket.emit('okey101:tiles', mySeat101.tiles);
+        }
       }
       socket.emit('okey101:reconnect');
 
@@ -2264,6 +2271,11 @@ io.on('connection', (socket) => {
 
       socket.on('okey101:swapJoker', (payload) => {
         const res = currentTable101.handleSwapJoker(user.id, payload.meldId, payload.tileId);
+        if (res.error) socket.emit('okey101:error', res.error);
+      });
+
+      socket.on('okey101:undoDraw', () => {
+        const res = currentTable101.handleUndoDraw(user.id);
         if (res.error) socket.emit('okey101:error', res.error);
       });
 

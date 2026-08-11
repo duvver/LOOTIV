@@ -116,6 +116,7 @@
         <div class="diz-btn" id="btn-sort-series" role="button" tabindex="0" aria-label="Seri Diz">SERİ<br aria-hidden="true">DİZ</div>
         <div class="diz-btn action-ac" id="btn-open-pairs" role="button" tabindex="0" aria-label="Çift Aç">ÇİFT<br aria-hidden="true">AÇ</div>
         <div class="diz-btn action-ac" id="btn-open-series" role="button" tabindex="0" aria-label="Seri Aç">SERİ<br aria-hidden="true">AÇ</div>
+        <div class="diz-btn action-gosterge" id="btn-show-indicator" role="button" tabindex="0" aria-label="Gösterge" style="display:none; background:#3498db;">GÖSTERGE</div>
       </div>
 
       <div class="local-player-hud" id="seat-bottom">
@@ -226,6 +227,7 @@
   window.addEventListener('DOMContentLoaded', resizeGame);
 </script>
 
+<div id="toast-container"></div>
 <script src="/socket.io/socket.io.js"></script>
 <script src="/js/okey101.js?v=3"></script>
 </body>

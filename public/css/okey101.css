@@ -219,13 +219,13 @@
   }
 .okey101 .grid-main, .okey101 .grid-side {
     display:grid;
-    grid-template-rows: repeat(13,14px);
+    grid-template-rows: repeat(13, 22px);
     border-top:1px solid rgba(255,255,255,.12);
     border-left:1px solid rgba(255,255,255,.12);
     border-radius:2px;
   }
-.okey101 .grid-main { grid-template-columns: repeat(26,14px); }
-.okey101 .grid-side { grid-template-columns: repeat(6,14px); background:rgba(255,255,255,.03); }
+.okey101 .grid-main { grid-template-columns: repeat(26, 16px); }
+.okey101 .grid-side { grid-template-columns: repeat(6, 16px); background:rgba(255,255,255,.03); }
 .okey101 .center-area .cell {
     border-right:1px solid rgba(255,255,255,.12);
     border-bottom:1px solid rgba(255,255,255,.12);
@@ -341,11 +341,13 @@
     position:relative; flex:0 0 auto;
   }
 .okey101 .tile.mini {
-    width: 28px; height: 38px;
-    font-size: 14px; padding-top: 2px;
+    width: 16px; height: 22px;
+    font-size: 10px; padding-top: 1px;
+    border-radius: 2px;
+    box-shadow:0 1px 2px rgba(0,0,0,.35), inset 0 1px 0 #fff;
   }
 .okey101 .tile.mini .dotmark {
-    bottom: 2px; font-size: 8px;
+    bottom: 1px; font-size: 6px;
   }
 .okey101 .tile .dotmark {
     position:absolute; bottom:4px; left:50%; transform:translateX(-50%);
@@ -579,3 +581,89 @@
   font-size: 16px;
   margin: 5px 0;
 }
+
+/* --- DND Glow & Slate/Navy Enhancements --- */
+
+/* Slate/Navy Board adjustments */
+.okey101 .board {
+    background: radial-gradient(circle at 50% 50%, #1e293b 0%, #0f172a 70%, #020617 100%) !important;
+    box-shadow: inset 0 0 50px rgba(0,0,0,0.8) !important;
+}
+
+.okey101 .rack {
+    background: linear-gradient(180deg, #1e293b, #0f172a) !important;
+    border: 3px solid #334155 !important;
+    box-shadow: inset 0 5px 15px rgba(0,0,0,0.7), 0 10px 25px rgba(0,0,0,0.9) !important;
+}
+
+.okey101 .row {
+    background: linear-gradient(#334155, #1e293b) !important;
+    box-shadow: inset 0 3px 6px rgba(0,0,0,0.5) !important;
+}
+
+.okey101 .rack::before, .okey101 .rack::after {
+    background: linear-gradient(#64748b, #334155) !important;
+}
+
+/* Sürükle Bırak Glow Efekti */
+.okey101 .rack-slot.drag-over {
+    background: rgba(16, 185, 129, 0.2) !important;
+    outline: 2px dashed #10b981 !important;
+    outline-offset: -2px;
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.4) inset !important;
+    transition: all 0.2s ease;
+}
+
+/* Masaya Aç Butonu Glow (101 barajı geçildiğinde) */
+.btn-glow-active {
+    background: linear-gradient(#10b981, #059669) !important;
+    color: #fff !important;
+    border-color: #34d399 !important;
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.6), inset 0 0 10px rgba(255,255,255,0.3) !important;
+    transform: scale(1.05);
+    transition: all 0.3s ease;
+}
+
+/* Toast Bildirim */
+#toast-container {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.toast-msg {
+    background: #1e293b;
+    border-left: 4px solid #e11d48;
+    color: #fff;
+    padding: 12px 24px;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    font-weight: 600;
+    opacity: 1;
+    transition: opacity 0.5s ease, transform 0.5s ease;
+    transform: translateY(0);
+}
+.toast-msg.fade-out {
+    opacity: 0;
+    transform: translateY(-20px);
+}
+
+/* --- Shift Animations for Rack Tiles --- */
+.okey101 .tile {
+    transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.okey101 .rack-slot.shift-right .tile {
+    transform: translateX(110%);
+}
+.okey101 .rack-slot.shift-left .tile {
+    transform: translateX(-110%);
+}
+.rack-is-dragging .tile {
+    pointer-events: none;
+}
+
+
