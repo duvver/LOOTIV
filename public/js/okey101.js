@@ -500,6 +500,8 @@
             });
             slotEl.classList.add('drag-over');
 
+            if (window.drawDragSource) return;
+
             if (dragTileId) {
                 const srcIdx = rackSlots.findIndex(t => t && t.id === dragTileId);
                 const targetIdx = i;
@@ -554,6 +556,12 @@
             e.preventDefault();
             slotEl.classList.remove('drag-over');
             window.currentDragTarget = null;
+            
+            if (window.drawDragSource) {
+                socket.emit('okey101:draw', { source: window.drawDragSource });
+                window.drawDragSource = null;
+                return;
+            }
             
             if (dragTileId) {
                 const srcIdx = rackSlots.findIndex(t => t && t.id === dragTileId);
@@ -1090,8 +1098,20 @@
   if (centerGridMain) {
       centerGridMain.ondragover = (e) => {
           e.preventDefault(); // allow drop
+          const targetCell = e.target.closest('.cell');
+          document.querySelectorAll('.center-area .cell.drag-target').forEach(el => el.classList.remove('drag-target'));
+          if (targetCell && dragTileId) {
+              targetCell.classList.add('drag-target');
+          }
+      };
+      centerGridMain.ondragleave = (e) => {
+          const targetCell = e.target.closest('.cell');
+          if (targetCell) {
+              targetCell.classList.remove('drag-target');
+          }
       };
       centerGridMain.ondrop = (e) => {
+          document.querySelectorAll('.center-area .cell.drag-target').forEach(el => el.classList.remove('drag-target'));
           e.preventDefault();
           if (!dragTileId) return;
           
@@ -1123,12 +1143,30 @@
       deckCountEl.addEventListener('click', () => {
           socket.emit('okey101:draw', { source: 'deck' });
       });
+      deckCountEl.setAttribute('draggable', 'true');
+      deckCountEl.addEventListener('dragstart', (e) => {
+          window.drawDragSource = 'deck';
+          e.dataTransfer.setData('text/plain', 'draw-deck');
+          e.dataTransfer.effectAllowed = 'copyMove';
+      });
+      deckCountEl.addEventListener('dragend', () => {
+          window.drawDragSource = null;
+      });
   }
   
   // Previous discard draw (click left discard)
   if (seats.left.discard) {
       seats.left.discard.addEventListener('click', () => {
           socket.emit('okey101:draw', { source: 'discard' });
+      });
+      seats.left.discard.setAttribute('draggable', 'true');
+      seats.left.discard.addEventListener('dragstart', (e) => {
+          window.drawDragSource = 'discard';
+          e.dataTransfer.setData('text/plain', 'draw-discard');
+          e.dataTransfer.effectAllowed = 'copyMove';
+      });
+      seats.left.discard.addEventListener('dragend', () => {
+          window.drawDragSource = null;
       });
   }
 
