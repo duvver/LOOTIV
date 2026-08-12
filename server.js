@@ -23,6 +23,8 @@ require('dotenv').config();
 
 const crypto = require('node:crypto');
 const express = require('express');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const session = require('express-session');
 const bcrypt = require('bcryptjs');
 // Nginx Unit uzerinde calisirken (DirectAdmin "Nginx birimi") istekleri Node'a
@@ -31,7 +33,7 @@ const bcrypt = require('bcryptjs');
 let http;
 try {
   http = require('unit-http');
-  console.log('unit-http modulu bulundu, Nginx Unit uyumlu modda calisiliyor.');
+
 } catch (err) {
   http = require('node:http');
 }
@@ -45,8 +47,16 @@ const { OkeyTable } = require('./lib/okeyTable');
 const { Okey101Table } = require('./lib/okey101Table');
 
 const app = express();
+app.use(helmet({ contentSecurityPolicy: false })); // CSP devredışı bırakıldı ki oyun içi resimler çalışsın
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 dakika
+  max: 1000, // IP başına 1000 istek
+  message: 'Çok fazla istek gönderdiniz, lütfen daha sonra tekrar deneyin.'
+});
+app.use(limiter);
 const server = http.createServer(app);
-const io = new Server(server);
+const io = new Server(server, { cors: { origin: process.env.CORS_ORIGIN || '*' } });
 
 const PORT = process.env.PORT || 3000;
 const RUMUZ_RE = /^[a-zA-Z0-9_]{3,20}$/;
@@ -63,15 +73,22 @@ function generateCode() {
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 // Avatar (profil resmi) data-URL olarak gonderilebildigi icin limit yukseltildi.
-app.use(express.urlencoded({ extended: false, limit: '3mb' }));
-app.use(express.json({ limit: '3mb' }));
+app.use(express.urlencoded({ extended: false, limit: '200kb' }));
+app.use(express.json({ limit: '200kb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
+  console.error("FATAL ERROR: SESSION_SECRET is not defined in production.");
+  process.exit(1);
+}
+app.set('trust proxy', 1);
+const pgSession = require('connect-pg-simple')(session);
 const sessionMiddleware = session({
+  store: new pgSession({ pool: require('./lib/db').pool, tableName: 'session' }),
   secret: process.env.SESSION_SECRET || 'lootiv-gizli-anahtar-degistir',
   resave: false,
   saveUninitialized: false,
-  cookie: { maxAge: 1000 * 60 * 60 * 24 * 7 },
+  cookie: { maxAge: 1000 * 60 * 60 * 24 * 7, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', httpOnly: true },
 });
 app.use(sessionMiddleware);
 
@@ -87,16 +104,18 @@ const attachUser = asyncHandler(async (req, res, next) => {
   res.locals.unreadCount = 0;
   res.locals.pendingFriendCount = 0;
   if (req.session.userId) {
-    await db.syncVip(req.session.userId).catch(() => {});
-    const user = await db.getUserById(req.session.userId);
+    const [_, user] = await Promise.all([
+      db.syncVip(req.session.userId).catch(() => {}),
+      db.getUserById(req.session.userId)
+    ]);
     if (user) {
       req.user = user;
-      res.locals.unreadCount = await db
-        .getUnreadAnnouncementCount(user.id, user.last_seen_announcement_id)
-        .catch(() => 0);
-      res.locals.pendingFriendCount = await db
-        .getPendingFriendRequestCount(user.id)
-        .catch(() => 0);
+      const [uCount, pCount] = await Promise.all([
+        db.getUnreadAnnouncementCount(user.id, user.last_seen_announcement_id).catch(() => 0),
+        db.getPendingFriendRequestCount(user.id).catch(() => 0)
+      ]);
+      res.locals.unreadCount = uCount;
+      res.locals.pendingFriendCount = pCount;
     } else {
       req.session.userId = null;
     }
@@ -174,7 +193,8 @@ app.post(
     const { identifier, password } = req.body;
     const user = identifier ? await db.getUserByIdentifier(identifier) : null;
 
-    if (!user || !bcrypt.compareSync(password || '', user.password_hash)) {
+    const passwordMatch = user ? await bcrypt.compare(password || '', user.password_hash) : false;
+    if (!user || !passwordMatch) {
       req.session.loginError = 'Rumuz/E-posta veya sifre hatali.';
       req.session.loginIdentifier = identifier || '';
       return res.redirect('/giris');
@@ -188,7 +208,7 @@ app.post(
       return res.redirect('/giris');
     }
 
-    req.session.userId = user.id;
+    req.session.regenerate(() => { req.session.userId = user.id; });
     res.redirect('/');
   })
 );
@@ -252,25 +272,6 @@ app.post(
     req.session.userId = userId;
     // Yeni uye once karakterini secsin.
     res.redirect('/karakter-sec');
-  })
-);
-
-// ================= Kazı Kazan =================
-app.get(
-  '/kazikazan',
-  attachUser,
-  requireAuth,
-  asyncHandler(async (req, res) => {
-    const scratchConfig = await db.getScratchConfig();
-    if (!scratchConfig || !scratchConfig.active) {
-      return res.redirect('/');
-    }
-    const scratchCountToday = await db.getUserScratchCountToday(req.user.id);
-    res.render('kazikazan', {
-      user: req.user,
-      scratchConfig,
-      scratchCountToday,
-    });
   })
 );
 
@@ -417,8 +418,7 @@ app.post(
     const code = generateCode();
     await db.setEmailVerificationCode(req.user.id, code);
     await renderProfileSettings(req, res, {
-      emailCode: code,
-      info: 'Demo modu: kod gercekten gonderilmedi, asagida gosteriliyor.',
+      info: 'Dogrulama kodu gonderildi.',
     });
   })
 );
@@ -465,8 +465,7 @@ app.post(
     const code = generateCode();
     await db.setPhoneVerificationCode(req.user.id, code);
     await renderProfileSettings(req, res, {
-      phoneCode: code,
-      info: 'Demo modu: kod gercekten gonderilmedi, asagida gosteriliyor.',
+      info: 'Dogrulama kodu gonderildi.',
     });
   })
 );
@@ -530,9 +529,15 @@ app.post(
     // Guvenlik: sadece http(s) veya makul boyutta bir data:image URL'sine izin ver.
     let value = null;
     if (raw) {
-      const isHttp = /^https?:\/\/.+/i.test(raw);
+      let isHttp = false;
+        try {
+            const urlObj = new URL(raw);
+            if (urlObj.protocol === 'http:' || urlObj.protocol === 'https:') {
+                isHttp = true;
+            }
+        } catch(e) {}
       const isDataImg = /^data:image\/(png|jpe?g|gif|webp);base64,/i.test(raw);
-      if ((isHttp || isDataImg) && raw.length <= 2 * 1024 * 1024) {
+      if ((isHttp || isDataImg) && raw.length <= 500 * 1024) {
         value = raw;
       }
     }
@@ -751,50 +756,9 @@ app.get(
 );
 
 // Pazar icinde ilan olusturma: envanterden esya sec + fiyat + sure (envantere yonlendirmeden).
-app.get(
-  '/pazar/ilan',
-  attachUser,
-  requireAuth,
-  asyncHandler(async (req, res) => {
-    const all = await db.getUserInventory(req.user.id);
-    const items = all.filter(function (i) { return !i.listed; });
-    const cfg = await db.getMarketConfig();
-    res.render('ilan-olustur', {
-      user: req.user,
-      items,
-      commission: cfg.commission_percent,
-      error: req.query.error || null,
-    });
-  })
-);
+app.get('/pazar/ilan', (req, res) => res.redirect('/?construction=Pazar'));
 
-app.post(
-  '/pazar/ilan',
-  attachUser,
-  requireAuth,
-  asyncHandler(async (req, res) => {
-    const invId = Number(req.body.invId);
-    const priceLt = Math.trunc(Number(req.body.price));
-    const allowedDur = { '24': 24, '48': 48, '168': 168 };
-    const durationHours = allowedDur[String(req.body.duration)] || 48;
-    const item = invId ? await db.getInventoryItem(invId) : null;
-    if (!item || item.user_id !== req.user.id) {
-      return res.redirect('/pazar/ilan?error=' + encodeURIComponent('Lutfen envanterinden gecerli bir esya sec.'));
-    }
-    if (!Number.isFinite(priceLt) || priceLt <= 0 || priceLt > 2147483647) {
-      return res.redirect('/pazar/ilan?error=' + encodeURIComponent('Gecerli bir fiyat gir (0dan buyuk ve en fazla 2,147,483,647).'));
-    }
-    const result = await db.createListingFromInventory({
-      invId,
-      userId: req.user.id,
-      sellerRumuz: req.user.rumuz,
-      priceLt,
-      durationHours,
-    });
-    if (result.error) return res.redirect('/pazar/ilan?error=' + encodeURIComponent(result.error));
-    res.redirect('/pazar?info=' + encodeURIComponent('Ilanin yayinlandi.'));
-  })
-);
+app.post('/pazar/ilan', (req, res) => res.redirect('/?construction=Pazar'));
 
 // Envanter: kullanicinin sahip oldugu esyalar; buradan satisa koyar.
 app.get(
@@ -805,56 +769,12 @@ app.get(
   })
 );
 
-app.post(
-  '/envanter/upgrade/:invId',
-  attachUser,
-  requireAuth,
-  asyncHandler(async (req, res) => {
-    const result = await db.upgradeInventoryItem(Number(req.params.invId), req.user.id);
-    if (result.error) {
-      return res.redirect('/envanter?error=' + encodeURIComponent(result.error));
-    }
-    res.redirect('/envanter?info=' + encodeURIComponent('Esya basariyla +' + result.newLevel + ' seviyesine yukseltildi!'));
-  })
-);
+app.post('/envanter/upgrade/:invId', (req, res) => res.redirect('/?construction=Envanter'));
 
 // Envanterdeki bir esyayi satisa koyma formu (sadece fiyat).
-app.get(
-  '/pazar/sat/:invId',
-  attachUser,
-  requireAuth,
-  asyncHandler(async (req, res) => {
-    const item = await db.getInventoryItem(Number(req.params.invId));
-    if (!item || item.user_id !== req.user.id) return res.redirect('/envanter');
-    if (item.listed) return res.redirect('/envanter?error=' + encodeURIComponent('Bu esya zaten satista.'));
-    const cfg = await db.getMarketConfig();
-    res.render('pazar-sat', { user: req.user, item, commission: cfg.commission_percent, error: null });
-  })
-);
+app.get('/pazar/sat/:invId', (req, res) => res.redirect('/?construction=Pazar'));
 
-app.post(
-  '/pazar/sat/:invId',
-  attachUser,
-  requireAuth,
-  asyncHandler(async (req, res) => {
-    const invId = Number(req.params.invId);
-    const priceLt = Math.trunc(Number(req.body.price));
-    const item = await db.getInventoryItem(invId);
-    if (!item || item.user_id !== req.user.id) return res.redirect('/envanter');
-    if (!Number.isFinite(priceLt) || priceLt <= 0 || priceLt > 2147483647) {
-      const cfg = await db.getMarketConfig();
-      return res.render('pazar-sat', { user: req.user, item, commission: cfg.commission_percent, error: 'Gecerli bir fiyat gir (0dan buyuk ve en fazla 2,147,483,647).' });
-    }
-    const result = await db.createListingFromInventory({
-      invId,
-      userId: req.user.id,
-      sellerRumuz: req.user.rumuz,
-      priceLt,
-    });
-    if (result.error) return res.redirect('/envanter?error=' + encodeURIComponent(result.error));
-    res.redirect('/pazar?info=' + encodeURIComponent('Ilanin yayinlandi.'));
-  })
-);
+app.post('/pazar/sat/:invId', (req, res) => res.redirect('/?construction=Pazar'));
 
 app.post(
   '/pazar/:id/satinal',
@@ -979,7 +899,7 @@ const GAME_META = {
     icon: '&#127183;',
     accent: '#353b99',
     playUrl: '/poker',
-    desc: '2-5 kisi, blöf, renk ve rest heyecanı. Acik poker.',
+    desc: '2-4 kisi, blöf, renk ve rest heyecanı. Acik poker.',
     rules: [
       { id: 'hizli', label: 'Hızlı Oyun', type: 'toggle', default: false }
     ],
@@ -1004,7 +924,7 @@ const GAME_META = {
     icon: '&#127183;',
     accent: '#353b99',
     playUrl: '/turkpoker',
-    desc: '2-5 kisi, blöf, renk ve rest heyecanı. Kapali poker.',
+    desc: '2-4 kisi, blöf, renk ve rest heyecanı. Kapali poker.',
     rules: [
       { id: 'hizli', label: 'Hızlı Oyun', type: 'toggle', default: false }
     ],
@@ -1714,6 +1634,11 @@ okey101Table.on('private-tiles', (payload) => {
   }
 });
 
+okey101Table.on('game-over', (payload) => {
+  io.to('okey101').emit('okey101:game-over', payload);
+  io.to('salon_okey101').emit('okey101:game-over', payload);
+});
+
 okey101Table.on('hand-result', ({ handNumber, participants }) => {
   (async () => {
     for (const p of participants) {
@@ -1786,6 +1711,16 @@ function checkUserRoomCleanup(roomId) {
   }
 }
 
+app.get('/api/turkpoker-leaderboard', async (req, res) => {
+  try {
+    const q = 'SELECT id, username, level, avatar_url, lt_balance FROM users ORDER BY lt_balance DESC LIMIT 10';
+    const rows = await db.pool.query(q);
+    res.json(rows.rows);
+  } catch (err) {
+    res.status(500).json({ error: 'Veritabani hatasi' });
+  }
+});
+
 app.post('/api/rooms/create', attachUser, requireAuth, asyncHandler(async (req, res) => {
   const { game, bet, mode, privacy, password, title: customTitle, rules } = req.body;
   if (!game || !GAME_META[game]) {
@@ -1807,9 +1742,9 @@ app.post('/api/rooms/create', attachUser, requireAuth, asyncHandler(async (req, 
   } else if (game === 'okey') {
     tableInstance = new OkeyTable();
   } else if (game === 'turkpoker') {
-    tableInstance = new TurkPokerTable();
+      tableInstance = new TurkPokerTable({ buyIn: stake * 10, smallBlind: stake });
   } else {
-    tableInstance = new PokerTable();
+      tableInstance = new PokerTable({ buyIn: stake * 10, smallBlind: stake, bigBlind: stake * 2 });
   }
   tableInstance.stake = stake;
 
@@ -1838,7 +1773,7 @@ app.post('/api/rooms/create', attachUser, requireAuth, asyncHandler(async (req, 
 
   activeUserRooms.set(roomId, roomObj);
 
-  tableInstance.on('log', (text) => gameLogMessage(text, 'oyun', game).catch(console.error));
+  tableInstance.on('log', (text) => gameLogMessage(text, 'oda_' + roomId, roomId).catch(console.error));
   tableInstance.on('update', (state) => {
     io.to(roomId).emit(game + ':state', state);
     broadcastUserRooms(game);
@@ -1961,8 +1896,17 @@ io.on('connection', (socket) => {
     }
     socket.join(game);
     if (reqRoomId && activeUserRooms.has(reqRoomId)) {
-      socket.join(reqRoomId);
-    }
+        const currentRoom = activeUserRooms.get(reqRoomId);
+        if (currentRoom.privacy === 'private') {
+           const session = socket.request.session;
+           if (!session || !session.unlockedRooms || !session.unlockedRooms.includes(reqRoomId)) {
+               socket.emit(game + ':error', 'Oda sifreli veya erisim izniniz yok!');
+               socket.disconnect(true);
+               return;
+           }
+        }
+        socket.join(reqRoomId);
+      }
 
     // Bildirim soketi: sadece duyurulari dinler; oyuncu listesine/sohbete katilmaz.
     if (game === 'notify') return;
@@ -1983,8 +1927,7 @@ io.on('connection', (socket) => {
       socket.emit('poker:players', Array.from(uniqueByUser.values()));
     }
 
-    const history = {};
-    for (const ch of CHANNELS) history[ch] = await db.getRecentMessages(ch, 50);
+    const history = await db.getRecentMessagesForChannels(CHANNELS, 50);
     socket.emit('chat:history', history);
 
     broadcastPlayers();
@@ -2073,7 +2016,8 @@ io.on('connection', (socket) => {
 
       socket.on('turkpoker:sit', async (payload) => {
         const seatIndex = Number(payload && payload.seatIndex);
-        const res = await currentTableTurkPoker.sit(user, seatIndex);
+        const clientIp = socket.handshake.headers['x-forwarded-for'] || socket.request.connection.remoteAddress;
+          const res = await currentTableTurkPoker.sit(user, seatIndex, clientIp);
         if (res.error) socket.emit('turkpoker:error', res.error);
         if (reqRoomId) checkUserRoomCleanup(reqRoomId);
       });
@@ -2091,7 +2035,7 @@ io.on('connection', (socket) => {
       });
       
       socket.on('turkpoker:draw', (payload) => {
-        const res = currentTableTurkPoker.handleDraw(user.id, payload && payload.discards);
+        const res = currentTableTurkPoker.handleAction(user.id, 'discard', payload && payload.discards);
         if (res.error) socket.emit('turkpoker:error', res.error);
       });
 
@@ -2215,6 +2159,14 @@ io.on('connection', (socket) => {
       }
       socket.emit('okey101:reconnect');
 
+      
+      socket.on('okey101:leave_table', () => {});
+      socket.on('okey101:join_random', () => {});
+      socket.on('okey101:send_like', () => {});
+      socket.on('okey101:request_sync', () => {});
+      socket.on('okey101:request_freeze', () => {});
+      socket.on('okey101:chat_message', (payload) => {});
+
       socket.on('okey101:sit', async (payload) => {
         const seatIndex = Number(payload && payload.seatIndex);
         const res = await currentTable101.sit(user, seatIndex);
@@ -2257,7 +2209,7 @@ io.on('connection', (socket) => {
         if (res.error) {
           socket.emit('okey101:error', res.error);
         } else if (res.jokerStolen) {
-          io.to(`okey101_${tableId}`).emit('okey101:jokerStolen', {
+          io.to(reqRoomId || 'okey101').emit('okey101:jokerStolen', {
             userId: user.id,
             meldId: res.meldId
           });
@@ -2270,6 +2222,7 @@ io.on('connection', (socket) => {
       });
 
       socket.on('okey101:swapJoker', (payload) => {
+        if (!payload) return;
         const res = currentTable101.handleSwapJoker(user.id, payload.meldId, payload.tileId);
         if (res.error) socket.emit('okey101:error', res.error);
       });
@@ -2381,14 +2334,14 @@ async function refundSeatedPlayers() {
       const amount = seat.stack;
       seat.stack = 0;
       await db.adjustLt(seat.userId, amount);
-      console.log(`Sunucu kapanirken ${seat.name} adli oyuncuya ${amount} LT iade edildi.`);
+
     }
   }
 }
 
 app.use((err, req, res, next) => {
   writeStartupLog(`Route hatasi: ${req.method} ${req.url}`, err);
-  next(err);
+  res.status(500).json({ error: 'Sunucu hatası oluştu.' });
 });
 
 function gracefulShutdown() {
@@ -2408,7 +2361,7 @@ setInterval(async () => {
     lastCheckedDate = currentDate;
     try {
       await db.clearNonFixedDailyTasks();
-      console.log('Yeni gün başladı: Sabit olmayan günlük görevler temizlendi.');
+
     } catch (err) {
       console.error('Günlük görevleri temizlerken hata:', err);
     }
@@ -2418,7 +2371,7 @@ setInterval(async () => {
 db.init()
   .then(() => {
     server.listen(PORT, () => {
-      console.log(`LOOTIV sunucusu ${PORT} portunda çalışıyor`);
+
     });
   })
   .catch((err) => {

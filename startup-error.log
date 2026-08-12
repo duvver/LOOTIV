@@ -1,0 +1,82 @@
+
+[2026-08-11T18:24:32.049Z] uncaughtException
+C:\Users\Emirr\Desktop\LOOTIV\lib\pokerTable.js:6
+const this.buyIn = 100;
+      ^^^^
+
+SyntaxError: Unexpected token 'this'
+    at wrapSafe (node:internal/modules/cjs/loader:1692:18)
+    at Module._compile (node:internal/modules/cjs/loader:1735:20)
+    at Object..js (node:internal/modules/cjs/loader:1893:10)
+    at Module.load (node:internal/modules/cjs/loader:1481:32)
+    at Module._load (node:internal/modules/cjs/loader:1300:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)
+    at Module.require (node:internal/modules/cjs/loader:1504:12)
+    at require (node:internal/modules/helpers:152:16)
+    at Object.<anonymous> (C:\Users\Emirr\Desktop\LOOTIV\server.js:43:24)
+
+[2026-08-11T18:25:03.682Z] uncaughtException
+C:\Users\Emirr\Desktop\LOOTIV\lib\pokerTable.js:662
+module.exports = { PokerTable, SEATS, this.buyIn, this.smallBlind, this.bigBlind };
+                                          ^
+
+SyntaxError: Unexpected token '.'
+    at wrapSafe (node:internal/modules/cjs/loader:1692:18)
+    at Module._compile (node:internal/modules/cjs/loader:1735:20)
+    at Object..js (node:internal/modules/cjs/loader:1893:10)
+    at Module.load (node:internal/modules/cjs/loader:1481:32)
+    at Module._load (node:internal/modules/cjs/loader:1300:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)
+    at Module.require (node:internal/modules/cjs/loader:1504:12)
+    at require (node:internal/modules/helpers:152:16)
+    at Object.<anonymous> (C:\Users\Emirr\Desktop\LOOTIV\server.js:43:24)
+
+[2026-08-11T18:25:28.299Z] uncaughtException
+C:\Users\Emirr\Desktop\LOOTIV\lib\okey101Table.js:1032
+        totalScores: this.scores,
+        ^^^^^^^^^^^
+
+SyntaxError: Unexpected identifier 'totalScores'
+    at wrapSafe (node:internal/modules/cjs/loader:1692:18)
+    at Module._compile (node:internal/modules/cjs/loader:1735:20)
+    at Object..js (node:internal/modules/cjs/loader:1893:10)
+    at Module.load (node:internal/modules/cjs/loader:1481:32)
+    at Module._load (node:internal/modules/cjs/loader:1300:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)
+    at Module.require (node:internal/modules/cjs/loader:1504:12)
+    at require (node:internal/modules/helpers:152:16)
+    at Object.<anonymous> (C:\Users\Emirr\Desktop\LOOTIV\server.js:47:26)
+
+[2026-08-11T18:25:53.184Z] uncaughtException
+ReferenceError: Must call super constructor in derived class before accessing 'this' or returning from derived constructor
+    at new Okey101Table (C:\Users\Emirr\Desktop\LOOTIV\lib\okey101Table.js:22:5)
+    at Object.<anonymous> (C:\Users\Emirr\Desktop\LOOTIV\server.js:1619:22)
+    at Module._compile (node:internal/modules/cjs/loader:1761:14)
+    at Object..js (node:internal/modules/cjs/loader:1893:10)
+    at Module.load (node:internal/modules/cjs/loader:1481:32)
+    at Module._load (node:internal/modules/cjs/loader:1300:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)
+    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+    at node:internal/main/run_main_module:33:47
+
+[2026-08-11T18:26:20.107Z] Veritabani baslatilamadi
+Error: SASL: SCRAM-SERVER-FIRST-MESSAGE: client password must be a string
+    at C:\Users\Emirr\Desktop\LOOTIV\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async Object.init (C:\Users\Emirr\Desktop\LOOTIV\lib\db.js:26:3)
+
+[2026-08-11T18:30:20.167Z] Veritabani baslatilamadi
+error: password authentication failed for user "lootiv_kullanici"
+    at C:\Users\Emirr\Desktop\LOOTIV\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async Object.init (C:\Users\Emirr\Desktop\LOOTIV\lib\db.js:26:3)
+
+[2026-08-11T18:36:56.593Z] Veritabani baslatilamadi
+error: password authentication failed for user "lootiv_kullanici"
+    at C:\Users\Emirr\Desktop\LOOTIV\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async Object.init (C:\Users\Emirr\Desktop\LOOTIV\lib\db.js:26:3)
