@@ -261,7 +261,7 @@
     </div> <!-- /GÖRÜNÜM: ODA OLUŞTURMA -->
   </main>
   <!-- ===== Lobby Chat Panel ===== -->
-  <aside id="lobby-chatpanel" class="fixed bottom-0 left-0 right-0 w-full h-64 bg-surface flex flex-col shadow-[0_-4px_20px_rgba(0,0,0,0.05)] border-t border-outline-variant/30 z-50">
+  <aside id="lobby-chatpanel" class="fixed bottom-0 left-0 right-0 mx-auto w-full max-w-container-max h-64 bg-surface flex flex-col shadow-[0_-4px_20px_rgba(0,0,0,0.05)] border-t border-x border-outline-variant/30 z-50 rounded-t-xl overflow-hidden">
     <div class="flex border-b border-outline-variant/30 px-2 bg-surface-container-lowest">
       <button id="chat-tab-sistem" class="relative px-4 py-3 font-label-md text-on-surface-variant border-b-2 border-transparent hover:text-primary transition-colors">
         Sistem Mesajı
@@ -281,7 +281,7 @@
     </form>
   </aside>
 
-  <%- include('partials/theme-foot', { user: user }) %>
+
   <script>window.LOBBY_GAME_ID = 'salon_' + '<%= meta.slug %>';</script>
   <script src="/js/lobby.js"></script>
   
