@@ -19,15 +19,6 @@
       <!-- Ana menu: herkes gorur (kisisel baglantilar sadece girise ozel) -->
       <nav class="hidden md:flex items-center gap-6 h-full">
         <a class="<%= navCls('home') %>" href="/">Anasayfa</a>
-        <a class="<%= navCls('oyunlar') %>" href="/#oyunlar">Oyunlar</a>
-        <button type="button" onclick="openConstructionModal('Pazar')" class="flex items-center gap-1.5 font-label-md text-label-md text-outline hover:text-primary transition-colors cursor-pointer">
-          <span>Pazar</span>
-          <span class="px-1.5 py-0.5 bg-amber-500/15 text-amber-600 border border-amber-500/30 rounded-md text-[10px] font-extrabold uppercase tracking-wider">YAKINDA</span>
-        </button>
-        <button type="button" onclick="openConstructionModal('Envanter')" class="flex items-center gap-1.5 font-label-md text-label-md text-outline hover:text-primary transition-colors cursor-pointer">
-          <span>Envanter</span>
-          <span class="px-1.5 py-0.5 bg-amber-500/15 text-amber-600 border border-amber-500/30 rounded-md text-[10px] font-extrabold uppercase tracking-wider">YAKINDA</span>
-        </button>
         <a class="<%= navCls('bloglar') %>" href="/bloglar">Bloglar</a>
         <% if (user) { %>
           <a class="<%= navCls('arkadaslar') %> relative flex items-center gap-1.5" href="/arkadaslar">
@@ -90,15 +81,6 @@
   <!-- Mobil acilir menu (herkes) -->
   <nav id="mobile-nav" class="hidden md:hidden bg-white border-t border-outline-variant px-margin-mobile py-3 flex-col gap-1">
     <a class="block py-2 font-label-md text-label-md text-on-surface" href="/">Anasayfa</a>
-    <a class="block py-2 font-label-md text-label-md text-on-surface" href="/#oyunlar">Oyunlar</a>
-    <button type="button" onclick="openConstructionModal('Pazar')" class="w-full text-left py-2 font-label-md text-label-md text-on-surface flex items-center justify-between">
-      <span>Pazar</span>
-      <span class="px-1.5 py-0.5 bg-amber-500/15 text-amber-600 border border-amber-500/30 rounded-md text-[10px] font-extrabold uppercase tracking-wider">YAKINDA</span>
-    </button>
-    <button type="button" onclick="openConstructionModal('Envanter')" class="w-full text-left py-2 font-label-md text-label-md text-on-surface flex items-center justify-between">
-      <span>Envanter</span>
-      <span class="px-1.5 py-0.5 bg-amber-500/15 text-amber-600 border border-amber-500/30 rounded-md text-[10px] font-extrabold uppercase tracking-wider">YAKINDA</span>
-    </button>
     <a class="block py-2 font-label-md text-label-md text-on-surface" href="/bloglar">Bloglar</a>
     <% if (user) { %>
       <a class="block py-2 font-label-md text-label-md text-on-surface flex items-center justify-between" href="/arkadaslar">

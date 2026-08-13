@@ -80,3 +80,386 @@ error: password authentication failed for user "lootiv_kullanici"
     at C:\Users\Emirr\Desktop\LOOTIV\node_modules\pg-pool\index.js:45:11
     at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
     at async Object.init (C:\Users\Emirr\Desktop\LOOTIV\lib\db.js:26:3)
+
+[2026-08-12T10:24:18.154Z] uncaughtException
+Error: Cannot find module 'helmet'
+Require stack:
+- /home/ydemir/workspace/LOOTV1/server.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1430:15)
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1040:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1045:22)
+    at Module._load (node:internal/modules/cjs/loader:1216:25)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Module.require (node:internal/modules/cjs/loader:1527:12)
+    at require (node:internal/modules/helpers:147:16)
+    at Object.<anonymous> (/home/ydemir/workspace/LOOTV1/server.js:26:16)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1913:10)
+
+[2026-08-12T10:24:44.073Z] Veritabani baslatilamadi
+error: "lootiv_kullanici" rolü mevcut değil
+    at /home/ydemir/workspace/LOOTV1/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async Object.init (/home/ydemir/workspace/LOOTV1/lib/db.js:26:3)
+
+[2026-08-12T10:25:14.720Z] Veritabani baslatilamadi
+error: "lootiv" veritabanı mevcut değil
+    at /home/ydemir/workspace/LOOTV1/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async Object.init (/home/ydemir/workspace/LOOTV1/lib/db.js:26:3)
+
+[2026-08-12T10:27:08.104Z] Route hatasi: POST /login
+error: "session" nesnesi mevcut değil
+    at /home/ydemir/workspace/LOOTV1/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async PGStore._asyncQuery (/home/ydemir/workspace/LOOTV1/node_modules/connect-pg-simple/index.js:322:21)
+
+[2026-08-12T10:27:08.106Z] Route hatasi: POST /login
+Error [ERR_HTTP_HEADERS_SENT]: Cannot set headers after they are sent to the client
+    at ServerResponse.setHeader (node:_http_outgoing:700:11)
+    at ServerResponse.header (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/response.js:794:10)
+    at ServerResponse.send (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/response.js:174:12)
+    at /home/ydemir/workspace/LOOTV1/server.js:1357:19
+    at Layer.handle_error (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/router/layer.js:71:5)
+    at trim_prefix (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/router/index.js:326:13)
+    at /home/ydemir/workspace/LOOTV1/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/router/index.js:346:12)
+    at Immediate.next [as _onImmediate] (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/router/index.js:280:10)
+    at process.processImmediate (node:internal/timers:486:21)
+
+[2026-08-12T10:27:08.113Z] Route hatasi: GET /giris
+error: "session" nesnesi mevcut değil
+    at /home/ydemir/workspace/LOOTV1/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async PGStore._asyncQuery (/home/ydemir/workspace/LOOTV1/node_modules/connect-pg-simple/index.js:322:21)
+
+[2026-08-12T10:27:08.115Z] Route hatasi: GET /giris
+error: "session" nesnesi mevcut değil
+    at /home/ydemir/workspace/LOOTV1/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async PGStore._asyncQuery (/home/ydemir/workspace/LOOTV1/node_modules/connect-pg-simple/index.js:322:21)
+
+[2026-08-12T10:27:12.838Z] Route hatasi: GET /giris
+error: "session" nesnesi mevcut değil
+    at /home/ydemir/workspace/LOOTV1/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async PGStore._asyncQuery (/home/ydemir/workspace/LOOTV1/node_modules/connect-pg-simple/index.js:322:21)
+
+[2026-08-12T10:27:13.471Z] Route hatasi: GET /giris
+error: "session" nesnesi mevcut değil
+    at /home/ydemir/workspace/LOOTV1/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async PGStore._asyncQuery (/home/ydemir/workspace/LOOTV1/node_modules/connect-pg-simple/index.js:322:21)
+
+[2026-08-12T13:10:54.288Z] Veritabani baslatilamadi
+AggregateError [ECONNREFUSED]: 
+    at /home/ydemir/workspace/LOOTV1/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async Object.init (/home/ydemir/workspace/LOOTV1/lib/db.js:26:3)
+
+[2026-08-12T13:11:00.299Z] uncaughtException
+Error: listen EADDRINUSE: address already in use :::3000
+    at Server.setupListenHandle [as _listen2] (node:net:1941:16)
+    at listenInCluster (node:net:1998:12)
+    at Server.listen (node:net:2103:7)
+    at /home/ydemir/workspace/LOOTV1/server.js:2426:12
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+
+[2026-08-12T18:34:34.156Z] uncaughtException
+Error: Cannot find module 'merge-descriptors'
+Require stack:
+- C:\Users\Emirr\Desktop\LOOTIV\node_modules\express\lib\express.js
+- C:\Users\Emirr\Desktop\LOOTIV\node_modules\express\index.js
+- C:\Users\Emirr\Desktop\LOOTIV\server.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1421:15)
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1059:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1064:22)
+    at Module._load (node:internal/modules/cjs/loader:1227:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)
+    at Module.require (node:internal/modules/cjs/loader:1504:12)
+    at require (node:internal/modules/helpers:152:16)
+    at Object.<anonymous> (C:\Users\Emirr\Desktop\LOOTIV\node_modules\express\lib\express.js:17:13)
+    at Module._compile (node:internal/modules/cjs/loader:1761:14)
+
+[2026-08-12T18:34:45.901Z] uncaughtException
+Error: Cannot find module 'merge-descriptors'
+Require stack:
+- C:\Users\Emirr\Desktop\LOOTIV\node_modules\express\lib\express.js
+- C:\Users\Emirr\Desktop\LOOTIV\node_modules\express\index.js
+- C:\Users\Emirr\Desktop\LOOTIV\server.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1421:15)
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1059:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1064:22)
+    at Module._load (node:internal/modules/cjs/loader:1227:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)
+    at Module.require (node:internal/modules/cjs/loader:1504:12)
+    at require (node:internal/modules/helpers:152:16)
+    at Object.<anonymous> (C:\Users\Emirr\Desktop\LOOTIV\node_modules\express\lib\express.js:17:13)
+    at Module._compile (node:internal/modules/cjs/loader:1761:14)
+
+[2026-08-12T18:34:50.080Z] uncaughtException
+Error: Cannot find module 'merge-descriptors'
+Require stack:
+- C:\Users\Emirr\Desktop\LOOTIV\node_modules\express\lib\express.js
+- C:\Users\Emirr\Desktop\LOOTIV\node_modules\express\index.js
+- C:\Users\Emirr\Desktop\LOOTIV\server.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1421:15)
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1059:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1064:22)
+    at Module._load (node:internal/modules/cjs/loader:1227:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)
+    at Module.require (node:internal/modules/cjs/loader:1504:12)
+    at require (node:internal/modules/helpers:152:16)
+    at Object.<anonymous> (C:\Users\Emirr\Desktop\LOOTIV\node_modules\express\lib\express.js:17:13)
+    at Module._compile (node:internal/modules/cjs/loader:1761:14)
+
+[2026-08-12T18:39:08.161Z] Route hatasi: GET /
+error: relation "session" does not exist
+    at C:\Users\Emirr\Desktop\LOOTIV\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async PGStore._asyncQuery (C:\Users\Emirr\Desktop\LOOTIV\node_modules\connect-pg-simple\index.js:322:21)
+
+[2026-08-12T18:39:08.249Z] Route hatasi: GET /favicon.ico
+error: relation "session" does not exist
+    at C:\Users\Emirr\Desktop\LOOTIV\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async PGStore._asyncQuery (C:\Users\Emirr\Desktop\LOOTIV\node_modules\connect-pg-simple\index.js:322:21)
+
+[2026-08-12T18:40:28.400Z] Route hatasi: GET /
+error: relation "session" does not exist
+    at C:\Users\Emirr\Desktop\LOOTIV\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async PGStore._asyncQuery (C:\Users\Emirr\Desktop\LOOTIV\node_modules\connect-pg-simple\index.js:322:21)
+
+[2026-08-12T18:40:28.564Z] Route hatasi: GET /favicon.ico
+error: relation "session" does not exist
+    at C:\Users\Emirr\Desktop\LOOTIV\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async PGStore._asyncQuery (C:\Users\Emirr\Desktop\LOOTIV\node_modules\connect-pg-simple\index.js:322:21)
+
+[2026-08-12T18:40:49.095Z] Route hatasi: GET /
+Error: Failed to lookup view "lobby" in views directory "C:\Users\Emirr\Desktop\LOOTIV\views"
+    at app.render (C:\Users\Emirr\Desktop\LOOTIV\node_modules\express\lib\application.js:597:17)
+    at ServerResponse.render (C:\Users\Emirr\Desktop\LOOTIV\node_modules\express\lib\response.js:1049:7)
+    at C:\Users\Emirr\Desktop\LOOTIV\server.js:169:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+
+[2026-08-12T18:40:49.811Z] Route hatasi: GET /
+Error: Failed to lookup view "lobby" in views directory "C:\Users\Emirr\Desktop\LOOTIV\views"
+    at app.render (C:\Users\Emirr\Desktop\LOOTIV\node_modules\express\lib\application.js:597:17)
+    at ServerResponse.render (C:\Users\Emirr\Desktop\LOOTIV\node_modules\express\lib\response.js:1049:7)
+    at C:\Users\Emirr\Desktop\LOOTIV\server.js:169:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+
+[2026-08-12T18:40:50.143Z] Route hatasi: GET /
+Error: Failed to lookup view "lobby" in views directory "C:\Users\Emirr\Desktop\LOOTIV\views"
+    at app.render (C:\Users\Emirr\Desktop\LOOTIV\node_modules\express\lib\application.js:597:17)
+    at ServerResponse.render (C:\Users\Emirr\Desktop\LOOTIV\node_modules\express\lib\response.js:1049:7)
+    at C:\Users\Emirr\Desktop\LOOTIV\server.js:169:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+
+[2026-08-12T18:56:19.651Z] Veritabani baslatilamadi
+error: syntax error at or near ""sid""
+    at C:\Users\Emirr\Desktop\LOOTIV\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async Object.init (C:\Users\Emirr\Desktop\LOOTIV\lib\db.js:26:3)
+
+[2026-08-12T19:04:58.405Z] uncaughtException
+Error: listen EADDRINUSE: address already in use :::3000
+    at Server.setupListenHandle [as _listen2] (node:net:1940:16)
+    at listenInCluster (node:net:1997:12)
+    at Server.listen (node:net:2102:7)
+    at C:\Users\Emirr\Desktop\LOOTIV\server.js:2489:12
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+
+[2026-08-12T19:13:07.753Z] uncaughtException
+Error: listen EADDRINUSE: address already in use :::3000
+    at Server.setupListenHandle [as _listen2] (node:net:1940:16)
+    at listenInCluster (node:net:1997:12)
+    at Server.listen (node:net:2102:7)
+    at C:\Users\Emirr\Desktop\LOOTIV\server.js:2495:12
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+
+[2026-08-13T10:59:56.699Z] Veritabani baslatilamadi
+AggregateError [ECONNREFUSED]: 
+    at /home/ydemir/workspace/LOOTV1/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async Object.init (/home/ydemir/workspace/LOOTV1/lib/db.js:26:3)
+
+[2026-08-13T11:00:04.720Z] uncaughtException
+Error: listen EADDRINUSE: address already in use :::3000
+    at Server.setupListenHandle [as _listen2] (node:net:1941:16)
+    at listenInCluster (node:net:1998:12)
+    at Server.listen (node:net:2103:7)
+    at /home/ydemir/workspace/LOOTV1/server.js:2504:12
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+
+[2026-08-13T11:46:05.188Z] Veritabani baslatilamadi
+AggregateError [ECONNREFUSED]: 
+    at /home/ydemir/workspace/LOOTV1/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async Object.init (/home/ydemir/workspace/LOOTV1/lib/db.js:26:3)
+
+[2026-08-13T12:23:05.681Z] Veritabani baslatilamadi
+AggregateError [ECONNREFUSED]: 
+    at /home/ydemir/workspace/LOOTV1/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async Object.init (/home/ydemir/workspace/LOOTV1/lib/db.js:26:3)
+
+[2026-08-13T12:24:45.888Z] uncaughtException
+Error: listen EADDRINUSE: address already in use :::3000
+    at Server.setupListenHandle [as _listen2] (node:net:1941:16)
+    at listenInCluster (node:net:1998:12)
+    at Server.listen (node:net:2103:7)
+    at /home/ydemir/workspace/LOOTV1/server.js:2607:12
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+
+[2026-08-13T12:33:50.406Z] Route hatasi: GET /oyun/okey101
+ReferenceError: /home/ydemir/workspace/LOOTV1/views/salon.ejs:109
+    107|         
+    108|         <!-- Oyuncu İstatistikleri -->
+ >> 109|         <% if (userStats) { %>
+    110|         <div class="bg-surface-container-lowest rounded-xl border border-outline-variant/30 shadow-sm p-4">
+    111|           <h3 class="font-headline-sm text-on-surface mb-3 flex items-center gap-2">
+    112|             <span class="material-symbols-outlined text-primary">analytics</span> İstatistiklerim
+
+userStats is not defined
+    at eval ("/home/ydemir/workspace/LOOTV1/views/salon.ejs":48:8)
+    at salon (/home/ydemir/workspace/LOOTV1/node_modules/ejs/lib/ejs.js:703:17)
+    at tryHandleCache (/home/ydemir/workspace/LOOTV1/node_modules/ejs/lib/ejs.js:274:36)
+    at exports.renderFile [as engine] (/home/ydemir/workspace/LOOTV1/node_modules/ejs/lib/ejs.js:491:10)
+    at View.render (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/view.js:135:8)
+    at tryRender (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/application.js:657:10)
+    at Function.render (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/application.js:609:3)
+    at ServerResponse.render (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/response.js:1049:7)
+    at /home/ydemir/workspace/LOOTV1/server.js:982:7
+    at Layer.handle [as handle_request] (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/router/layer.js:95:5)
+
+[2026-08-13T12:33:52.099Z] Route hatasi: GET /oyun/okey101
+ReferenceError: /home/ydemir/workspace/LOOTV1/views/salon.ejs:109
+    107|         
+    108|         <!-- Oyuncu İstatistikleri -->
+ >> 109|         <% if (userStats) { %>
+    110|         <div class="bg-surface-container-lowest rounded-xl border border-outline-variant/30 shadow-sm p-4">
+    111|           <h3 class="font-headline-sm text-on-surface mb-3 flex items-center gap-2">
+    112|             <span class="material-symbols-outlined text-primary">analytics</span> İstatistiklerim
+
+userStats is not defined
+    at eval ("/home/ydemir/workspace/LOOTV1/views/salon.ejs":48:8)
+    at salon (/home/ydemir/workspace/LOOTV1/node_modules/ejs/lib/ejs.js:703:17)
+    at tryHandleCache (/home/ydemir/workspace/LOOTV1/node_modules/ejs/lib/ejs.js:274:36)
+    at exports.renderFile [as engine] (/home/ydemir/workspace/LOOTV1/node_modules/ejs/lib/ejs.js:491:10)
+    at View.render (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/view.js:135:8)
+    at tryRender (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/application.js:657:10)
+    at Function.render (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/application.js:609:3)
+    at ServerResponse.render (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/response.js:1049:7)
+    at /home/ydemir/workspace/LOOTV1/server.js:982:7
+    at Layer.handle [as handle_request] (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/router/layer.js:95:5)
+
+[2026-08-13T12:33:52.698Z] Route hatasi: GET /oyun/okey101
+ReferenceError: /home/ydemir/workspace/LOOTV1/views/salon.ejs:109
+    107|         
+    108|         <!-- Oyuncu İstatistikleri -->
+ >> 109|         <% if (userStats) { %>
+    110|         <div class="bg-surface-container-lowest rounded-xl border border-outline-variant/30 shadow-sm p-4">
+    111|           <h3 class="font-headline-sm text-on-surface mb-3 flex items-center gap-2">
+    112|             <span class="material-symbols-outlined text-primary">analytics</span> İstatistiklerim
+
+userStats is not defined
+    at eval ("/home/ydemir/workspace/LOOTV1/views/salon.ejs":48:8)
+    at salon (/home/ydemir/workspace/LOOTV1/node_modules/ejs/lib/ejs.js:703:17)
+    at tryHandleCache (/home/ydemir/workspace/LOOTV1/node_modules/ejs/lib/ejs.js:274:36)
+    at exports.renderFile [as engine] (/home/ydemir/workspace/LOOTV1/node_modules/ejs/lib/ejs.js:491:10)
+    at View.render (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/view.js:135:8)
+    at tryRender (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/application.js:657:10)
+    at Function.render (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/application.js:609:3)
+    at ServerResponse.render (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/response.js:1049:7)
+    at /home/ydemir/workspace/LOOTV1/server.js:982:7
+    at Layer.handle [as handle_request] (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/router/layer.js:95:5)
+
+[2026-08-13T12:48:11.964Z] Route hatasi: GET /oyun/okey101
+TypeError: db.getUserProfile is not a function
+    at /home/ydemir/workspace/LOOTV1/server.js:982:41
+    at /home/ydemir/workspace/LOOTV1/server.js:66:30
+    at Layer.handle [as handle_request] (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/router/layer.js:95:5)
+    at next (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/router/route.js:149:13)
+    at requireAuth (/home/ydemir/workspace/LOOTV1/server.js:128:3)
+    at Layer.handle [as handle_request] (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/router/layer.js:95:5)
+    at next (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/router/route.js:149:13)
+    at /home/ydemir/workspace/LOOTV1/server.js:123:3
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+
+[2026-08-13T12:48:12.596Z] Route hatasi: GET /oyun/okey101
+TypeError: db.getUserProfile is not a function
+    at /home/ydemir/workspace/LOOTV1/server.js:982:41
+    at /home/ydemir/workspace/LOOTV1/server.js:66:30
+    at Layer.handle [as handle_request] (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/router/layer.js:95:5)
+    at next (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/router/route.js:149:13)
+    at requireAuth (/home/ydemir/workspace/LOOTV1/server.js:128:3)
+    at Layer.handle [as handle_request] (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/router/layer.js:95:5)
+    at next (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/router/route.js:149:13)
+    at /home/ydemir/workspace/LOOTV1/server.js:123:3
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+
+[2026-08-13T12:48:15.147Z] Route hatasi: GET /oyun/okey101
+TypeError: db.getUserProfile is not a function
+    at /home/ydemir/workspace/LOOTV1/server.js:982:41
+    at /home/ydemir/workspace/LOOTV1/server.js:66:30
+    at Layer.handle [as handle_request] (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/router/layer.js:95:5)
+    at next (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/router/route.js:149:13)
+    at requireAuth (/home/ydemir/workspace/LOOTV1/server.js:128:3)
+    at Layer.handle [as handle_request] (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/router/layer.js:95:5)
+    at next (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/router/route.js:149:13)
+    at /home/ydemir/workspace/LOOTV1/server.js:123:3
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+
+[2026-08-13T12:49:57.672Z] Route hatasi: GET /oyun/okey101
+TypeError: db.getUserProfile is not a function
+    at /home/ydemir/workspace/LOOTV1/server.js:982:41
+    at /home/ydemir/workspace/LOOTV1/server.js:66:30
+    at Layer.handle [as handle_request] (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/router/layer.js:95:5)
+    at next (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/router/route.js:149:13)
+    at requireAuth (/home/ydemir/workspace/LOOTV1/server.js:128:3)
+    at Layer.handle [as handle_request] (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/router/layer.js:95:5)
+    at next (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/router/route.js:149:13)
+    at /home/ydemir/workspace/LOOTV1/server.js:123:3
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+
+[2026-08-13T12:49:58.458Z] Route hatasi: GET /oyun/okey101
+TypeError: db.getUserProfile is not a function
+    at /home/ydemir/workspace/LOOTV1/server.js:982:41
+    at /home/ydemir/workspace/LOOTV1/server.js:66:30
+    at Layer.handle [as handle_request] (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/router/layer.js:95:5)
+    at next (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/router/route.js:149:13)
+    at requireAuth (/home/ydemir/workspace/LOOTV1/server.js:128:3)
+    at Layer.handle [as handle_request] (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/router/layer.js:95:5)
+    at next (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/router/route.js:149:13)
+    at /home/ydemir/workspace/LOOTV1/server.js:123:3
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+
+[2026-08-13T12:49:58.645Z] Route hatasi: GET /oyun/okey101
+TypeError: db.getUserProfile is not a function
+    at /home/ydemir/workspace/LOOTV1/server.js:982:41
+    at /home/ydemir/workspace/LOOTV1/server.js:66:30
+    at Layer.handle [as handle_request] (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/router/layer.js:95:5)
+    at next (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/router/route.js:149:13)
+    at requireAuth (/home/ydemir/workspace/LOOTV1/server.js:128:3)
+    at Layer.handle [as handle_request] (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/router/layer.js:95:5)
+    at next (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/router/route.js:149:13)
+    at /home/ydemir/workspace/LOOTV1/server.js:123:3
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+
+[2026-08-13T12:49:58.787Z] Route hatasi: GET /oyun/okey101
+TypeError: db.getUserProfile is not a function
+    at /home/ydemir/workspace/LOOTV1/server.js:982:41
+    at /home/ydemir/workspace/LOOTV1/server.js:66:30
+    at Layer.handle [as handle_request] (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/router/layer.js:95:5)
+    at next (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/router/route.js:149:13)
+    at requireAuth (/home/ydemir/workspace/LOOTV1/server.js:128:3)
+    at Layer.handle [as handle_request] (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/router/layer.js:95:5)
+    at next (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/router/route.js:149:13)
+    at /home/ydemir/workspace/LOOTV1/server.js:123:3
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)

@@ -203,44 +203,53 @@
           <!-- VIP Ayrıcalıkları Grid -->
           <div class="py-6 relative z-10">
             <h3 class="text-sm font-semibold text-purple-200/90 uppercase tracking-wider mb-4 flex items-center gap-2">
-              <span class="material-symbols-outlined text-amber-400 text-lg">star</span> Aktif VIP Ayrıcalıklarınız
+              <span class="material-symbols-outlined text-amber-400 text-lg">star</span> Mevcut Seviyeniz: <%= activeVip.name %> Ayrıcalıkları
             </h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            
+            <!-- Tier Highlight Banner -->
+            <div class="flex flex-col sm:flex-row gap-4 mb-6">
+              <div class="flex-1 bg-gradient-to-r from-amber-500/20 to-amber-900/20 border border-amber-500/30 rounded-xl p-4 flex items-center gap-4">
+                <div class="w-12 h-12 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center text-2xl">
+                  <span class="material-symbols-outlined">payments</span>
+                </div>
+                <div>
+                  <p class="text-xs text-amber-200/70 uppercase tracking-wide font-bold">Haftalık Sabit Maaş</p>
+                  <p class="text-2xl font-black text-amber-400"><%= activeVip.weekly %></p>
+                </div>
+              </div>
+              <div class="flex-1 bg-gradient-to-r from-emerald-500/20 to-emerald-900/20 border border-emerald-500/30 rounded-xl p-4 flex items-center gap-4">
+                <div class="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-2xl">
+                  <span class="material-symbols-outlined">redeem</span>
+                </div>
+                <div>
+                  <p class="text-xs text-emerald-200/70 uppercase tracking-wide font-bold">Anında Hediye Bonusu</p>
+                  <p class="text-2xl font-black text-emerald-400"><%= activeVip.instant %></p>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               
               <!-- Ayrıcalık 1: Özel Mesaj (PM) -->
-              <div class="bg-white/5 border border-white/10 rounded-xl p-4 hover:bg-white/10 transition-all">
-                <div class="w-10 h-10 rounded-lg bg-purple-500/20 text-purple-300 flex items-center justify-center mb-3">
+              <div class="bg-white/5 border border-white/10 rounded-xl p-4 hover:bg-white/10 transition-all flex gap-4 items-center">
+                <div class="w-12 h-12 rounded-lg bg-purple-500/20 text-purple-300 flex items-center justify-center shrink-0">
                   <span class="material-symbols-outlined">forum</span>
                 </div>
-                <h4 class="font-bold text-white text-base mb-1">Lobi Özel Mesaj (PM)</h4>
-                <p class="text-xs text-purple-200/70 leading-relaxed">Lobi sohbetinde dilediğiniz oyuncuya tıklayarak sınırsız 1-v-1 özel mesaj gönderebilirsiniz.</p>
-              </div>
-
-              <!-- Ayrıcalık 2: Haftalık LT Bonusu -->
-              <div class="bg-white/5 border border-white/10 rounded-xl p-4 hover:bg-white/10 transition-all">
-                <div class="w-10 h-10 rounded-lg bg-amber-500/20 text-amber-300 flex items-center justify-center mb-3">
-                  <span class="material-symbols-outlined">account_balance_wallet</span>
+                <div>
+                  <h4 class="font-bold text-white text-base mb-1">Lobi Özel Mesaj (PM)</h4>
+                  <p class="text-xs text-purple-200/70 leading-relaxed">Lobi sohbetinde dilediğiniz oyuncuya tıklayarak sınırsız 1-v-1 özel mesaj gönderebilirsiniz.</p>
                 </div>
-                <h4 class="font-bold text-white text-base mb-1">Haftalık Otomatik LT</h4>
-                <p class="text-xs text-purple-200/70 leading-relaxed">Her hafta hesabınıza otomatik olarak <strong class="text-amber-400">+<%= activeVip.weekly %></strong> maaş olarak yüklenir.</p>
               </div>
 
               <!-- Ayrıcalık 3: VIP Rozet & Tag -->
-              <div class="bg-white/5 border border-white/10 rounded-xl p-4 hover:bg-white/10 transition-all">
-                <div class="w-10 h-10 rounded-lg bg-pink-500/20 text-pink-300 flex items-center justify-center mb-3">
+              <div class="bg-white/5 border border-white/10 rounded-xl p-4 hover:bg-white/10 transition-all flex gap-4 items-center">
+                <div class="w-12 h-12 rounded-lg bg-pink-500/20 text-pink-300 flex items-center justify-center shrink-0">
                   <span class="material-symbols-outlined">workspace_premium</span>
                 </div>
-                <h4 class="font-bold text-white text-base mb-1">Özel VIP Rozeti</h4>
-                <p class="text-xs text-purple-200/70 leading-relaxed">Sohbetlerde, masalarda ve sıralamalarda isminizin yanında VIP <%= user.vip_tier %> rozeti görünür.</p>
-              </div>
-
-              <!-- Ayrıcalık 4: Hoş Geldin Bonusu -->
-              <div class="bg-white/5 border border-white/10 rounded-xl p-4 hover:bg-white/10 transition-all">
-                <div class="w-10 h-10 rounded-lg bg-emerald-500/20 text-emerald-300 flex items-center justify-center mb-3">
-                  <span class="material-symbols-outlined">card_giftcard</span>
+                <div>
+                  <h4 class="font-bold text-white text-base mb-1">Özel VIP Rozeti</h4>
+                  <p class="text-xs text-purple-200/70 leading-relaxed">Sohbetlerde, masalarda ve sıralamalarda isminizin yanında <strong class="text-pink-400">VIP <%= user.vip_tier %></strong> rozeti görünür.</p>
                 </div>
-                <h4 class="font-bold text-white text-base mb-1">Anında LT Bonusu</h4>
-                <p class="text-xs text-purple-200/70 leading-relaxed">VIP aktifleştirildiği anda tek seferde <strong class="text-emerald-400">+<%= activeVip.instant %></strong> hediye tanımlanır.</p>
               </div>
 
             </div>
@@ -259,51 +268,59 @@
           </div>
         </div>
       <% } else { %>
-        <!-- VIP Aktifleştirme ve Tanıtım Kartı (VIP Olmayan Kullanıcılar İçin) -->
-        <div class="bg-white rounded-xl border border-outline-variant/30 shadow-sm p-6 lg:col-span-2">
-          <div class="flex items-center gap-3 mb-4">
-            <span class="w-12 h-12 rounded-xl bg-energetic-purple/10 text-energetic-purple flex items-center justify-center text-3xl font-bold">👑</span>
-            <div>
-              <h2 class="font-headline-md text-headline-md text-primary">VIP Üyelik & Ayrıcalıklar</h2>
-              <p class="text-body-sm text-on-surface-variant">LOOTIV dünyasında ayrıcalıklı üye olarak özel imkanlardan yararlanın.</p>
-            </div>
-          </div>
-
-          <!-- VIP Avantajları Özeti -->
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 my-4">
-            <div class="p-4 rounded-xl bg-surface-container-low border border-outline-variant/20 flex items-center gap-3">
-              <span class="material-symbols-outlined text-energetic-purple text-2xl">forum</span>
+          <!-- VIP Aktifleştirme ve Tanıtım Kartı (VIP Olmayan Kullanıcılar İçin) -->
+          <div class="bg-gradient-to-br from-slate-900 via-purple-950 to-slate-950 text-white rounded-2xl border border-purple-500/30 shadow-xl p-6 lg:col-span-2 relative overflow-hidden">
+            
+            <!-- Arka Plan Glow Efektleri -->
+            <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-purple-600/10 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute -left-10 -top-10 w-48 h-48 bg-amber-500/10 rounded-full blur-2xl pointer-events-none"></div>
+            
+            <div class="flex items-center gap-4 mb-6 relative z-10">
+              <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-800 to-purple-950 border border-purple-500/30 flex items-center justify-center text-3xl shadow-lg">
+                💎
+              </div>
               <div>
-                <span class="font-bold text-primary block text-sm">Lobi Özel Mesaj (PM)</span>
-                <span class="text-outline text-xs">Diğer oyuncularla 1-v-1 özel mesajlaşma</span>
+                <h2 class="text-xl font-bold text-white tracking-wide">VIP Üyelik & Ayrıcalıklar</h2>
+                <p class="text-sm text-purple-200/70 mt-1">LOOTIV dünyasında ayrıcalıklı üye olarak özel imkanlardan yararlanın.</p>
               </div>
             </div>
-            <div class="p-4 rounded-xl bg-surface-container-low border border-outline-variant/20 flex items-center gap-3">
-              <span class="material-symbols-outlined text-amber-gold text-2xl">account_balance_wallet</span>
-              <div>
-                <span class="font-bold text-primary block text-sm">Haftalık LT Maaşı</span>
-                <span class="text-outline text-xs">Her hafta düzenli otomatik LT yüklemesi</span>
+  
+            <!-- VIP Avantajları Özeti -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 my-6 relative z-10">
+              <div class="p-5 rounded-xl bg-gradient-to-b from-white/10 to-white/5 border border-white/10 hover:bg-white/10 transition-colors group flex flex-col items-center text-center">
+                <div class="w-14 h-14 rounded-full bg-slate-800 border border-slate-600 flex items-center justify-center text-xl font-black text-white mb-3 shadow-lg">V1</div>
+                <span class="font-bold text-amber-400 block text-lg mb-1">VIP 1</span>
+                <span class="text-white text-sm font-semibold mb-1">10.000 LT Haftalık Maaş</span>
+                <span class="text-emerald-400 text-xs font-bold mb-3">+10.000 LT Anında Hediye</span>
+                <span class="text-purple-200/60 text-xs">Özel Mesaj (PM) İzni</span>
+                <span class="text-purple-200/60 text-xs">VIP 1 Rozeti</span>
+              </div>
+              <div class="p-5 rounded-xl bg-gradient-to-b from-amber-500/20 to-amber-900/20 border border-amber-500/30 hover:bg-amber-500/30 transition-colors group flex flex-col items-center text-center relative transform md:-translate-y-2 shadow-2xl shadow-amber-500/10">
+                <span class="absolute -top-3 bg-amber-500 text-slate-900 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">En Popüler</span>
+                <div class="w-14 h-14 rounded-full bg-amber-500 border border-amber-300 flex items-center justify-center text-xl font-black text-slate-900 mb-3 shadow-lg shadow-amber-500/50">V2</div>
+                <span class="font-bold text-amber-400 block text-lg mb-1">VIP 2</span>
+                <span class="text-white text-sm font-semibold mb-1">15.000 LT Haftalık Maaş</span>
+                <span class="text-emerald-400 text-xs font-bold mb-3">+15.000 LT Anında Hediye</span>
+                <span class="text-purple-200/60 text-xs">Özel Mesaj (PM) İzni</span>
+                <span class="text-purple-200/60 text-xs">VIP 2 Rozeti</span>
+              </div>
+              <div class="p-5 rounded-xl bg-gradient-to-b from-purple-600/20 to-purple-900/20 border border-purple-500/30 hover:bg-purple-500/30 transition-colors group flex flex-col items-center text-center">
+                <div class="w-14 h-14 rounded-full bg-purple-600 border border-purple-400 flex items-center justify-center text-xl font-black text-white mb-3 shadow-lg shadow-purple-500/30">V3</div>
+                <span class="font-bold text-purple-300 block text-lg mb-1">VIP 3</span>
+                <span class="text-white text-sm font-semibold mb-1">20.000 LT Haftalık Maaş</span>
+                <span class="text-emerald-400 text-xs font-bold mb-3">+20.000 LT Anında Hediye</span>
+                <span class="text-purple-200/60 text-xs">Özel Mesaj (PM) İzni</span>
+                <span class="text-purple-200/60 text-xs">VIP 3 Rozeti</span>
               </div>
             </div>
-            <div class="p-4 rounded-xl bg-surface-container-low border border-outline-variant/20 flex items-center gap-3">
-              <span class="material-symbols-outlined text-energetic-purple text-2xl">workspace_premium</span>
-              <div>
-                <span class="font-bold text-primary block text-sm">Özel VIP Rozeti</span>
-                <span class="text-outline text-xs">Tüm masalarda & sohbetlerde seçkin görünüm</span>
-              </div>
+  
+            <div class="mt-2 flex justify-end relative z-10">
+              <a href="/vip" class="px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-purple-500/30 flex items-center gap-2 transition-all hover:scale-105">
+                <span class="material-symbols-outlined text-sm">shopping_cart</span> VIP Paketlerini İncele
+              </a>
             </div>
           </div>
-
-          <!-- E-Pin Kod Girme Alanı -->
-          <div class="pt-4 border-t border-outline-variant/20">
-            <p class="text-body-sm text-on-surface-variant mb-3">ByNoGame veya Kopazar'dan aldığınız VIP (E-Pin) kodunuzu buraya girerek anında VIP statüsüne sahip olun:</p>
-            <form method="POST" action="/settings/profile/vip" class="flex gap-2 flex-wrap max-w-md">
-              <input name="vip_code" placeholder="Örn: VIP1-ABCD-EFGH" required class="flex-1 px-4 py-2.5 border border-silver-light rounded-lg outline-none focus:ring-2 focus:ring-energetic-purple uppercase text-sm" />
-              <button class="px-6 py-2.5 bg-energetic-purple text-white font-semibold rounded-lg font-label-md text-label-sm hover:bg-opacity-90 transition-all">Aktifleştir</button>
-            </form>
-          </div>
-        </div>
-      <% } %>
+<% } %>
     </div>
 
     <div class="mt-6">

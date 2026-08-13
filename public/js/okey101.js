@@ -1,8 +1,15 @@
 (() => {
-  console.log('[LOOTIV] okey101.js v1 yuklendi');
 
   const roomId = new URLSearchParams(window.location.search).get('roomId');
   const socket = io({ query: { game: 'okey101', roomId: roomId || '' } });
+  window.okey101Socket = socket;
+
+  // Auto-switch if loaded directly with roomId (e.g. from page refresh)
+  document.addEventListener('DOMContentLoaded', () => {
+    if (roomId && typeof window.spaSwitchToTable === 'function') {
+      window.spaSwitchToTable(roomId);
+    }
+  });
 
   // ---------------- DOM ELEMENTS ----------------
   const elTableBadge = document.getElementById('table-badge-id');
@@ -65,7 +72,7 @@
 
   // ---------------- STATE ----------------
   let lastState = null;
-  let rackSlots = new Array(40).fill(null); // 2 rows of 17
+  let rackSlots = new Array(40).fill(null); // 2 rows of 20
   let currentTableId = null;
   let currentHandNumber = -1;
   let selectedTiles = new Set();
@@ -103,7 +110,7 @@
 
   // ---------------- SOCKET EVENTS ----------------
   socket.on('connect', () => {
-    console.log('[LOOTIV] Connected to Okey 101 server.');
+
   });
 
   socket.on('okey101:reconnect', () => {
@@ -223,6 +230,27 @@
     }, 3000);
   });
 
+  socket.on('room:spectators', (count) => {
+    const elCount = document.getElementById('spectator-count-val');
+    const elBadge = document.getElementById('spectator-badge');
+    if (elCount && elBadge) {
+      elCount.textContent = count;
+      elBadge.style.display = count > 0 ? 'inline-flex' : 'none';
+    }
+  });
+
+  socket.on('okey101:chat', (msg) => {
+    const chatBody = document.getElementById('chat-body');
+    if (!chatBody) return;
+    const msgEl = document.createElement('div');
+    msgEl.className = 'chat-msg';
+    const isMe = msg.userId === (document.body.dataset.userId || '');
+    msgEl.innerHTML = `<b>${isMe ? 'Sen' : escapeHtml(msg.name)}:</b> `;
+    msgEl.appendChild(document.createTextNode(msg.text));
+    chatBody.appendChild(msgEl);
+    chatBody.scrollTop = chatBody.scrollHeight;
+  });
+
   socket.on('okey101:game-over', (data) => {
       let finalScores = data && data.totalScores ? data.totalScores : {};
       if (!gameOverOverlay) {
@@ -307,8 +335,13 @@
     if (elInfoElCount) elInfoElCount.textContent = state.handNumber || 0;
     if (elInfoPuan) elInfoPuan.textContent = (myCurrentSeat ? myCurrentSeat.totalScore : 0) + ' PUAN';
 
-    elTableBadge.innerHTML = `#${state.tableId}<span class="x">✕</span>`;
-    document.getElementById('bottom-table-id').textContent = `#${state.tableId}`;
+    if (elTableBadge) {
+      elTableBadge.innerHTML = `#${state.tableId}<span class="x">✕</span>`;
+    }
+    const bottomTableId = document.getElementById('bottom-table-id');
+    if (bottomTableId) {
+      bottomTableId.textContent = `#${state.tableId}`;
+    }
     
     deckCountEl.textContent = state.deckCount || 0;
     
@@ -1176,7 +1209,7 @@
   const btnMasalar = document.querySelector('.btn-masalar');
   if (btnMasalar) {
     btnMasalar.addEventListener('click', () => {
-      window.location.href = '/lobiler'; // Ana lobiye dön
+      window.location.href = '/oyun/okey101'; // Ana lobiye dön
     });
   }
 
@@ -1186,7 +1219,7 @@
     btnExit.addEventListener('click', () => {
       if (confirm('Oyundan ayrılmak istediğinize emin misiniz?')) {
         socket.emit('okey101:leave_table');
-        window.location.href = '/lobiler';
+        window.location.href = '/oyun/okey101';
       }
     });
   }
@@ -1294,14 +1327,6 @@
       if (text) {
         socket.emit('okey101:chat_message', { text });
         inpChat.value = '';
-        
-        // Ekrana da ekleyelim şimdilik local olarak (sunucudan gelecek aslında)
-        const chatBody = document.getElementById('chat-body');
-        const msgEl = document.createElement('div');
-        msgEl.className = 'chat-msg';
-        msgEl.innerHTML = `<b>Sen:</b> ${text}`;
-        chatBody.appendChild(msgEl);
-        chatBody.scrollTop = chatBody.scrollHeight;
       }
     };
     btnSendChat.addEventListener('click', sendMsg);

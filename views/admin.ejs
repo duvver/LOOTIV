@@ -529,6 +529,10 @@
       </a>
 
       <div class="adm-nav-group">Oyun Ayarları</div>
+        <a class="adm-nav-link" data-page="gametables" onclick="showPage('gametables',this)">
+          <span class="adm-nav-icon">&#127922;</span> Masa Ayarları
+        </a>
+
       <a class="adm-nav-link" data-page="dailytasks" onclick="showPage('dailytasks',this)">
         <span class="adm-nav-icon">&#128221;</span> Günlük Görevler
       </a>
@@ -968,7 +972,91 @@
       </div>
     </div>
 
-    <!-- ========== SAYFA: Günlük Görevler ========== -->
+    
+      <!-- ========== SAYFA: Masa Ayarlari ========== -->
+      <div class="adm-page" id="page-gametables">
+        <div class="adm-section open">
+          <div class="adm-section-header" onclick="toggleSection(this)">
+            <h2 class="adm-section-title">Yeni Masa Ekle</h2>
+            <span class="material-symbols-outlined adm-section-icon">expand_more</span>
+          </div>
+          <div class="adm-section-content">
+            <form action="/admin/game_tables" method="POST" class="adm-form">
+              <div class="adm-form-group">
+                <label>Oyun Secin</label>
+                <select name="game_slug" class="adm-input" required>
+                  <option value="poker">Texas Hold'em</option>
+                  <option value="turkpoker">Turk Pokeri</option>
+                  
+                  
+                </select>
+              </div>
+              
+              
+              
+                <div class="adm-form-group">
+                  <label>Masa Adeti (Kac adet eklensin?)</label>
+                  <input type="number" name="count" class="adm-input" value="1" min="1" max="50" required>
+                </div>
+                <button type="submit" class="adm-btn adm-btn-primary">Masayi Ekle</button>
+            </form>
+          </div>
+        </div>
+
+        <div class="adm-section open">
+          <div class="adm-section-header" onclick="toggleSection(this)">
+            <h2 class="adm-section-title">Mevcut Masalar</h2>
+            <span class="material-symbols-outlined adm-section-icon">expand_more</span>
+          </div>
+          <div class="adm-section-content">
+            <div class="adm-table-wrapper">
+              <table class="adm-table">
+                <thead>
+                  <tr>
+                    <th>Oyun</th>
+                    <th>Masa Adi</th>
+                    <th>Bahis (LT)</th>
+                    <th>Durum</th>
+                    <th>Islem</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% if (typeof gameTables !== 'undefined' && gameTables.length > 0) { %>
+                    <% gameTables.forEach(t => { %>
+                      <tr>
+                        <td><%= t.game_slug %></td>
+                        <td><%= t.title %></td>
+                        <td><%= t.stake %></td>
+                        <td>
+                          <% if (t.is_active) { %>
+                            <span class="adm-badge adm-badge-success">Aktif</span>
+                          <% } else { %>
+                            <span class="adm-badge adm-badge-error">Pasif</span>
+                          <% } %>
+                        </td>
+                        <td style="display: flex; gap: 8px;">
+                          <form action="/admin/game_tables/<%= t.id %>/toggle" method="POST" style="margin:0;">
+                            <button type="submit" class="adm-btn adm-btn-secondary" style="padding: 4px 8px; font-size:12px;">
+                              <%= t.is_active ? 'Gizle' : 'Goster' %>
+                            </button>
+                          </form>
+                          <form action="/admin/game_tables/<%= t.id %>/delete" method="POST" style="margin:0;" onsubmit="return confirm('Emin misiniz?')">
+                            <button type="submit" class="adm-btn adm-btn-danger" style="padding: 4px 8px; font-size:12px;">Sil</button>
+                          </form>
+                        </td>
+                      </tr>
+                    <% }) %>
+                  <% } else { %>
+                    <tr><td colspan="5" style="text-align:center;">Henuz eklenmis masa yok.</td></tr>
+                  <% } %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========== SAYFA: Günlük Görevler ========== -->
     <div class="adm-page" id="page-dailytasks">
       <div class="adm-section open">
         <div class="adm-section-head" onclick="toggleSection(this)">

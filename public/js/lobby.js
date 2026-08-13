@@ -128,4 +128,51 @@
       chatInput.value = '';
     });
   }
+
+  // SPA Functions
+  window.spaSwitchToTable = function spaSwitchToTable(roomId) {
+    var lobiTab = document.getElementById('spa-tab-lobi');
+    var masaTab = document.getElementById('spa-tab-masa');
+    if (lobiTab) lobiTab.style.display = 'none';
+    if (masaTab) masaTab.style.display = 'block';
+    
+    // Hide global elements
+    var header = document.querySelector('header');
+    if (header) header.style.display = 'none';
+    var chatpanel = document.getElementById('lobby-chatpanel');
+    if (chatpanel) chatpanel.style.display = 'none';
+    var hero = document.getElementById('lobby-hero');
+    if (hero) hero.style.display = 'none';
+    var backBtn = document.getElementById('lobby-back-btn');
+    if (backBtn) backBtn.style.display = 'none';
+
+    if (window.okey101Socket && window.okey101Socket.emit) {
+      window.okey101Socket.emit('game:join', { roomId: roomId });
+    }
+  };
+
+  window.spaSwitchToLobby = function spaSwitchToLobby() {
+    var lobiTab = document.getElementById('spa-tab-lobi');
+    var masaTab = document.getElementById('spa-tab-masa');
+    if (masaTab) masaTab.style.display = 'none';
+    if (lobiTab) lobiTab.style.display = 'block';
+    
+    // Show global elements
+    var header = document.querySelector('header');
+    if (header) header.style.display = '';
+    var chatpanel = document.getElementById('lobby-chatpanel');
+    if (chatpanel) chatpanel.style.display = 'flex';
+    var hero = document.getElementById('lobby-hero');
+    if (hero) hero.style.display = '';
+    var backBtn = document.getElementById('lobby-back-btn');
+    if (backBtn) backBtn.style.display = '';
+
+    if (window.okey101Socket && window.okey101Socket.emit) {
+      window.okey101Socket.emit('game:leave');
+    }
+    
+    var url = new URL(window.location);
+    url.searchParams.delete('roomId');
+    window.history.pushState({}, '', url);
+  };
 })();

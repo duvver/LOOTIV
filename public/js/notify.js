@@ -33,8 +33,8 @@
     body.textContent = text.length > 140 ? text.slice(0, 140) + '...' : text;
     var foot = document.createElement('a');
     foot.className = 'announce-toast-link';
-    foot.href = '/duyurular';
-    foot.textContent = 'Duyurulari gor';
+    foot.href = payload.link || '/duyurular';
+    foot.textContent = payload.linkText || 'Duyurulari gor';
     toast.appendChild(title);
     toast.appendChild(body);
     toast.appendChild(foot);
@@ -76,4 +76,15 @@
     bumpBadge();
     showToast(payload);
   });
+
+  socket.on('room:invited', function (payload) {
+    if (!payload) return;
+    showToast({
+      title: 'Oyun Daveti!',
+      content: payload.from + ' sizi masasına davet ediyor.',
+      link: '/oyun/' + payload.game + '?roomId=' + payload.roomId,
+      linkText: 'Masaya Katıl'
+    });
+  });
+
 })();

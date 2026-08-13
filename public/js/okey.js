@@ -1,6 +1,5 @@
 (() => {
   // Surum takibi: F12 > Console'da bu satiri gormuyorsan tarayici ESKI dosyayi kullaniyor demektir.
-  console.log('[LOOTIV] okey.js v3 yuklendi (per destekli Seri Diz)');
 
   const roomId = new URLSearchParams(window.location.search).get('roomId');
   const socket = io({ query: { game: 'okey', roomId: roomId || '' } });
@@ -12,7 +11,7 @@
   const chatInput = document.getElementById('chat-input');
   const tabs = Array.from(document.querySelectorAll('.chat-tab'));
 
-  const messagesByChannel = { oyun: [], sistem: [] };
+  const messagesByChannel = { oyun: [], sistem: [], masa: [] };
   let activeChannel = 'oyun';
 
   function formatTime(isoLike) {
@@ -22,9 +21,9 @@
   }
 
   function escapeHtml(str) {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
+    var div = document.createElement('div');
+    div.textContent = str == null ? '' : String(str);
+    return div.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#039;');
   }
 
   function renderMessages() {
@@ -65,7 +64,11 @@
     e.preventDefault();
     const text = chatInput.value.trim();
     if (!text || activeChannel === 'sistem') return;
-    socket.emit('chat:message', { channel: activeChannel, text });
+    if (activeChannel === 'masa') {
+      socket.emit('okey:chat_message', { text });
+    } else {
+      socket.emit('chat:message', { channel: activeChannel, text });
+    }
     chatInput.value = '';
   });
 
@@ -89,6 +92,32 @@
     } else {
       const tab = tabs.find((t) => t.dataset.channel === ch);
       if (tab) tab.classList.add('has-new');
+    }
+  });
+
+  socket.on('okey:chat', (msg) => {
+    if (!messagesByChannel['masa']) messagesByChannel['masa'] = [];
+    messagesByChannel['masa'].push({
+      channel: 'masa',
+      username: msg.name,
+      content: msg.text,
+      created_at: new Date(msg.timestamp).toISOString().replace('T', ' ').substring(0, 19)
+    });
+    if (messagesByChannel['masa'].length > 200) messagesByChannel['masa'].shift();
+    if (activeChannel === 'masa') {
+      renderMessages();
+    } else {
+      const tab = tabs.find((t) => t.dataset.channel === 'masa');
+      if (tab) tab.classList.add('has-new');
+    }
+  });
+
+  socket.on('room:spectators', (count) => {
+    const elCount = document.getElementById('spectator-count-val');
+    const elBadge = document.getElementById('spectator-count');
+    if (elCount && elBadge) {
+      elCount.textContent = count;
+      elBadge.style.display = count > 0 ? 'inline-flex' : 'none';
     }
   });
 

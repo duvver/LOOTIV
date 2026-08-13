@@ -27,7 +27,7 @@
   <main class="okey-layout">
     <section class="okey-table">
       <div class="okey-felt" id="okey-felt">
-        <div class="okey-title" id="okey-title">Canak Okey</div>
+        <div class="okey-title" id="okey-title">Canak Okey <span id="spectator-count" style="display: none; font-size: 12px; margin-left: 8px; background: rgba(59, 130, 246, 0.1); color: #1d4ed8; padding: 2px 6px; border-radius: 4px; font-weight: bold;"><span class="material-symbols-outlined" style="font-size: 12px; vertical-align: middle;">visibility</span> <span id="spectator-count-val">0</span></span></div>
         <div class="okey-status" id="okey-status"></div>
         <div class="okey-seats" id="okey-seats"></div>
         <div class="okey-middle">
@@ -55,15 +55,63 @@
 
     <aside class="players-panel">
       <h3 class="panel-title">Canli Oynayanlar <span id="player-count" class="panel-count">0</span></h3>
+      <button type="button" class="btn btn-sm btn-outline-primary w-full mb-3" onclick="openInviteModal()">+ Davet Et</button>
       <ul id="player-list" class="player-list"></ul>
     </aside>
 
   </main>
 
+  <!-- Invite Modal -->
+  <div id="invite-modal" class="glass-panel" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2000; width: 400px; padding: 20px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1);">
+    <h3 style="margin-bottom: 15px; color: #fff; font-size: 1.25rem;">Oyuncu Davet Et</h3>
+    <div style="max-height: 300px; overflow-y: auto;" id="invite-user-list">
+      Yükleniyor...
+    </div>
+    <div style="text-align: right; margin-top: 15px;">
+      <button class="btn btn-secondary btn-sm" onclick="document.getElementById('invite-modal').style.display='none'">Kapat</button>
+    </div>
+  </div>
+
+  <script>
+  window.openInviteModal = function() {
+    document.getElementById('invite-modal').style.display = 'block';
+    document.getElementById('invite-user-list').innerHTML = 'Yükleniyor...';
+    fetch('/api/users/online')
+      .then(r => r.json())
+      .then(data => {
+        let html = '<ul style="list-style: none; padding: 0; margin: 0;">';
+        if (!data.users || data.users.length === 0) {
+           html = '<p class="text-sm text-outline italic text-center py-4">Davet edilebilecek oyuncu bulunamadı.</p>';
+        } else {
+          data.users.forEach(u => {
+            html += `
+              <li style="display:flex; justify-content:space-between; margin-bottom: 10px; background: rgba(255,255,255,0.05); padding: 8px; border-radius: 6px;">
+                <span>${u.username}</span>
+                <button class="btn btn-primary btn-sm" onclick="sendInvite(${u.id})">Davet Et</button>
+              </li>
+            `;
+          });
+          html += '</ul>';
+        }
+        document.getElementById('invite-user-list').innerHTML = html;
+      })
+      .catch(err => {
+        document.getElementById('invite-user-list').innerHTML = 'Hata oluştu.';
+      });
+  };
+  window.sendInvite = function(targetUserId) {
+    if (typeof socket !== 'undefined' && socket) {
+      socket.emit('room:invite', { targetUserId: targetUserId });
+      alert('Davet gönderildi!');
+    }
+  };
+  </script>
+
   <!-- ===== Sohbet paneli (surekli acik) ===== -->
   <aside class="ok1-chatpanel" id="ok1-chatpanel">
     <div class="chat-tabs">
       <button class="chat-tab active" data-channel="oyun">Oyun Lobisi <span class="badge"></span></button>
+      <button class="chat-tab" data-channel="masa">Masa <span class="badge"></span></button>
       <button class="chat-tab" data-channel="sistem">Sistem Mesaji <span class="badge"></span></button>
     </div>
     <div class="chat-body">
