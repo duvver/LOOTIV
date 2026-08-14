@@ -11,8 +11,7 @@
   <%- include('partials/theme-nav', { active: 'oyunlar', user: user, unreadCount: typeof unreadCount !== 'undefined' ? unreadCount : 0 }) %>
 
   <main class="flex-grow max-w-container-max mx-auto w-full px-margin-mobile md:px-margin-desktop py-8 pb-[270px]">
-
-    <a href="/" class="text-primary font-label-md hover:underline flex items-center gap-1 mb-4"><span class="material-symbols-outlined text-sm">arrow_back</span> Ana Sayfa</a>
+    <a href="/" id="ana-sayfa-link" class="text-primary font-label-md hover:underline flex items-center gap-1 mb-4"><span class="material-symbols-outlined text-sm">arrow_back</span> Ana Sayfa</a>
 
     <!-- Oyun başlığı hero -->
     <section class="relative rounded-xl overflow-hidden bg-primary text-white mb-8 p-8 flex items-center gap-5" style="background-image: linear-gradient(120deg, #1d3246, <%= meta.accent %>);">
@@ -440,7 +439,7 @@
     </div> <!-- /GÖRÜNÜM: ODA OLUŞTURMA -->
   </main>
   <!-- ===== Lobby Chat Panel ===== -->
-  <aside id="lobby-chatpanel" class="fixed bottom-0 left-0 right-0 mx-auto w-full max-w-container-max h-64 bg-surface flex flex-col shadow-[0_-4px_20px_rgba(0,0,0,0.05)] border-t border-x border-outline-variant/30 z-50 rounded-t-xl overflow-hidden">
+  <aside id="lobby-chatpanel" class="fixed bottom-0 left-0 right-0 mx-auto w-full max-w-container-max h-56 bg-surface flex flex-col shadow-[0_-4px_20px_rgba(0,0,0,0.05)] border-t border-x border-outline-variant/30 z-50 rounded-t-xl overflow-hidden">
     <div class="flex border-b border-outline-variant/30 px-2 bg-surface-container-lowest">
       <button id="chat-tab-sistem" class="relative px-4 py-3 font-label-md text-on-surface-variant border-b-2 border-transparent hover:text-primary transition-colors">
         Sistem Mesajı
@@ -1013,13 +1012,25 @@
 
       // SPA Navigation functions
       window.showGame = function(roomId, gameSlug) {
-         document.getElementById('table-list-container').classList.add('hidden');
-         document.getElementById('create-room-view').hidden = true;
-         document.getElementById('game-container').classList.remove('hidden');
+         // --- OYUN GÖRÜNÜMÜNE GEÇİŞ ---
+         // Scroll'a izin ver ve chat panelinin üstüne çıkmaması için alttan boşluk bırak
+         document.body.classList.remove('overflow-hidden', 'h-screen');
          
-         // Hide active players section to expand
-         const activePlayers = document.getElementById('active-players-section');
-         if (activePlayers) activePlayers.classList.add('hidden');
+         const main = document.querySelector('main');
+         if (main) {
+             main.classList.add('flex', 'flex-col');
+             main.classList.remove('overflow-hidden', 'h-full', 'pb-4');
+             // Alt chat paneli için paddingi koruyalım ki oyunun altı kesilmesin
+             main.classList.add('py-8', 'pb-[220px]');
+         }
+         
+         const anaSayfaLink = document.getElementById('ana-sayfa-link');
+         if (anaSayfaLink) anaSayfaLink.classList.add('hidden');
+         
+         const hero = document.querySelector('section.relative.bg-primary');
+         if (hero) hero.classList.add('hidden'); // Başlığı gizle, yer açılsın
+         
+         document.getElementById('create-room-view').hidden = true;
          
          const filterBar = document.getElementById('filter-bar');
          if (filterBar) filterBar.classList.add('hidden');
@@ -1027,8 +1038,20 @@
          const sidebar = document.getElementById('sidebar-section');
          if (sidebar) sidebar.classList.add('hidden');
          
-         // Make game-container fill the height of viewport mostly
-         document.getElementById('game-container').classList.add('min-h-[85vh]');
+         const tableList = document.getElementById('table-list-container');
+         if (tableList) tableList.classList.add('hidden');
+         
+         // tables-view ayarları
+         const tablesView = document.getElementById('tables-view');
+         tablesView.classList.add('flex-1', 'overflow-hidden');
+         
+         const tablesViewLeft = tablesView.querySelector('.flex-1');
+         tablesViewLeft.classList.add('flex', 'flex-col', 'h-full', 'overflow-hidden');
+         
+         // game-container ayarları
+         const gc = document.getElementById('game-container');
+         gc.classList.remove('hidden', 'min-h-[600px]');
+         gc.classList.add('flex-1', 'flex', 'items-center', 'justify-center', 'overflow-hidden');
 
          // Update tabs UI
          const tabLobi = document.getElementById('spa-tab-lobi');
@@ -1060,6 +1083,9 @@
          if (window.lobbySocket && roomId) {
              window.lobbySocket.emit('game:join', { game: gameSlug || '<%= meta.slug %>', roomId: roomId });
          }
+         
+         // Trigger resize
+         setTimeout(resizeGameContainer, 100);
       };
 
       window.leaveTable = function(event) {
@@ -1083,13 +1109,24 @@
              window.showLobby();
          }
       };
+      
       window.showLobby = function() {
-         document.getElementById('table-list-container').classList.remove('hidden');
-         document.getElementById('game-container').classList.add('hidden');
-         document.getElementById('create-room-view').hidden = true;
+         // --- LOBİ GÖRÜNÜMÜNE DÖNÜŞ ---
+         document.body.classList.remove('overflow-hidden', 'h-screen');
          
-         const activePlayers = document.getElementById('active-players-section');
-         if (activePlayers) activePlayers.classList.remove('hidden');
+         const main = document.querySelector('main');
+         if (main) {
+             main.classList.remove('flex', 'flex-col', 'overflow-hidden');
+             main.classList.add('py-8', 'pb-[220px]');
+         }
+         
+         const anaSayfaLink = document.getElementById('ana-sayfa-link');
+         if (anaSayfaLink) anaSayfaLink.classList.remove('hidden');
+         
+         const hero = document.querySelector('section.relative.bg-primary');
+         if (hero) hero.classList.remove('hidden');
+         
+         document.getElementById('create-room-view').hidden = true;
          
          const filterBar = document.getElementById('filter-bar');
          if (filterBar) filterBar.classList.remove('hidden');
@@ -1097,7 +1134,18 @@
          const sidebar = document.getElementById('sidebar-section');
          if (sidebar) sidebar.classList.remove('hidden');
          
-         document.getElementById('game-container').classList.remove('min-h-[85vh]');
+         const tableList = document.getElementById('table-list-container');
+         if (tableList) tableList.classList.remove('hidden');
+         
+         const tablesView = document.getElementById('tables-view');
+         tablesView.classList.remove('flex-1', 'overflow-hidden');
+         
+         const tablesViewLeft = tablesView.querySelector('.flex-1');
+         tablesViewLeft.classList.remove('flex', 'flex-col', 'h-full', 'overflow-hidden');
+         
+         const gc = document.getElementById('game-container');
+         gc.classList.add('hidden', 'min-h-[600px]');
+         gc.classList.remove('flex-1', 'flex', 'items-center', 'justify-center', 'overflow-hidden');
 
          // Update tabs UI
          const tabLobi = document.getElementById('spa-tab-lobi');
@@ -1120,37 +1168,52 @@
          window.dispatchEvent(new CustomEvent('switch-chat-tab', {detail: ('lobi')}));
       };
 
-      // Auto-scale Okey101 game board to fit the container
+      // Auto-scale Okey101 game board to perfectly fill the container
       function resizeGameContainer() {
         const gc = document.getElementById('game-container');
-        const okey101 = document.querySelector('.okey101');
         const gameScaler = document.querySelector('.game-scaler');
+        const okey101 = document.querySelector('.okey101');
         
-        if (gc && okey101 && !gc.classList.contains('hidden')) {
-           const containerWidth = gc.clientWidth;
-           const availableWidth = containerWidth - 40; // 20px padding on each side
-           let scaleW = availableWidth / 755;
+        if (gc && gameScaler && okey101 && !gc.classList.contains('hidden')) {
+           const availableWidth = gc.clientWidth;
+           let availableHeight = gc.clientHeight;
            
-           // Constrain by height to prevent vertical scrolling
-           const originalHeight = okey101.offsetHeight || 645;
-           // Estimate header + padding height (approx 110px) to allow the game to be bigger
-           const availableHeight = window.innerHeight - 110; 
+           // If scrolling is allowed, clientHeight might collapse or not account for full screen properly.
+           // We ensure it takes a good chunk of the viewport minus the chat panel.
+           if (availableHeight < 500) {
+               availableHeight = Math.max(500, window.innerHeight - 320); 
+           }
+           
+           const originalWidth = 1100;
+           const originalHeight = 750;
+           
+           let scaleW = availableWidth / originalWidth;
            let scaleH = availableHeight / originalHeight;
            
-           // Use the smaller of the two scales to ensure it fits perfectly in the viewport
+           // Orantıyı bozmadan sığması için en küçük ölçeği seç
            let scale = Math.min(scaleW, scaleH);
            
-           // Keep reasonable limits so it doesn't get too small or too large
-           if (scale > 1.35) scale = 1.35; 
-           if (scale < 0.6) scale = 0.6; 
+           if (scale > 1.35) scale = 1.35;
            
+           gameScaler.style.transform = 'scale(' + scale + ')';
+           gameScaler.style.transformOrigin = 'center center';
+           
+           gameScaler.style.width = originalWidth + 'px';
+           gameScaler.style.height = originalHeight + 'px';
+           
+           okey101.style.width = '100%';
+           okey101.style.height = '100%';
            okey101.style.setProperty('--scale', scale);
            
-           if (gameScaler) {
-             gameScaler.style.height = (originalHeight * scale + 40) + 'px';
+           const game = okey101.querySelector('.game');
+           if (game) {
+               game.style.width = '100%';
+               game.style.height = '100%';
            }
         }
       }
+      
+      window.addEventListener('resize', resizeGameContainer);
       
       window.addEventListener('resize', resizeGameContainer);
       // Trigger resize after a small delay when game starts

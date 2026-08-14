@@ -21,7 +21,16 @@
 
     <!-- TAHTA -->
     <div class="board-wrap">
-      <div class="board">
+      <div class="board" id="board" style="position:relative;">
+      
+        <!-- Sol Butonlar (Dikey) -->
+        <div class="left-actions" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 8px; z-index: 10;">
+          <div class="diz-btn" id="btn-sort-pairs" role="button" tabindex="0" aria-label="Çift Diz">ÇİFT<br aria-hidden="true">DİZ</div>
+          <div class="diz-btn" id="btn-sort-series" role="button" tabindex="0" aria-label="Seri Diz">SERİ<br aria-hidden="true">DİZ</div>
+          <div class="diz-btn action-ac" id="btn-open-pairs" role="button" tabindex="0" aria-label="Çift Aç">ÇİFT<br aria-hidden="true">AÇ</div>
+          <div class="diz-btn action-ac" id="btn-open-series" role="button" tabindex="0" aria-label="Seri Aç">SERİ<br aria-hidden="true">AÇ</div>
+          <div class="diz-btn action-gosterge" id="btn-show-indicator" role="button" tabindex="0" aria-label="Gösterge" style="display:none; background:#3498db;">GÖSTER</div>
+        </div>
 
         <!-- KÖŞELER (Atılan Taşlar) -->
         <div class="discard discard-pos-top" id="discard-top"></div>
@@ -89,13 +98,6 @@
 
     <!-- KONTROLLER -->
     <div class="controls">
-      <div class="left-actions" style="display:flex; gap:10px;">
-        <div class="diz-btn" id="btn-sort-pairs" role="button" tabindex="0" aria-label="Çift Diz">ÇİFT<br aria-hidden="true">DİZ</div>
-        <div class="diz-btn" id="btn-sort-series" role="button" tabindex="0" aria-label="Seri Diz">SERİ<br aria-hidden="true">DİZ</div>
-        <div class="diz-btn action-ac" id="btn-open-pairs" role="button" tabindex="0" aria-label="Çift Aç">ÇİFT<br aria-hidden="true">AÇ</div>
-        <div class="diz-btn action-ac" id="btn-open-series" role="button" tabindex="0" aria-label="Seri Aç">SERİ<br aria-hidden="true">AÇ</div>
-        <div class="diz-btn action-gosterge" id="btn-show-indicator" role="button" tabindex="0" aria-label="Gösterge" style="display:none; background:#3498db;">GÖSTERGE</div>
-      </div>
 
       <div class="local-player-hud" id="seat-bottom">
         <span class="score-pill" id="score-bottom">0</span>
@@ -188,17 +190,39 @@
   // Resize logic for game-scaler
   function resizeGame() {
     const scaler = document.querySelector('.game-scaler');
-    const game = document.querySelector('.okey101');
-    if (!scaler || !game) return;
+    const okey101 = document.querySelector('.okey101');
+    const game = document.querySelector('.okey101 .game');
     
-    // Original width is 755px. Let's scale if the screen is smaller than 800px.
-    const screenWidth = window.innerWidth;
-    let scale = 1;
-    if (screenWidth < 800) {
-      scale = screenWidth / 780; // a little padding
+    // If we are in SPA mode, salon.ejs handles resizing
+    if (document.getElementById('game-container') && !document.getElementById('game-container').classList.contains('hidden')) return;
+    
+    if (!scaler || !okey101) return;
+    
+    const availableWidth = window.innerWidth;
+    const availableHeight = window.innerHeight;
+    
+    const originalWidth = 1100;
+    const originalHeight = 650;
+    
+    let scaleW = availableWidth / originalWidth;
+    let scaleH = availableHeight / originalHeight;
+    let scale = Math.min(scaleW, scaleH);
+    
+    if (scale > 1.35) scale = 1.35;
+    
+    scaler.style.transform = 'scale(' + scale + ')';
+    scaler.style.transformOrigin = 'center center';
+    scaler.style.width = originalWidth + 'px';
+    scaler.style.height = originalHeight + 'px';
+    
+    okey101.style.width = '100%';
+    okey101.style.height = '100%';
+    okey101.style.setProperty('--scale', scale);
+    
+    if (game) {
+        game.style.width = '100%';
+        game.style.height = '100%';
     }
-    
-    game.style.setProperty('--scale', scale);
   }
 
   window.addEventListener('resize', resizeGame);
