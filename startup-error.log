@@ -605,3 +605,137 @@ Error: listen EADDRINUSE: address already in use :::3000
     at Server.listen (node:net:2110:7)
     at C:\Users\eness\Desktop\LOOTIV\server.js:2718:12
     at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+
+[2026-08-18T11:53:02.033Z] uncaughtException
+C:\Users\eness\Desktop\LOOTIV\lib\db.js:1731
+      INSERT INTO game_sessions (user_id, game, room_id, start_lt) VALUES ($1, $2, $3, $4) RETURNING id,
+      ^^^^^^
+
+SyntaxError: missing ) after argument list
+    at wrapSafe (node:internal/modules/cjs/loader:1743:18)
+    at Module._compile (node:internal/modules/cjs/loader:1786:20)
+    at Object..js (node:internal/modules/cjs/loader:1943:10)
+    at Module.load (node:internal/modules/cjs/loader:1533:32)
+    at Module._load (node:internal/modules/cjs/loader:1335:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+    at Module.require (node:internal/modules/cjs/loader:1556:12)
+    at require (node:internal/modules/helpers:152:16)
+    at Object.<anonymous> (C:\Users\eness\Desktop\LOOTIV\server.js:40:12)
+    at Module._compile (node:internal/modules/cjs/loader:1812:14)
+
+[2026-08-18T11:53:04.063Z] uncaughtException
+C:\Users\eness\Desktop\LOOTIV\lib\db.js:1731
+      INSERT INTO game_sessions (user_id, game, room_id, start_lt) VALUES ($1, $2, $3, $4) RETURNING id,
+      ^^^^^^
+
+SyntaxError: missing ) after argument list
+    at wrapSafe (node:internal/modules/cjs/loader:1743:18)
+    at Module._compile (node:internal/modules/cjs/loader:1786:20)
+    at Object..js (node:internal/modules/cjs/loader:1943:10)
+    at Module.load (node:internal/modules/cjs/loader:1533:32)
+    at Module._load (node:internal/modules/cjs/loader:1335:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+    at Module.require (node:internal/modules/cjs/loader:1556:12)
+    at require (node:internal/modules/helpers:152:16)
+    at Object.<anonymous> (C:\Users\eness\Desktop\LOOTIV\server.js:40:12)
+    at Module._compile (node:internal/modules/cjs/loader:1812:14)
+
+[2026-08-18T11:54:01.627Z] uncaughtException
+C:\Users\eness\Desktop\LOOTIV\lib\turkPokerTable.js:708
+    const winMap = new Map();
+    ^^^^^
+
+SyntaxError: Unexpected token 'const'
+    at wrapSafe (node:internal/modules/cjs/loader:1743:18)
+    at Module._compile (node:internal/modules/cjs/loader:1786:20)
+    at Object..js (node:internal/modules/cjs/loader:1943:10)
+    at Module.load (node:internal/modules/cjs/loader:1533:32)
+    at Module._load (node:internal/modules/cjs/loader:1335:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+    at Module.require (node:internal/modules/cjs/loader:1556:12)
+    at require (node:internal/modules/helpers:152:16)
+    at Object.<anonymous> (C:\Users\eness\Desktop\LOOTIV\server.js:43:28)
+    at Module._compile (node:internal/modules/cjs/loader:1812:14)
+
+[2026-08-18T12:20:13.414Z] uncaughtException
+Error: listen EADDRINUSE: address already in use :::3000
+    at Server.setupListenHandle [as _listen2] (node:net:1948:16)
+    at listenInCluster (node:net:2005:12)
+    at Server.listen (node:net:2110:7)
+    at C:\Users\eness\Desktop\LOOTIV\server.js:2744:12
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+
+[2026-08-18T13:18:53.908Z] unhandledRejection
+ReferenceError: isBot is not defined
+    at TurkPokerTable.sit (C:\Users\eness\Desktop\LOOTIV\lib\turkPokerTable.js:208:5)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Socket.<anonymous> (C:\Users\eness\Desktop\LOOTIV\server.js:2197:21)
+
+[2026-08-18T13:18:57.900Z] unhandledRejection
+ReferenceError: isBot is not defined
+    at TurkPokerTable.sit (C:\Users\eness\Desktop\LOOTIV\lib\turkPokerTable.js:208:5)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Socket.<anonymous> (C:\Users\eness\Desktop\LOOTIV\server.js:2197:21)
+
+[2026-08-18T13:18:58.388Z] unhandledRejection
+ReferenceError: isBot is not defined
+    at TurkPokerTable.sit (C:\Users\eness\Desktop\LOOTIV\lib\turkPokerTable.js:208:5)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Socket.<anonymous> (C:\Users\eness\Desktop\LOOTIV\server.js:2197:21)
+
+[2026-08-18T13:18:58.865Z] unhandledRejection
+ReferenceError: isBot is not defined
+    at TurkPokerTable.sit (C:\Users\eness\Desktop\LOOTIV\lib\turkPokerTable.js:208:5)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Socket.<anonymous> (C:\Users\eness\Desktop\LOOTIV\server.js:2197:21)
+
+[2026-08-18T13:18:59.382Z] unhandledRejection
+ReferenceError: isBot is not defined
+    at TurkPokerTable.sit (C:\Users\eness\Desktop\LOOTIV\lib\turkPokerTable.js:208:5)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Socket.<anonymous> (C:\Users\eness\Desktop\LOOTIV\server.js:2197:21)
+
+[2026-08-18T13:19:00.091Z] unhandledRejection
+ReferenceError: isBot is not defined
+    at TurkPokerTable.sit (C:\Users\eness\Desktop\LOOTIV\lib\turkPokerTable.js:208:5)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Socket.<anonymous> (C:\Users\eness\Desktop\LOOTIV\server.js:2197:21)
+
+[2026-08-18T13:19:06.756Z] unhandledRejection
+ReferenceError: isBot is not defined
+    at TurkPokerTable.sit (C:\Users\eness\Desktop\LOOTIV\lib\turkPokerTable.js:208:5)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Socket.<anonymous> (C:\Users\eness\Desktop\LOOTIV\server.js:2197:21)
+
+[2026-08-18T13:31:54.871Z] unhandledRejection
+ReferenceError: isBot is not defined
+    at TurkPokerTable.sit (C:\Users\eness\Desktop\LOOTIV\lib\turkPokerTable.js:208:5)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Socket.<anonymous> (C:\Users\eness\Desktop\LOOTIV\server.js:2197:21)
+
+[2026-08-18T13:34:37.420Z] uncaughtException
+ReferenceError: isBot is not defined
+    at TurkPokerTable.addBot (C:\Users\eness\Desktop\LOOTIV\lib\turkPokerTable.js:69:5)
+    at Socket.<anonymous> (C:\Users\eness\Desktop\LOOTIV\server.js:2221:43)
+    at Socket.emit (node:events:508:28)
+    at Socket.emitUntyped (C:\Users\eness\Desktop\LOOTIV\node_modules\socket.io\dist\typed-events.js:69:22)
+    at C:\Users\eness\Desktop\LOOTIV\node_modules\socket.io\dist\socket.js:697:39
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11)
+
+[2026-08-18T13:37:11.880Z] unhandledRejection
+ReferenceError: isBot is not defined
+    at TurkPokerTable.sit (C:\Users\eness\Desktop\LOOTIV\lib\turkPokerTable.js:202:5)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Socket.<anonymous> (C:\Users\eness\Desktop\LOOTIV\server.js:2197:21)
+
+[2026-08-18T13:37:48.781Z] unhandledRejection
+ReferenceError: isBot is not defined
+    at TurkPokerTable.sit (C:\Users\eness\Desktop\LOOTIV\lib\turkPokerTable.js:202:5)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Socket.<anonymous> (C:\Users\eness\Desktop\LOOTIV\server.js:2197:21)
+
+[2026-08-18T13:37:48.784Z] unhandledRejection
+ReferenceError: isBot is not defined
+    at TurkPokerTable.sit (C:\Users\eness\Desktop\LOOTIV\lib\turkPokerTable.js:202:5)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Socket.<anonymous> (C:\Users\eness\Desktop\LOOTIV\server.js:2197:21)
