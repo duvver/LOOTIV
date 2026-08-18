@@ -23,8 +23,6 @@ require('dotenv').config();
 
 const crypto = require('node:crypto');
 const express = require('express');
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
 const session = require('express-session');
 const bcrypt = require('bcryptjs');
 // Nginx Unit uzerinde calisirken (DirectAdmin "Nginx birimi") istekleri Node'a
@@ -33,7 +31,7 @@ const bcrypt = require('bcryptjs');
 let http;
 try {
   http = require('unit-http');
-
+  console.log('unit-http modulu bulundu, Nginx Unit uyumlu modda calisiliyor.');
 } catch (err) {
   http = require('node:http');
 }
@@ -47,19 +45,14 @@ const { OkeyTable } = require('./lib/okeyTable');
 const { Okey101Table } = require('./lib/okey101Table');
 
 const app = express();
-app.use(helmet({ contentSecurityPolicy: false })); // CSP devredışı bırakıldı ki oyun içi resimler çalışsın
-
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 dakika
-  max: 1000, // IP başına 1000 istek
-  message: 'Çok fazla istek gönderdiniz, lütfen daha sonra tekrar deneyin.'
-});
-app.use(limiter);
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: process.env.CORS_ORIGIN || '*' } });
+const io = new Server(server);
 
 const PORT = process.env.PORT || 3000;
 const RUMUZ_RE = /^[a-zA-Z0-9_]{3,20}$/;
+
+global.botTestMode = true;
+global.botTestCount = 500;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function asyncHandler(fn) {
@@ -73,22 +66,15 @@ function generateCode() {
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 // Avatar (profil resmi) data-URL olarak gonderilebildigi icin limit yukseltildi.
-app.use(express.urlencoded({ extended: false, limit: '200kb' }));
-app.use(express.json({ limit: '200kb' }));
+app.use(express.urlencoded({ extended: false, limit: '3mb' }));
+app.use(express.json({ limit: '3mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
-  console.error("FATAL ERROR: SESSION_SECRET is not defined in production.");
-  process.exit(1);
-}
-app.set('trust proxy', 1);
-const pgSession = require('connect-pg-simple')(session);
 const sessionMiddleware = session({
-  store: new pgSession({ pool: require('./lib/db').pool, tableName: 'session' }),
   secret: process.env.SESSION_SECRET || 'lootiv-gizli-anahtar-degistir',
   resave: false,
   saveUninitialized: false,
-  cookie: { maxAge: 1000 * 60 * 60 * 24 * 7, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', httpOnly: true },
+  cookie: { maxAge: 1000 * 60 * 60 * 24 * 7 },
 });
 app.use(sessionMiddleware);
 
@@ -104,18 +90,16 @@ const attachUser = asyncHandler(async (req, res, next) => {
   res.locals.unreadCount = 0;
   res.locals.pendingFriendCount = 0;
   if (req.session.userId) {
-    const [_, user] = await Promise.all([
-      db.syncVip(req.session.userId).catch(() => {}),
-      db.getUserById(req.session.userId)
-    ]);
+    await db.syncVip(req.session.userId).catch(() => {});
+    const user = await db.getUserById(req.session.userId);
     if (user) {
       req.user = user;
-      const [uCount, pCount] = await Promise.all([
-        db.getUnreadAnnouncementCount(user.id, user.last_seen_announcement_id).catch(() => 0),
-        db.getPendingFriendRequestCount(user.id).catch(() => 0)
-      ]);
-      res.locals.unreadCount = uCount;
-      res.locals.pendingFriendCount = pCount;
+      res.locals.unreadCount = await db
+        .getUnreadAnnouncementCount(user.id, user.last_seen_announcement_id)
+        .catch(() => 0);
+      res.locals.pendingFriendCount = await db
+        .getPendingFriendRequestCount(user.id)
+        .catch(() => 0);
     } else {
       req.session.userId = null;
     }
@@ -165,6 +149,7 @@ app.get(
     }
     const vipLinks = await db.getVipLinks();
     const blogs = await db.getAllBlogs(5).catch(() => []);
+    const gameStatuses = await db.getAllGameStatuses();
 
     res.render('lobby', {
       user: req.user || null,
@@ -181,6 +166,7 @@ app.get(
       vipPlans: db.getVipPlans(),
       vipLinks,
       blogs,
+      gameStatuses,
     });
   })
 );
@@ -193,8 +179,7 @@ app.post(
     const { identifier, password } = req.body;
     const user = identifier ? await db.getUserByIdentifier(identifier) : null;
 
-    const passwordMatch = user ? await bcrypt.compare(password || '', user.password_hash) : false;
-    if (!user || !passwordMatch) {
+    if (!user || !bcrypt.compareSync(password || '', user.password_hash)) {
       req.session.loginError = 'Rumuz/E-posta veya sifre hatali.';
       req.session.loginIdentifier = identifier || '';
       return res.redirect('/giris');
@@ -208,7 +193,8 @@ app.post(
       return res.redirect('/giris');
     }
 
-    req.session.regenerate((err) => { req.session.userId = user.id; req.session.save(() => { res.redirect('/'); }); });
+    req.session.userId = user.id;
+    res.redirect('/');
   })
 );
 
@@ -218,9 +204,9 @@ app.post('/logout', (req, res) => {
 
 // ---- Giris sayfasi (misafirler icin) ----
 
-app.get('/vip', (req, res) => {
+app.get('/vip', attachUser, (req, res) => {
   res.render('vip', {
-    user: req.session.user || null,
+    user: req.user || null,
     path: '/vip',
     _pendingFriends: res.locals._pendingFriends || 0
   });
@@ -280,6 +266,25 @@ app.post(
     req.session.userId = userId;
     // Yeni uye once karakterini secsin.
     res.redirect('/karakter-sec');
+  })
+);
+
+// ================= Kazı Kazan =================
+app.get(
+  '/kazikazan',
+  attachUser,
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const scratchConfig = await db.getScratchConfig();
+    if (!scratchConfig || !scratchConfig.active) {
+      return res.redirect('/');
+    }
+    const scratchCountToday = await db.getUserScratchCountToday(req.user.id);
+    res.render('kazikazan', {
+      user: req.user,
+      scratchConfig,
+      scratchCountToday,
+    });
   })
 );
 
@@ -426,7 +431,8 @@ app.post(
     const code = generateCode();
     await db.setEmailVerificationCode(req.user.id, code);
     await renderProfileSettings(req, res, {
-      info: 'Dogrulama kodu gonderildi.',
+      emailCode: code,
+      info: 'Demo modu: kod gercekten gonderilmedi, asagida gosteriliyor.',
     });
   })
 );
@@ -473,7 +479,8 @@ app.post(
     const code = generateCode();
     await db.setPhoneVerificationCode(req.user.id, code);
     await renderProfileSettings(req, res, {
-      info: 'Dogrulama kodu gonderildi.',
+      phoneCode: code,
+      info: 'Demo modu: kod gercekten gonderilmedi, asagida gosteriliyor.',
     });
   })
 );
@@ -537,15 +544,9 @@ app.post(
     // Guvenlik: sadece http(s) veya makul boyutta bir data:image URL'sine izin ver.
     let value = null;
     if (raw) {
-      let isHttp = false;
-        try {
-            const urlObj = new URL(raw);
-            if (urlObj.protocol === 'http:' || urlObj.protocol === 'https:') {
-                isHttp = true;
-            }
-        } catch(e) {}
+      const isHttp = /^https?:\/\/.+/i.test(raw);
       const isDataImg = /^data:image\/(png|jpe?g|gif|webp);base64,/i.test(raw);
-      if ((isHttp || isDataImg) && raw.length <= 500 * 1024) {
+      if ((isHttp || isDataImg) && raw.length <= 2 * 1024 * 1024) {
         value = raw;
       }
     }
@@ -568,7 +569,8 @@ app.post(
     if (!tier) {
       return renderProfileSettings(req, res, { error: 'Geçersiz veya kullanılmış VIP kodu.' });
     }
-    await renderProfileSettings(req, res, { info: `Tebrikler! VIP${tier} aktif edildi.` });
+    const tierName = tier === 1 ? 'Bronz Paket' : tier === 2 ? 'Gümüş Paket' : tier === 3 ? 'Altın Paket' : `VIP${tier}`;
+    await renderProfileSettings(req, res, { info: `Tebrikler! ${tierName} aktif edildi.` });
   })
 );
 
@@ -764,9 +766,50 @@ app.get(
 );
 
 // Pazar icinde ilan olusturma: envanterden esya sec + fiyat + sure (envantere yonlendirmeden).
-app.get('/pazar/ilan', (req, res) => res.redirect('/?construction=Pazar'));
+app.get(
+  '/pazar/ilan',
+  attachUser,
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const all = await db.getUserInventory(req.user.id);
+    const items = all.filter(function (i) { return !i.listed; });
+    const cfg = await db.getMarketConfig();
+    res.render('ilan-olustur', {
+      user: req.user,
+      items,
+      commission: cfg.commission_percent,
+      error: req.query.error || null,
+    });
+  })
+);
 
-app.post('/pazar/ilan', (req, res) => res.redirect('/?construction=Pazar'));
+app.post(
+  '/pazar/ilan',
+  attachUser,
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const invId = Number(req.body.invId);
+    const priceLt = Math.trunc(Number(req.body.price));
+    const allowedDur = { '24': 24, '48': 48, '168': 168 };
+    const durationHours = allowedDur[String(req.body.duration)] || 48;
+    const item = invId ? await db.getInventoryItem(invId) : null;
+    if (!item || item.user_id !== req.user.id) {
+      return res.redirect('/pazar/ilan?error=' + encodeURIComponent('Lutfen envanterinden gecerli bir esya sec.'));
+    }
+    if (!Number.isFinite(priceLt) || priceLt <= 0 || priceLt > 2147483647) {
+      return res.redirect('/pazar/ilan?error=' + encodeURIComponent('Gecerli bir fiyat gir (0dan buyuk ve en fazla 2,147,483,647).'));
+    }
+    const result = await db.createListingFromInventory({
+      invId,
+      userId: req.user.id,
+      sellerRumuz: req.user.rumuz,
+      priceLt,
+      durationHours,
+    });
+    if (result.error) return res.redirect('/pazar/ilan?error=' + encodeURIComponent(result.error));
+    res.redirect('/pazar?info=' + encodeURIComponent('Ilanin yayinlandi.'));
+  })
+);
 
 // Envanter: kullanicinin sahip oldugu esyalar; buradan satisa koyar.
 app.get(
@@ -777,12 +820,56 @@ app.get(
   })
 );
 
-app.post('/envanter/upgrade/:invId', (req, res) => res.redirect('/?construction=Envanter'));
+app.post(
+  '/envanter/upgrade/:invId',
+  attachUser,
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const result = await db.upgradeInventoryItem(Number(req.params.invId), req.user.id);
+    if (result.error) {
+      return res.redirect('/envanter?error=' + encodeURIComponent(result.error));
+    }
+    res.redirect('/envanter?info=' + encodeURIComponent('Esya basariyla +' + result.newLevel + ' seviyesine yukseltildi!'));
+  })
+);
 
 // Envanterdeki bir esyayi satisa koyma formu (sadece fiyat).
-app.get('/pazar/sat/:invId', (req, res) => res.redirect('/?construction=Pazar'));
+app.get(
+  '/pazar/sat/:invId',
+  attachUser,
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const item = await db.getInventoryItem(Number(req.params.invId));
+    if (!item || item.user_id !== req.user.id) return res.redirect('/envanter');
+    if (item.listed) return res.redirect('/envanter?error=' + encodeURIComponent('Bu esya zaten satista.'));
+    const cfg = await db.getMarketConfig();
+    res.render('pazar-sat', { user: req.user, item, commission: cfg.commission_percent, error: null });
+  })
+);
 
-app.post('/pazar/sat/:invId', (req, res) => res.redirect('/?construction=Pazar'));
+app.post(
+  '/pazar/sat/:invId',
+  attachUser,
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const invId = Number(req.params.invId);
+    const priceLt = Math.trunc(Number(req.body.price));
+    const item = await db.getInventoryItem(invId);
+    if (!item || item.user_id !== req.user.id) return res.redirect('/envanter');
+    if (!Number.isFinite(priceLt) || priceLt <= 0 || priceLt > 2147483647) {
+      const cfg = await db.getMarketConfig();
+      return res.render('pazar-sat', { user: req.user, item, commission: cfg.commission_percent, error: 'Gecerli bir fiyat gir (0dan buyuk ve en fazla 2,147,483,647).' });
+    }
+    const result = await db.createListingFromInventory({
+      invId,
+      userId: req.user.id,
+      sellerRumuz: req.user.rumuz,
+      priceLt,
+    });
+    if (result.error) return res.redirect('/envanter?error=' + encodeURIComponent(result.error));
+    res.redirect('/pazar?info=' + encodeURIComponent('Ilanin yayinlandi.'));
+  })
+);
 
 app.post(
   '/pazar/:id/satinal',
@@ -826,33 +913,31 @@ function requireRoomAccess(req, res, next) {
     return next();
   }
   
-  res.redirect(`/oyun/${room.game}?error=private`);
+  res.redirect(`/oyun/salon_${room.game}?error=private`);
 }
 
 // ---- Texas Hold'em odasi ----
-app.get('/poker', (req, res) => res.redirect('/oyun/poker'));
+app.get('/poker', attachUser, requireAuth, requireRoomAccess, (req, res) => {
+  res.render('poker', { user: req.user });
+});
 
-app.get('/turkpoker', (req, res) => res.redirect('/oyun/turkpoker'));
-app.get('/okey', (req, res) => res.redirect('/oyun/okey'));
-app.get('/okey101', (req, res) => res.redirect('/oyun/okey101'));
+// ---- Turk Pokeri odasi ----
+app.get('/turkpoker', attachUser, requireAuth, requireRoomAccess, (req, res) => {
+  res.render('turkpoker', { user: req.user });
+});
+
+// ---- Canak Okey odasi ----
+app.get('/okey', attachUser, requireAuth, requireRoomAccess, (req, res) => {
+  res.render('okey', { user: req.user });
+});
+
+// ---- 101 Okey odasi ----
+app.get('/okey101', attachUser, requireAuth, requireRoomAccess, (req, res) => {
+  res.render('okey101', { user: req.user });
+});
 
 // ---- Oyun salonu (bahis salonlari + masa listesi) ----
 // Su an gorunum katmani; canli masa sistemi (backend) bir sonraki adimda baglanacak.
-
-const TIMER_PRESETS = [
-  { id: 'normal', label: 'Normal', seconds: 30, icon: 'timer', default: true },
-  { id: 'hizli', label: 'Hızlı', seconds: 15, icon: 'speed' },
-  { id: 'cokhizli', label: 'Çok Hızlı', seconds: 10, icon: 'bolt' }
-];
-
-const HAND_LIMITS = [
-  { value: 0, label: 'Sınırsız', default: true },
-  { value: 3, label: '3 El' },
-  { value: 5, label: '5 El' },
-  { value: 10, label: '10 El' },
-  { value: 20, label: '20 El' }
-];
-
 const GAME_META = {
   okey101: {
     slug: 'okey101',
@@ -869,9 +954,6 @@ const GAME_META = {
       { id: 'esli', label: 'Eşli', default: false }
     ],
     bets: [],
-    seatOptions: [{ value: 4, label: '4 Oyuncu', default: true }],
-    timerPresets: TIMER_PRESETS,
-    handLimits: HAND_LIMITS,
     howToPlay: [
       "Elinizdeki taşları seri veya çift yaparak toplamda en az 101 sayıya ulaşın.",
       "Yere açılan serilere taş işleyebilir veya bitmek için tüm taşlarınızı per yapabilirsiniz.",
@@ -900,9 +982,6 @@ const GAME_META = {
       { id: '10000', label: 'Pro', amount: '10K G', value: 10000 },
       { id: '50000', label: 'Elit', amount: '50K G', value: 50000 }
     ],
-    seatOptions: [{ value: 4, label: '4 Oyuncu', default: true }],
-    timerPresets: TIMER_PRESETS,
-    handLimits: HAND_LIMITS,
     howToPlay: [
       "Taşları aynı renkten sıralı veya farklı renkten aynı sayılar olacak şekilde en az 3'lü perler yapın.",
       "Okey taşı, joker yerine geçer. Göstergeyi ilk elde belli edip ekstra puan alabilirsiniz.",
@@ -915,7 +994,7 @@ const GAME_META = {
     icon: '&#127183;',
     accent: '#353b99',
     playUrl: '/poker',
-    desc: '2-4 kisi, blöf, renk ve rest heyecanı. Acik poker.',
+    desc: '',
     rules: [
       { id: 'hizli', label: 'Hızlı Oyun', type: 'toggle', default: false }
     ],
@@ -928,13 +1007,6 @@ const GAME_META = {
       { id: '10000', label: 'Pro', amount: '10K G', value: 10000 },
       { id: '50000', label: 'Elit', amount: '50K G', value: 50000 }
     ],
-    seatOptions: [
-      { value: 2, label: '2 Oyuncu' },
-      { value: 3, label: '3 Oyuncu' },
-      { value: 4, label: '4 Oyuncu', default: true }
-    ],
-    timerPresets: TIMER_PRESETS,
-    handLimits: HAND_LIMITS,
     howToPlay: [
       "Her oyuncuya 2 kapalı kart dağıtılır. Ortaya 5 ortak kart açılır.",
       "Oyun ilerledikçe ortak kartlar (Flop, Turn, River) sırayla açılır ve bahis yapılır.",
@@ -947,7 +1019,7 @@ const GAME_META = {
     icon: '&#127183;',
     accent: '#353b99',
     playUrl: '/turkpoker',
-    desc: '2-4 kisi, blöf, renk ve rest heyecanı. Kapali poker.',
+    desc: '',
     rules: [
       { id: 'hizli', label: 'Hızlı Oyun', type: 'toggle', default: false }
     ],
@@ -960,13 +1032,6 @@ const GAME_META = {
       { id: '10000', label: 'Pro', amount: '10K G', value: 10000 },
       { id: '50000', label: 'Elit', amount: '50K G', value: 50000 }
     ],
-    seatOptions: [
-      { value: 2, label: '2 Oyuncu' },
-      { value: 3, label: '3 Oyuncu' },
-      { value: 4, label: '4 Oyuncu', default: true }
-    ],
-    timerPresets: TIMER_PRESETS,
-    handLimits: HAND_LIMITS,
     howToPlay: [
       "Her oyuncuya 5 kapalı kart dağıtılır. İlk bahis turu (Kör Bahis) yapılır.",
       "Oyuncular ellerine uymayan 0-4 arası kartı değiştirme hakkına (Draw) sahiptir.",
@@ -979,41 +1044,10 @@ const GAME_META = {
 app.get('/oyun/:oyun', attachUser, requireAuth, asyncHandler(async (req, res) => {
   const meta = GAME_META[req.params.oyun];
   if (!meta) return res.redirect('/');
-  const userStats = req.user ? await db.getUserProfile(req.user.id) : null;
-  res.render('salon', { user: req.user, meta, userStats });
+  const gameStatuses = await db.getAllGameStatuses();
+  if (gameStatuses[meta.slug] === false) return res.redirect('/');
+  res.render('salon', { user: req.user, meta });
 }));
-
-
-
-app.post('/admin/game_tables', requireAdmin, asyncHandler(async (req, res) => {
-  const { game_slug, count } = req.body;
-  const adet = parseInt(count, 10) || 1;
-  const currentTables = await db.getAllGameTables();
-  let gameCount = currentTables.filter(t => t.game_slug === game_slug).length;
-  const stake = 1000;
-  
-  for (let i = 0; i < adet; i++) {
-    gameCount++;
-    const title = "Masa #" + gameCount;
-    await db.addGameTable(game_slug, title, stake);
-  }
-  
-  await initSystemTables();
-  res.redirect('/admin');
-}));
-
-app.post('/admin/game_tables/:id/delete', requireAdmin, asyncHandler(async (req, res) => {
-  await db.deleteGameTable(req.params.id);
-  await initSystemTables();
-  res.redirect('/admin');
-}));
-
-app.post('/admin/game_tables/:id/toggle', requireAdmin, asyncHandler(async (req, res) => {
-  await db.toggleGameTable(req.params.id);
-  await initSystemTables();
-  res.redirect('/admin');
-}));
-
 
 // ================= Admin paneli =================
 app.get(
@@ -1037,8 +1071,11 @@ app.get(
     const commissionSettings = await db.getAllCommissionSettings();
     const treasuryBalance = await db.getCommissionBalance();
     const withdrawalHistory = await db.getWithdrawalHistory(50);
-    const gameTables = await db.getAllGameTables();
-      res.render('admin', {
+    const pokerConfig = await db.getPokerConfig();
+    const gameStatuses = await db.getAllGameStatuses();
+    const gameMeta = GAME_META; // Pass GAME_META to know which games exist
+
+    res.render('admin', {
       user: req.user,
       users,
       stats,
@@ -1059,9 +1096,62 @@ app.get(
       categories: db.MARKET_CATEGORIES,
       rarities: db.MARKET_RARITIES,
       vipPlans: db.getVipPlans(),
+      pokerConfig,
+      gameStatuses,
+      gameMeta,
+      botTestMode: global.botTestMode,
+      botTestCount: global.botTestCount,
       savedMsg: req.query.saved || null,
-      gameTables
     });
+  })
+);
+
+app.post(
+  '/admin/bot-test',
+  attachUser,
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const { botCount } = req.body;
+    const count = parseInt(botCount, 10);
+    
+    if (isNaN(count)) {
+      global.botTestMode = false;
+      global.botTestCount = 0;
+    } else if (count <= 0) {
+      global.botTestMode = false;
+      global.botTestCount = 0;
+    } else {
+      global.botTestMode = true;
+      global.botTestCount = Math.min(count, 2000); // 2000'e kadar sinir
+    }
+    
+    broadcastLobbyPlayers().catch(err => console.error(err));
+    res.redirect('/admin');
+  })
+);
+
+app.post(
+  '/admin/game-status',
+  attachUser,
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const { slug, is_active } = req.body;
+    if (!GAME_META[slug]) return res.redirect('/admin?error=Geçersiz oyun');
+    await db.setGameStatus(slug, is_active === 'true');
+    res.redirect('/admin?saved=Oyun durumu güncellendi');
+  })
+);
+app.post(
+  '/admin/poker-config',
+  attachUser,
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const tableCount = parseInt(req.body.table_count, 10);
+    if (!isNaN(tableCount) && tableCount > 0) {
+      await db.upsertPokerConfig(tableCount);
+      await reinitSystemPokerRooms(tableCount);
+    }
+    res.redirect('/admin?saved=poker#poker');
   })
 );
 
@@ -1200,7 +1290,8 @@ app.get(
     codes.forEach(c => {
       const status = c.is_used ? 'KULLANILDI' : 'AKTIF';
       const plat = (c.platform || 'genel').toUpperCase();
-      lines.push(c.code + '  |  VIP ' + c.tier + '  |  ' + plat + '  |  ' + status);
+      const tierName = c.tier === 1 ? 'Bronz Paket' : c.tier === 2 ? 'Gümüş Paket' : c.tier === 3 ? 'Altın Paket' : ('VIP ' + c.tier);
+      lines.push(c.code + '  |  ' + tierName + '  |  ' + plat + '  |  ' + status);
     });
 
     const filename = 'lootiv-epinler-' + new Date().toISOString().slice(0, 10) + '.txt';
@@ -1416,6 +1507,30 @@ app.post(
   })
 );
 
+// ---- API: Leaderboard, Recent Games, Online Users ----
+app.get('/api/leaderboard/:game_slug', attachUser, asyncHandler(async (req, res) => {
+  const game = req.params.game_slug;
+  const leaderboard = await db.getPokerLeaderboard(game);
+  res.json({ leaderboard });
+}));
+
+app.get('/api/users/online', attachUser, requireAuth, (req, res) => {
+  const uniqueUsers = [];
+  const seenIds = new Set();
+  for (const p of onlinePlayers.values()) {
+    if (p.userId && !seenIds.has(p.userId) && p.userId !== req.user.id) {
+      seenIds.add(p.userId);
+      uniqueUsers.push({ id: p.userId, username: p.name });
+    }
+  }
+  res.json({ users: uniqueUsers });
+});
+
+app.get('/api/my/recent-games', attachUser, requireAuth, asyncHandler(async (req, res) => {
+  const games = await db.getUserRecentGames(req.user.id, 10);
+  res.json({ games });
+}));
+
 // ---- 500 hata sayfasi (asyncHandler'dan gelen hatalar) ----
 app.use((err, req, res, next) => {
   writeStartupLog(`Route hatasi: ${req.method} ${req.originalUrl}`, err);
@@ -1454,9 +1569,19 @@ async function broadcastLobbyPlayers() {
     return;
   }
 
+  let fakeBotIds = [];
+  if (global.botTestMode && global.botTestCount > 0) {
+    for (let i = 1; i <= global.botTestCount; i++) {
+      fakeBotIds.push(`bot_${i}`);
+    }
+  }
+
   let brief = [];
   try {
-    brief = await db.getUsersBrief(ids);
+    const realIds = ids.filter(id => typeof id === 'number');
+    if (realIds.length > 0) {
+      brief = await db.getUsersBrief(realIds);
+    }
   } catch (err) {
     brief = [];
   }
@@ -1464,6 +1589,16 @@ async function broadcastLobbyPlayers() {
 
   const mapIds = (userList) => {
     return userList.map((id) => {
+      if (typeof id === 'string' && id.startsWith('bot_')) {
+        const botIndex = parseInt(id.split('_')[1], 10);
+        return {
+          rumuz: `Oyuncu_${botIndex}`,
+          lt: 5000 + (botIndex * 100),
+          avatar: null,
+          vip: botIndex % 4,
+          character: 'default'
+        };
+      }
       const u = byId.get(id);
       if (!u) return null;
       return {
@@ -1477,14 +1612,22 @@ async function broadcastLobbyPlayers() {
   };
 
   // Global lobby yayını
-  io.to('lobby').emit('lobby:players', mapIds(ids));
+  let globalLobbyIds = [...ids];
+  if (global.botTestMode) {
+    globalLobbyIds = [...globalLobbyIds, ...fakeBotIds];
+  }
+  io.to('lobby').emit('lobby:players', mapIds(globalLobbyIds));
 
   // Oyun özel lobileri için yayın
   for (const g of games) {
     const gameUserIds = Array.from(new Set(
       allPlayers.filter(p => p.game === g || p.game === 'salon_' + g).map(p => p.userId)
     ));
-    const gameList = mapIds(gameUserIds);
+    let combinedGameIds = [...gameUserIds];
+    if (g === 'okey101' && global.botTestMode) {
+      combinedGameIds = [...combinedGameIds, ...fakeBotIds];
+    }
+    const gameList = mapIds(combinedGameIds);
     io.to('salon_' + g).emit('lobby:players', gameList);
     io.to(g).emit('lobby:players', gameList);
   }
@@ -1522,35 +1665,10 @@ async function gameLogMessage(text, channel = 'oyun', room = null) {
 
 const table = new PokerTable();
 const turkPokerTable = new TurkPokerTable();
-const pendingStands = new Map();
+const pendingStandTimers = new Map();
+const pendingStandTimersTurkPoker = new Map();
 const RECONNECT_GRACE_MS = 8000;
 
-function handleDisconnectGracePeriod(table, gameStr, userId, reqRoomId) {
-  if (!table) return;
-  const idx = typeof table.findSeatByUser === 'function' ? table.findSeatByUser(userId) : -1;
-  if (idx !== -1) {
-    const timerKey = `${userId}_${gameStr}_${reqRoomId || 'global'}`;
-    const timer = setTimeout(() => {
-      pendingStands.delete(timerKey);
-      let res;
-      try {
-        if (gameStr === 'poker' || gameStr === 'turkpoker') {
-          res = table.stand(userId);
-          if (res && res.catch) res.catch(console.error);
-        } else {
-          res = table.stand(userId);
-          if (res && res.error) console.error(`${gameStr} otomatik kalkma hatasi:`, res.error);
-        }
-      } catch (err) {
-        console.error('Stand error:', err);
-      }
-      if (reqRoomId && typeof checkUserRoomCleanup === 'function') {
-        checkUserRoomCleanup(reqRoomId);
-      }
-    }, RECONNECT_GRACE_MS);
-    pendingStands.set(timerKey, timer);
-  }
-}
 table.on('log', (text) => gameLogMessage(text, 'oyun', 'poker').catch(console.error));
 table.on('update', (state) => {
   io.to('poker').emit('table:state', state);
@@ -1638,7 +1756,7 @@ turkPokerTable.on('hand-result', ({ handNumber, participants }) => {
 });
 
 const okeyTable = new OkeyTable();
-
+const pendingStandTimersOkey = new Map();
 
 okeyTable.on('log', (text) => gameLogMessage(text, 'okey', 'okey').catch(console.error));
 okeyTable.on('update', (state) => {
@@ -1682,7 +1800,7 @@ okeyTable.on('hand-result', ({ handNumber, participants }) => {
 
 // ---- 101 Okey masasi ----
 const okey101Table = new Okey101Table();
-
+const pendingStandTimers101 = new Map();
 
 okey101Table.on('log', (text) => gameLogMessage(text, 'okey101', 'okey101').catch(console.error));
 okey101Table.on('update', (state) => {
@@ -1697,11 +1815,6 @@ okey101Table.on('private-tiles', (payload) => {
       }
     }
   }
-});
-
-okey101Table.on('game-over', (payload) => {
-  io.to('okey101').emit('okey101:game-over', payload);
-  io.to('salon_okey101').emit('okey101:game-over', payload);
 });
 
 okey101Table.on('hand-result', ({ handNumber, participants }) => {
@@ -1733,43 +1846,6 @@ okey101Table.on('hand-result', ({ handNumber, participants }) => {
 let userRoomCounter = 1;
 const activeUserRooms = new Map();
 
-// ---- Admin Game Tables ----
-async function initSystemTables() {
-  try {
-    // Sadece sistem odalarini temizle, kullanici odalarini koru
-    for (const [id, room] of activeUserRooms.entries()) {
-      if (room.isSystem) activeUserRooms.delete(id);
-    }
-    const tables = await db.getAllGameTables();
-    for (const t of tables) {
-      if (!t.is_active) continue;
-      const roomId = 'sys_' + t.id;
-      let tableInstance;
-      if (t.game_slug === 'poker') tableInstance = new PokerTable({ buyIn: t.stake * 10, smallBlind: t.stake, bigBlind: t.stake * 2 });
-      else if (t.game_slug === 'turkpoker') tableInstance = new TurkPokerTable({ buyIn: t.stake * 10, smallBlind: t.stake });
-      else if (t.game_slug === 'okey') tableInstance = new OkeyTable();
-      else if (t.game_slug === 'okey101') tableInstance = new Okey101Table();
-      else continue;
-      
-      tableInstance.stake = t.stake;
-      activeUserRooms.set(roomId, {
-        id: roomId,
-        game: t.game_slug,
-        title: t.title,
-        stake: t.stake,
-        mode: 'Tekli',
-        privacy: 'public',
-        table: tableInstance,
-        isSystem: true
-      });
-    }
-  } catch (err) {
-    console.error('Sistem masalari yuklenemedi', err);
-  }
-}
-initSystemTables();
-
-
 function getPublicRoomsList(gameSlug) {
   const rooms = [];
   for (const [id, r] of activeUserRooms.entries()) {
@@ -1785,15 +1861,9 @@ function getPublicRoomsList(gameSlug) {
         creatorName: r.creatorName,
         gameMode: r.table.gameMode || 'Tek',
         gameType: r.table.gameType || 'Katlamasız',
-        stage: r.table.stage || 'waiting',
         seatedCount: seated.length,
         seatCount: r.table.seats.length,
         seats: r.table.seats.map((s) => (s ? { name: s.name, isBot: !!s.isBot } : null)),
-        timerPreset: r.timerPreset || 'normal',
-        handLimit: r.handLimit || 0,
-        currentHand: r.table.handNumber || 0,
-        minBalance: r.minBalance || 0,
-        spectatorCount: r.spectators ? r.spectators.size : 0,
       });
     }
   }
@@ -1809,7 +1879,7 @@ function checkUserRoomCleanup(roomId) {
   const room = activeUserRooms.get(roomId);
   if (!room) return;
   const humanCount = room.table.seats.filter((s) => s && !s.isBot).length;
-  if (humanCount === 0 && !room.isSystem) {
+  if (humanCount === 0) {
     try { room.table.resetTable(); } catch (e) {}
     activeUserRooms.delete(roomId);
     broadcastUserRooms(room.game);
@@ -1818,113 +1888,8 @@ function checkUserRoomCleanup(roomId) {
   }
 }
 
-app.get('/api/turkpoker-leaderboard', async (req, res) => {
-  try {
-    const q = 'SELECT id, username, level, avatar_url, lt_balance FROM users ORDER BY lt_balance DESC LIMIT 10';
-    const rows = await db.pool.query(q);
-    res.json(rows.rows);
-  } catch (err) {
-    res.status(500).json({ error: 'Veritabani hatasi' });
-  }
-});
-
-app.get('/api/leaderboard/:game_slug', attachUser, asyncHandler(async (req, res) => {
-  const game = req.params.game_slug;
-  const leaderboard = await db.getPokerLeaderboard(game);
-  res.json({ leaderboard });
-}));
-
-app.get('/api/users/online', attachUser, requireAuth, (req, res) => {
-  const uniqueUsers = [];
-  const seenIds = new Set();
-  for (const p of onlinePlayers.values()) {
-    if (p.userId && !seenIds.has(p.userId) && p.userId !== req.user.id) {
-      seenIds.add(p.userId);
-      uniqueUsers.push({ id: p.userId, username: p.name });
-    }
-  }
-  res.json({ users: uniqueUsers });
-});
-
-app.get('/api/my/recent-games', attachUser, requireAuth, asyncHandler(async (req, res) => {
-  const games = await db.getUserRecentGames(req.user.id, 10);
-  res.json({ games });
-}));
-
-app.post('/api/rooms/create', attachUser, requireAuth, asyncHandler(async (req, res) => {
-  const { game, bet, mode, privacy, password, title: customTitle, rules, seatCount, timerPreset, handLimit, minBalance } = req.body;
-  if (!game || !GAME_META[game]) {
-    return res.status(400).json({ error: 'Geçersiz oyun.' });
-  }
-
-  const isVip = req.user.vip_tier > 0;
-  const parsedBet = Number(bet) || 500;
-  const stake = (parsedBet <= 0 || parsedBet > 2147483647) ? 500 : parsedBet;
-  const roomId = 'room_' + game + '_' + (userRoomCounter++);
-  let title = `Masa #${userRoomCounter - 1}`;
-  if (isVip && customTitle && typeof customTitle === 'string' && customTitle.trim()) {
-    title = customTitle.trim().slice(0, 30);
-  }
-
-  // Validate new options
-  const gameMeta = GAME_META[game];
-  const allowedSeats = gameMeta.seatOptions.map(s => s.value);
-  const validSeatCount = allowedSeats.includes(Number(seatCount)) ? Number(seatCount) : (gameMeta.seatOptions.find(s => s.default) || gameMeta.seatOptions[0]).value;
-  const timerEntry = TIMER_PRESETS.find(t => t.id === timerPreset) || TIMER_PRESETS.find(t => t.default);
-  const timerMs = timerEntry.seconds * 1000;
-  const allowedLimits = HAND_LIMITS.map(h => h.value);
-  const validHandLimit = allowedLimits.includes(Number(handLimit)) ? Number(handLimit) : 0;
-  const validMinBalance = (Number(minBalance) > 0 && Number(minBalance) <= 2147483647) ? Number(minBalance) : 0;
-
-  let tableInstance;
-  if (game === 'okey101') {
-    tableInstance = new Okey101Table();
-  } else if (game === 'okey') {
-    tableInstance = new OkeyTable();
-  } else if (game === 'turkpoker') {
-      tableInstance = new TurkPokerTable({ buyIn: stake * 10, smallBlind: stake, seatsCount: validSeatCount });
-  } else {
-      tableInstance = new PokerTable({ buyIn: stake * 10, smallBlind: stake, bigBlind: stake * 2, seatsCount: validSeatCount });
-  }
-  tableInstance.stake = stake;
-
-  // Apply new table options
-  if (typeof tableInstance.turnTimeoutMs !== 'undefined') tableInstance.turnTimeoutMs = timerMs;
-  if (typeof tableInstance.turnTimeLimit !== 'undefined') tableInstance.turnTimeLimit = timerMs;
-  tableInstance._customTurnTimeout = timerMs;
-  tableInstance.maxHands = validHandLimit;
-  tableInstance.minBalance = validMinBalance;
-
-  const isEsli = mode === 'esli';
-  tableInstance.gameMode = isEsli ? 'Eşli' : 'Tek';
-  const isKatlamali = Array.isArray(rules) ? rules.includes('katlamali') : !!rules;
-  tableInstance.isKatlamali = isKatlamali;
-  tableInstance.gameType = isKatlamali ? 'Katlamalı' : 'Katlamasız';
-
-  const roomObj = {
-    id: roomId,
-    game,
-    title,
-    stake,
-    mode: mode || 'solo',
-    privacy: privacy || 'public',
-    password: password || '',
-    creatorId: req.user.id,
-    creatorName: req.user.rumuz,
-    table: tableInstance,
-    createdAt: Date.now(),
-    timerPreset: timerEntry.id,
-    handLimit: validHandLimit,
-    minBalance: validMinBalance,
-    spectators: new Set(),
-  };
-
-  // Kurucuyu sunucuda hemen 0. koltuğa oturt
-  await tableInstance.sit(req.user, 0);
-
-  activeUserRooms.set(roomId, roomObj);
-
-  tableInstance.on('log', (text) => gameLogMessage(text, 'oda_' + roomId, roomId).catch(console.error));
+function wireTableEvents(tableInstance, game, roomId) {
+  tableInstance.on('log', (text) => gameLogMessage(text, 'oyun', game).catch(console.error));
   tableInstance.on('update', (state) => {
     io.to(roomId).emit(game + ':state', state);
     broadcastUserRooms(game);
@@ -1939,9 +1904,6 @@ app.post('/api/rooms/create', attachUser, requireAuth, asyncHandler(async (req, 
           }
         }
       }
-    });
-    tableInstance.on('game-over', (data) => {
-      io.to(roomId).emit(game + ':game-over', data);
     });
   } else if (game === 'poker' || game === 'turkpoker') {
     tableInstance.on('animation', (payload) => {
@@ -1975,12 +1937,72 @@ app.post('/api/rooms/create', attachUser, requireAuth, asyncHandler(async (req, 
               game: game,
             });
           } catch (err) {
-            console.error('Ozel oda oyun logu yazilamadi:', err);
+            console.error('Oda oyun logu yazilamadi:', err);
           }
         }
       })();
     });
   }
+}
+
+app.post('/api/rooms/create', attachUser, requireAuth, asyncHandler(async (req, res) => {
+  const { game, bet, mode, privacy, password, title: customTitle, rules } = req.body;
+  if (!game || !GAME_META[game]) {
+    return res.status(400).json({ error: 'Geçersiz oyun.' });
+  }
+
+  if (game === 'poker' || game === 'turkpoker') {
+    return res.status(400).json({ error: 'Bu oyunlar için yeni masa oluşturulamaz. Lütfen sistem masalarına katılın.' });
+  }
+
+  const isVip = req.user.vip_tier > 0;
+  const parsedBet = Number(bet) || 500;
+  const stake = (parsedBet <= 0 || parsedBet > 2147483647) ? 500 : parsedBet;
+  const roomId = 'room_' + game + '_' + (userRoomCounter++);
+  let title = `Masa #${userRoomCounter - 1}`;
+  if (isVip && customTitle && typeof customTitle === 'string' && customTitle.trim()) {
+    title = customTitle.trim().slice(0, 30);
+  }
+
+  let tableInstance;
+  if (game === 'okey101') {
+    tableInstance = new Okey101Table();
+  } else if (game === 'okey') {
+    tableInstance = new OkeyTable();
+  } else if (game === 'turkpoker') {
+    tableInstance = new TurkPokerTable();
+  } else {
+    tableInstance = new PokerTable();
+  }
+  tableInstance.stake = stake;
+
+  const isEsli = mode === 'esli';
+  tableInstance.gameMode = isEsli ? 'Eşli' : 'Tek';
+  const isKatlamali = Array.isArray(rules) ? rules.includes('katlamali') : !!rules;
+  tableInstance.isKatlamali = isKatlamali;
+  tableInstance.gameType = isKatlamali ? 'Katlamalı' : 'Katlamasız';
+
+  const roomObj = {
+    id: roomId,
+    game,
+    title,
+    stake,
+    mode: mode || 'solo',
+    privacy: privacy || 'public',
+    password: password || '',
+    creatorId: req.user.id,
+    creatorName: req.user.rumuz,
+    table: tableInstance,
+    createdAt: Date.now(),
+  };
+
+  // Kurucuyu sunucuda hemen 0. koltuğa oturt
+  await tableInstance.sit(req.user, 0);
+
+
+  activeUserRooms.set(roomId, roomObj);
+
+  wireTableEvents(tableInstance, game, roomId);
 
   broadcastUserRooms(game);
 
@@ -2047,33 +2069,33 @@ io.on('connection', (socket) => {
     }
     socket.join(game);
     if (reqRoomId && activeUserRooms.has(reqRoomId)) {
-        const currentRoom = activeUserRooms.get(reqRoomId);
-        if (currentRoom.privacy === 'private') {
-           const session = socket.request.session;
-           if (!session || !session.unlockedRooms || !session.unlockedRooms.includes(reqRoomId)) {
-               socket.emit(game + ':error', 'Oda sifreli veya erisim izniniz yok!');
-               socket.disconnect(true);
-               return;
-           }
-        }
-        socket.join(reqRoomId);
-        if (currentRoom.spectators) {
-          currentRoom.spectators.add(socket.id);
-          io.to(reqRoomId).emit('room:spectators', currentRoom.spectators.size);
-        }
-      }
+      socket.join(reqRoomId);
+    }
 
     // Bildirim soketi: sadece duyurulari dinler; oyuncu listesine/sohbete katilmaz.
     if (game === 'notify') return;
 
     onlinePlayers.set(socket.id, { userId: user.id, name, game });
 
-    // Clear any pending stands for this user across all games/rooms
-    for (const [key, timer] of pendingStands.entries()) {
-      if (key.startsWith(`${user.id}_`)) {
-        clearTimeout(timer);
-        pendingStands.delete(key);
-      }
+    const pendingStand = pendingStandTimers.get(user.id);
+    if (pendingStand) {
+      clearTimeout(pendingStand);
+      pendingStandTimers.delete(user.id);
+    }
+    const pendingStandTurkPoker = pendingStandTimersTurkPoker.get(user.id);
+    if (pendingStandTurkPoker) {
+      clearTimeout(pendingStandTurkPoker);
+      pendingStandTimersTurkPoker.delete(user.id);
+    }
+    const pendingStandOkey = pendingStandTimersOkey.get(user.id);
+    if (pendingStandOkey) {
+      clearTimeout(pendingStandOkey);
+      pendingStandTimersOkey.delete(user.id);
+    }
+    const pendingStand101 = pendingStandTimers101.get(user.id);
+    if (pendingStand101) {
+      clearTimeout(pendingStand101);
+      pendingStandTimers101.delete(user.id);
     }
 
     {
@@ -2082,7 +2104,8 @@ io.on('connection', (socket) => {
       socket.emit('poker:players', Array.from(uniqueByUser.values()));
     }
 
-    const history = await db.getRecentMessagesForChannels(CHANNELS, 50);
+    const history = {};
+    for (const ch of CHANNELS) history[ch] = await db.getRecentMessages(ch, 50);
     socket.emit('chat:history', history);
 
     broadcastPlayers();
@@ -2116,119 +2139,10 @@ io.on('connection', (socket) => {
       }, 1500);
       return;
     }
-
-    // Call it initially
-    setupGameHandlers(socket, user, game, reqRoomId);
-    
-    // Allow dynamic joining
-    socket.on('game:join', (payload) => {
-        if (!payload || !payload.game) return;
-        const newGame = payload.game;
-        const newRoomId = payload.roomId || null;
-        
-        // Leave any existing game rooms (starting with 'room_')
-        socket.rooms.forEach(r => {
-            if (r.startsWith('room_') && r !== newRoomId) {
-                socket.leave(r);
-            }
-        });
-
-        socket.join(newGame);
-        if (newRoomId) socket.join(newRoomId);
-        
-        // Setup handlers for the new game context
-        setupGameHandlers(socket, user, newGame, newRoomId);
-    });
-
-
-function setupGameHandlers(socket, user, game, reqRoomId) {
-  socket.removeAllListeners('okey101:addbot');
-  socket.removeAllListeners('okey101:chat_message');
-  socket.removeAllListeners('okey101:discard');
-  socket.removeAllListeners('okey101:draw');
-  socket.removeAllListeners('okey101:emote');
-  socket.removeAllListeners('okey101:fillbots');
-  socket.removeAllListeners('okey101:gift');
-  socket.removeAllListeners('okey101:join_random');
-  socket.removeAllListeners('okey101:leave_table');
-  socket.removeAllListeners('okey101:open');
-  socket.removeAllListeners('okey101:process');
-  socket.removeAllListeners('okey101:removebots');
-  socket.removeAllListeners('okey101:request_freeze');
-  socket.removeAllListeners('okey101:request_sync');
-  socket.removeAllListeners('okey101:send_like');
-  socket.removeAllListeners('okey101:showIndicator');
-  socket.removeAllListeners('okey101:sit');
-  socket.removeAllListeners('okey101:stand');
-  socket.removeAllListeners('okey101:swapJoker');
-  socket.removeAllListeners('okey101:undoDraw');
-  socket.removeAllListeners('okey:addbot');
-  socket.removeAllListeners('okey:discard');
-  socket.removeAllListeners('okey:draw');
-  socket.removeAllListeners('okey:emote');
-  socket.removeAllListeners('okey:fillbots');
-  socket.removeAllListeners('okey:finish');
-  socket.removeAllListeners('okey:gift');
-  socket.removeAllListeners('okey:removebots');
-  socket.removeAllListeners('okey:sit');
-  socket.removeAllListeners('okey:stand');
-  socket.removeAllListeners('table:action');
-  socket.removeAllListeners('table:emote');
-  socket.removeAllListeners('table:gift');
-  socket.removeAllListeners('table:sit');
-  socket.removeAllListeners('table:stand');
-  socket.removeAllListeners('turkpoker:sit');
-  socket.removeAllListeners('turkpoker:stand');
-  socket.removeAllListeners('turkpoker:action');
-  socket.removeAllListeners('turkpoker:draw');
-  socket.removeAllListeners('turkpoker:addbot');
-  socket.removeAllListeners('turkpoker:removebots');
-  socket.removeAllListeners('turkpoker:gift');
-  socket.removeAllListeners('turkpoker:emote');
-
-  const currentRoom = reqRoomId ? activeUserRooms.get(reqRoomId) : null;
     const currentTable101 = currentRoom ? currentRoom.table : okey101Table;
     const currentTableOkey = currentRoom ? currentRoom.table : okeyTable;
     const currentTablePoker = currentRoom ? currentRoom.table : table;
     const currentTableTurkPoker = currentRoom ? currentRoom.table : turkPokerTable;
-
-    // 2C: Generic Room Chat Handler
-    socket.on(game + ':chat_message', (payload) => {
-      if (!payload || !payload.text || typeof payload.text !== 'string') return;
-      const text = payload.text.trim().slice(0, 200);
-      if (!text) return;
-      io.to(reqRoomId || game).emit(game + ':chat', {
-        userId: user.id,
-        name: user.rumuz,
-        text: text,
-        timestamp: Date.now(),
-      });
-    });
-
-    socket.on('room:invite', (payload) => {
-      const targetUserId = payload.targetUserId;
-      if (!targetUserId || targetUserId === user.id) return;
-      if (!reqRoomId) return; // Must be in a room to invite
-
-      // Find all sockets for targetUserId
-      const targetSockets = [];
-      for (const [sid, p] of onlinePlayers.entries()) {
-        if (p.userId === targetUserId) {
-          targetSockets.push(sid);
-        }
-      }
-
-      if (targetSockets.length > 0) {
-        const inviteData = {
-          from: user.rumuz || user.username,
-          roomId: reqRoomId,
-          game: game
-        };
-        targetSockets.forEach(sid => {
-          io.to(sid).emit('room:invited', inviteData);
-        });
-      }
-    });
 
     if (game === 'poker') {
       socket.emit('table:state', currentTablePoker.getPublicState());
@@ -2238,13 +2152,6 @@ function setupGameHandlers(socket, user, game, reqRoomId) {
       }
 
       socket.on('table:sit', async (payload) => {
-        if (reqRoomId) {
-          const room = activeUserRooms.get(reqRoomId);
-          if (room && room.minBalance && user.lt_balance < room.minBalance) {
-            socket.emit('table:error', 'Bu masaya oturmak için en az ' + room.minBalance.toLocaleString('tr-TR') + ' LT bakiyeniz olmalıdır.');
-            return;
-          }
-        }
         const seatIndex = Number(payload && payload.seatIndex);
         const res = await currentTablePoker.sit(user, seatIndex);
         if (res.error) socket.emit('table:error', res.error);
@@ -2286,16 +2193,8 @@ function setupGameHandlers(socket, user, game, reqRoomId) {
       }
 
       socket.on('turkpoker:sit', async (payload) => {
-        if (reqRoomId) {
-          const room = activeUserRooms.get(reqRoomId);
-          if (room && room.minBalance && user.lt_balance < room.minBalance) {
-            socket.emit('turkpoker:error', 'Bu masaya oturmak için en az ' + room.minBalance.toLocaleString('tr-TR') + ' LT bakiyeniz olmalıdır.');
-            return;
-          }
-        }
         const seatIndex = Number(payload && payload.seatIndex);
-        const clientIp = socket.handshake.headers['x-forwarded-for'] || socket.request.connection.remoteAddress;
-          const res = await currentTableTurkPoker.sit(user, seatIndex, clientIp);
+        const res = await currentTableTurkPoker.sit(user, seatIndex);
         if (res.error) socket.emit('turkpoker:error', res.error);
         if (reqRoomId) checkUserRoomCleanup(reqRoomId);
       });
@@ -2313,7 +2212,7 @@ function setupGameHandlers(socket, user, game, reqRoomId) {
       });
       
       socket.on('turkpoker:draw', (payload) => {
-        const res = currentTableTurkPoker.handleAction(user.id, 'discard', payload && payload.discards);
+        const res = currentTableTurkPoker.handleDraw(user.id, payload && payload.discards);
         if (res.error) socket.emit('turkpoker:error', res.error);
       });
 
@@ -2355,13 +2254,6 @@ function setupGameHandlers(socket, user, game, reqRoomId) {
       }
 
       socket.on('okey:sit', async (payload) => {
-        if (reqRoomId) {
-          const room = activeUserRooms.get(reqRoomId);
-          if (room && room.minBalance && user.lt_balance < room.minBalance) {
-            socket.emit('okey:error', 'Bu masaya oturmak için en az ' + room.minBalance.toLocaleString('tr-TR') + ' LT bakiyeniz olmalıdır.');
-            return;
-          }
-        }
         const seatIndex = Number(payload && payload.seatIndex);
         const res = await currentTableOkey.sit(user, seatIndex);
         if (res.error) socket.emit('okey:error', res.error);
@@ -2435,40 +2327,11 @@ function setupGameHandlers(socket, user, game, reqRoomId) {
       // ---- 101 Okey ----
       socket.emit('okey101:state', currentTable101.getPublicState());
       const mySeat101 = currentTable101.seats.find((s) => s && s.userId === user.id);
-      if (mySeat101) {
-        // Reconnect: leavingAfterHand flag'ini temizle (BUG-F)
-        mySeat101.leavingAfterHand = false;
-        if (mySeat101.tiles.length) {
-          socket.emit('okey101:tiles', mySeat101.tiles);
-        }
+      if (mySeat101 && mySeat101.tiles.length) {
+        socket.emit('okey101:tiles', mySeat101.tiles);
       }
-      socket.emit('okey101:reconnect');
-
-      
-      socket.on('okey101:leave_table', () => {
-        if (currentTable101) {
-          const res = currentTable101.stand(user.id);
-          if (res.error) console.log('Stand error on leave:', res.error);
-        }
-        if (reqRoomId) {
-          socket.leave(reqRoomId);
-          checkUserRoomCleanup(reqRoomId);
-        }
-      });
-      socket.on('okey101:join_random', () => {});
-      socket.on('okey101:send_like', () => {});
-      socket.on('okey101:request_sync', () => {});
-      socket.on('okey101:request_freeze', () => {});
-
 
       socket.on('okey101:sit', async (payload) => {
-        if (reqRoomId) {
-          const room = activeUserRooms.get(reqRoomId);
-          if (room && room.minBalance && user.lt_balance < room.minBalance) {
-            socket.emit('okey101:error', 'Bu masaya oturmak için en az ' + room.minBalance.toLocaleString('tr-TR') + ' LT bakiyeniz olmalıdır.');
-            return;
-          }
-        }
         const seatIndex = Number(payload && payload.seatIndex);
         const res = await currentTable101.sit(user, seatIndex);
         if (res.error) socket.emit('okey101:error', res.error);
@@ -2479,11 +2342,6 @@ function setupGameHandlers(socket, user, game, reqRoomId) {
         const res = currentTable101.stand(user.id);
         if (res.error) socket.emit('okey101:error', res.error);
         if (reqRoomId) checkUserRoomCleanup(reqRoomId);
-      });
-
-      socket.on('okey101:showIndicator', () => {
-        const res = currentTable101.handleShowIndicator(user.id);
-        if (res && res.error) socket.emit('okey101:error', res.error);
       });
 
       socket.on('okey101:draw', (payload) => {
@@ -2500,17 +2358,22 @@ function setupGameHandlers(socket, user, game, reqRoomId) {
         if (res.error) socket.emit('okey101:error', res.error);
       });
 
+      socket.on('okey101:showIndicator', () => {
+        const res = currentTable101.handleShowIndicator(user.id);
+        if (res && res.error) socket.emit('okey101:error', res.error);
+      });
+
       socket.on('okey101:process', (payload) => {
-        const res = currentTable101.handleProcess({
-          userId: user.id,
-          tileId: payload && payload.tileId,
-          meldId: payload && payload.meldId,
-          targetJokerId: payload && payload.targetJokerId
-        });
+        const res = currentTable101.handleProcess(
+          user.id,
+          payload && payload.tileId,
+          payload && payload.meldId,
+          payload && payload.targetJokerId
+        );
         if (res.error) {
           socket.emit('okey101:error', res.error);
         } else if (res.jokerStolen) {
-          io.to(reqRoomId || 'okey101').emit('okey101:jokerStolen', {
+          io.to(`okey101_${tableId}`).emit('okey101:jokerStolen', {
             userId: user.id,
             meldId: res.meldId
           });
@@ -2519,17 +2382,6 @@ function setupGameHandlers(socket, user, game, reqRoomId) {
 
       socket.on('okey101:discard', (payload) => {
         const res = currentTable101.handleDiscard(user.id, payload && payload.tileId);
-        if (res.error) socket.emit('okey101:error', res.error);
-      });
-
-      socket.on('okey101:swapJoker', (payload) => {
-        if (!payload) return;
-        const res = currentTable101.handleSwapJoker(user.id, payload.meldId, payload.tileId);
-        if (res.error) socket.emit('okey101:error', res.error);
-      });
-
-      socket.on('okey101:undoDraw', () => {
-        const res = currentTable101.handleUndoDraw(user.id);
         if (res.error) socket.emit('okey101:error', res.error);
       });
 
@@ -2577,8 +2429,6 @@ function setupGameHandlers(socket, user, game, reqRoomId) {
       });
     }
 
-
-}
     socket.on('chat:message', async (payload) => {
       if (!payload || typeof payload.text !== 'string') return;
       const channel = payload.channel;
@@ -2606,28 +2456,32 @@ function setupGameHandlers(socket, user, game, reqRoomId) {
         systemMessage(`${name} masadan ayrildi.`, game).catch(console.error);
       }
       const stillConnected = Array.from(onlinePlayers.values()).some((p) => p.userId === user.id);
-      let currentTable = null;
-      if (reqRoomId && activeUserRooms.has(reqRoomId)) {
-        const currentRoom = activeUserRooms.get(reqRoomId);
-        currentTable = currentRoom.table;
-        if (currentRoom.spectators && currentRoom.spectators.has(socket.id)) {
-          currentRoom.spectators.delete(socket.id);
-          io.to(reqRoomId).emit('room:spectators', currentRoom.spectators.size);
-        }
-      } else {
-        if (game === 'poker') currentTable = table;
-        else if (game === 'turkpoker') currentTable = turkPokerTable;
-        else if (game === 'okey') currentTable = okeyTable;
-        else if (game === 'okey101') currentTable = okey101Table;
+      if (!stillConnected && game === 'poker' && table.findSeatByUser(user.id) !== -1) {
+        const timer = setTimeout(() => {
+          pendingStandTimers.delete(user.id);
+          table.stand(user.id).catch(console.error);
+        }, RECONNECT_GRACE_MS);
+        pendingStandTimers.set(user.id, timer);
       }
-
-      if (currentTable) {
-        if (!stillConnected) {
-          handleDisconnectGracePeriod(currentTable, game, user.id, reqRoomId);
-        } else if (reqRoomId) {
-          currentTable.stand(user.id);
-          checkUserRoomCleanup(reqRoomId);
-        }
+      if (!stillConnected && game === 'turkpoker' && turkPokerTable.findSeatByUser(user.id) !== -1) {
+        const timer = setTimeout(() => {
+          pendingStandTimersTurkPoker.delete(user.id);
+          turkPokerTable.stand(user.id).catch(console.error);
+        }, RECONNECT_GRACE_MS);
+        pendingStandTimersTurkPoker.set(user.id, timer);
+      }
+      if (!stillConnected && game === 'okey' && okeyTable.findSeatByUser(user.id) !== -1) {
+        const timer = setTimeout(() => {
+          pendingStandTimersOkey.delete(user.id);
+          const res = okeyTable.stand(user.id);
+          if (res.error) console.error('Okey otomatik kalkma hatasi:', res.error);
+        }, RECONNECT_GRACE_MS);
+        pendingStandTimersOkey.set(user.id, timer);
+      }
+      if (reqRoomId && activeUserRooms.has(reqRoomId)) {
+        const room = activeUserRooms.get(reqRoomId);
+        room.table.stand(user.id);
+        checkUserRoomCleanup(reqRoomId);
       }
     });
   })().catch((err) => {
@@ -2642,14 +2496,14 @@ async function refundSeatedPlayers() {
       const amount = seat.stack;
       seat.stack = 0;
       await db.adjustLt(seat.userId, amount);
-
+      console.log(`Sunucu kapanirken ${seat.name} adli oyuncuya ${amount} LT iade edildi.`);
     }
   }
 }
 
 app.use((err, req, res, next) => {
   writeStartupLog(`Route hatasi: ${req.method} ${req.url}`, err);
-  res.status(500).json({ error: 'Sunucu hatası oluştu.' });
+  next(err);
 });
 
 function gracefulShutdown() {
@@ -2669,16 +2523,226 @@ setInterval(async () => {
     lastCheckedDate = currentDate;
     try {
       await db.clearNonFixedDailyTasks();
+      console.log('Yeni gün başladı: Sabit olmayan günlük görevler temizlendi.');
     } catch (err) {
       console.error('Günlük görevleri temizlerken hata:', err);
     }
   }
 }, 60 * 1000); // Her dakika kontrol et
 
+async function initSystemPokerRooms() {
+  try {
+    const config = await db.getPokerConfig();
+    const tableCount = config ? config.table_count : 10;
+    
+    // Açık Poker Masaları
+    for (let i = 1; i <= tableCount; i++) {
+      const roomId = 'room_poker_sys_' + i;
+      const tableInstance = new PokerTable();
+      tableInstance.stake = 500;
+      tableInstance.gameMode = 'Tek';
+      tableInstance.gameType = 'Katlamasız';
+      
+      const roomObj = {
+        id: roomId,
+        game: 'poker',
+        title: `Masa ${i}`,
+        stake: 500,
+        mode: 'solo',
+        privacy: 'public',
+        password: '',
+        creatorId: 0,
+        creatorName: 'Sistem',
+        table: tableInstance,
+        createdAt: Date.now(),
+        isSystem: true
+      };
+      
+      activeUserRooms.set(roomId, roomObj);
+      wireTableEvents(tableInstance, 'poker', roomId);
+    }
+    
+    // Türk Pokeri Masaları
+    for (let i = 1; i <= tableCount; i++) {
+      const roomId = 'room_turkpoker_sys_' + i;
+      const tableInstance = new TurkPokerTable();
+      tableInstance.stake = 500;
+      tableInstance.gameMode = 'Tek';
+      tableInstance.gameType = 'Katlamasız';
+      
+      const roomObj = {
+        id: roomId,
+        game: 'turkpoker',
+        title: `Masa ${i}`,
+        stake: 500,
+        mode: 'solo',
+        privacy: 'public',
+        password: '',
+        creatorId: 0,
+        creatorName: 'Sistem',
+        table: tableInstance,
+        createdAt: Date.now(),
+        isSystem: true
+      };
+      
+      activeUserRooms.set(roomId, roomObj);
+      wireTableEvents(tableInstance, 'turkpoker', roomId);
+    }
+
+    // 101 Okey Masaları
+    for (let i = 1; i <= tableCount; i++) {
+      const roomId = 'room_okey101_sys_' + i;
+      const tableInstance = new Okey101Table();
+      tableInstance.stake = 500;
+      
+      const roomObj = {
+        id: roomId,
+        game: 'okey101',
+        title: `Masa ${i}`,
+        stake: 500,
+        mode: 'solo',
+        privacy: 'public',
+        password: '',
+        creatorId: 0,
+        creatorName: 'Sistem',
+        table: tableInstance,
+        createdAt: Date.now(),
+        isSystem: true
+      };
+      
+      activeUserRooms.set(roomId, roomObj);
+      wireTableEvents(tableInstance, 'okey101', roomId);
+    }
+
+    // Düz Okey Masaları
+    for (let i = 1; i <= tableCount; i++) {
+      const roomId = 'room_okey_sys_' + i;
+      const tableInstance = new OkeyTable();
+      tableInstance.stake = 500;
+      
+      const roomObj = {
+        id: roomId,
+        game: 'okey',
+        title: `Masa ${i}`,
+        stake: 500,
+        mode: 'solo',
+        privacy: 'public',
+        password: '',
+        creatorId: 0,
+        creatorName: 'Sistem',
+        table: tableInstance,
+        createdAt: Date.now(),
+        isSystem: true
+      };
+      
+      activeUserRooms.set(roomId, roomObj);
+      wireTableEvents(tableInstance, 'okey', roomId);
+    }
+    console.log(`${tableCount} adet sabit Oyun (Poker, Türk Pokeri, Okey 101, Okey) masası oluşturuldu.`);
+  } catch (err) {
+    console.error('Sistem oyun masaları oluşturulamadı:', err);
+  }
+}
+
+async function reinitSystemPokerRooms(newCount) {
+  try {
+    const currentRooms = Array.from(activeUserRooms.keys());
+    const sysPokerRooms = currentRooms.filter(id => id.startsWith('room_poker_sys_'));
+    const sysTurkPokerRooms = currentRooms.filter(id => id.startsWith('room_turkpoker_sys_'));
+    const sysOkey101Rooms = currentRooms.filter(id => id.startsWith('room_okey101_sys_'));
+    const sysOkeyRooms = currentRooms.filter(id => id.startsWith('room_okey_sys_'));
+
+    for (let i = 1; i <= Math.max(newCount, sysPokerRooms.length); i++) {
+      const roomId = 'room_poker_sys_' + i;
+      if (i <= newCount && !activeUserRooms.has(roomId)) {
+        const tableInstance = new PokerTable();
+        tableInstance.stake = 500;
+        tableInstance.gameMode = 'Tek';
+        tableInstance.gameType = 'Katlamasız';
+        const roomObj = {
+          id: roomId, game: 'poker', title: `Masa ${i}`, stake: 500, mode: 'solo', privacy: 'public', password: '', creatorId: 0, creatorName: 'Sistem', table: tableInstance, createdAt: Date.now(), isSystem: true
+        };
+        activeUserRooms.set(roomId, roomObj);
+        wireTableEvents(tableInstance, 'poker', roomId);
+      } else if (i > newCount && activeUserRooms.has(roomId)) {
+        const room = activeUserRooms.get(roomId);
+        if (room && room.table.seats.filter(s => s && !s.isBot).length === 0) {
+           activeUserRooms.delete(roomId);
+        }
+      }
+    }
+
+    for (let i = 1; i <= Math.max(newCount, sysTurkPokerRooms.length); i++) {
+      const roomId = 'room_turkpoker_sys_' + i;
+      if (i <= newCount && !activeUserRooms.has(roomId)) {
+        const tableInstance = new TurkPokerTable();
+        tableInstance.stake = 500;
+        tableInstance.gameMode = 'Tek';
+        tableInstance.gameType = 'Katlamasız';
+        const roomObj = {
+          id: roomId, game: 'turkpoker', title: `Masa ${i}`, stake: 500, mode: 'solo', privacy: 'public', password: '', creatorId: 0, creatorName: 'Sistem', table: tableInstance, createdAt: Date.now(), isSystem: true
+        };
+        activeUserRooms.set(roomId, roomObj);
+        wireTableEvents(tableInstance, 'turkpoker', roomId);
+      } else if (i > newCount && activeUserRooms.has(roomId)) {
+        const room = activeUserRooms.get(roomId);
+        if (room && room.table.seats.filter(s => s && !s.isBot).length === 0) {
+           activeUserRooms.delete(roomId);
+        }
+      }
+    }
+    
+    for (let i = 1; i <= Math.max(newCount, sysOkey101Rooms.length); i++) {
+      const roomId = 'room_okey101_sys_' + i;
+      if (i <= newCount && !activeUserRooms.has(roomId)) {
+        const tableInstance = new Okey101Table();
+        tableInstance.stake = 500;
+        const roomObj = {
+          id: roomId, game: 'okey101', title: `Masa ${i}`, stake: 500, mode: 'solo', privacy: 'public', password: '', creatorId: 0, creatorName: 'Sistem', table: tableInstance, createdAt: Date.now(), isSystem: true
+        };
+        activeUserRooms.set(roomId, roomObj);
+        wireTableEvents(tableInstance, 'okey101', roomId);
+      } else if (i > newCount && activeUserRooms.has(roomId)) {
+        const room = activeUserRooms.get(roomId);
+        if (room && room.table.seats.filter(s => s && !s.isBot).length === 0) {
+           activeUserRooms.delete(roomId);
+        }
+      }
+    }
+    
+    for (let i = 1; i <= Math.max(newCount, sysOkeyRooms.length); i++) {
+      const roomId = 'room_okey_sys_' + i;
+      if (i <= newCount && !activeUserRooms.has(roomId)) {
+        const tableInstance = new OkeyTable();
+        tableInstance.stake = 500;
+        const roomObj = {
+          id: roomId, game: 'okey', title: `Masa ${i}`, stake: 500, mode: 'solo', privacy: 'public', password: '', creatorId: 0, creatorName: 'Sistem', table: tableInstance, createdAt: Date.now(), isSystem: true
+        };
+        activeUserRooms.set(roomId, roomObj);
+        wireTableEvents(tableInstance, 'okey', roomId);
+      } else if (i > newCount && activeUserRooms.has(roomId)) {
+        const room = activeUserRooms.get(roomId);
+        if (room && room.table.seats.filter(s => s && !s.isBot).length === 0) {
+           activeUserRooms.delete(roomId);
+        }
+      }
+    }
+
+    broadcastUserRooms('poker');
+    broadcastUserRooms('turkpoker');
+    broadcastUserRooms('okey101');
+    broadcastUserRooms('okey');
+    console.log(`Sistem masaları yeniden düzenlendi. Yeni limit: ${newCount}`);
+  } catch (err) {
+    console.error('Sistem oyun masaları güncellenemedi:', err);
+  }
+}
+
 db.init()
-  .then(() => {
+  .then(async () => {
+    await initSystemPokerRooms();
     server.listen(PORT, () => {
-      console.log('Sunucu calisiyor: port ' + PORT);
+      console.log(`LOOTIV sunucusu ${PORT} portunda çalışıyor`);
     });
   })
   .catch((err) => {

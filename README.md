@@ -43,9 +43,9 @@ Uc plan var, hepsi admin panelinden (`/admin` > kullanici satirindaki VIP secimi
 
 | Plan | Sure | Aninda LT | Haftalik LT |
 |------|------|-----------|-------------|
-| VIP 1 | 1 ay | 10.000 | 10.000 |
-| VIP 2 | 6 ay | 15.000 | 15.000 |
-| VIP 3 | 12 ay | 20.000 | 20.000 |
+| Bronz Paket | 1 ay | 10.000 | 10.000 |
+| Gümüş Paket | 6 ay | 15.000 | 15.000 |
+| Altın Paket | 12 ay | 20.000 | 20.000 |
 
 Haftalik LT eklemesi, kullanicinin her istek atmasinda (`attachUser` middleware) veritabanindaki son ekleme tarihine bakilarak otomatik hesaplanir — sunucu yeniden baslasa veya bir sure kapali kalsa bile kaldigi yerden devam eder, ayri bir zamanlayici surecine ihtiyac yoktur. Sure dolunca VIP otomatik kaldirilir.
 

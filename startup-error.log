@@ -463,3 +463,145 @@ TypeError: db.getUserProfile is not a function
     at next (/home/ydemir/workspace/LOOTV1/node_modules/express/lib/router/route.js:149:13)
     at /home/ydemir/workspace/LOOTV1/server.js:123:3
     at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+
+[2026-08-14T11:25:42.013Z] uncaughtException
+Error: Cannot find module 'dotenv'
+Require stack:
+- C:\Users\eness\Desktop\LOOTIV\server.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1456:15)
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1066:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1071:22)
+    at Module._load (node:internal/modules/cjs/loader:1242:25)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+    at Module.require (node:internal/modules/cjs/loader:1556:12)
+    at require (node:internal/modules/helpers:152:16)
+    at Object.<anonymous> (C:\Users\eness\Desktop\LOOTIV\server.js:22:1)
+    at Module._compile (node:internal/modules/cjs/loader:1812:14)
+    at Object..js (node:internal/modules/cjs/loader:1943:10)
+
+[2026-08-14T11:26:15.704Z] Veritabani baslatilamadi
+error: database "lootiv" does not exist
+    at C:\Users\eness\Desktop\LOOTIV\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Object.init (C:\Users\eness\Desktop\LOOTIV\lib\db.js:26:3)
+
+[2026-08-14T11:27:43.983Z] Route hatasi: GET /oyun/okey101
+ReferenceError: C:\Users\eness\Desktop\LOOTIV\views\salon.ejs:108
+    106|         
+    107|         <!-- Oyuncu İstatistikleri -->
+ >> 108|         <% if (userStats) { %>
+    109|         <div class="bg-surface-container-lowest rounded-xl border border-outline-variant/30 shadow-sm p-4">
+    110|           <h3 class="font-headline-sm text-on-surface mb-3 flex items-center gap-2">
+    111|             <span class="material-symbols-outlined text-primary">analytics</span> İstatistiklerim
+
+userStats is not defined
+    at eval ("C:\\Users\\eness\\Desktop\\LOOTIV\\views\\salon.ejs":48:8)
+    at salon (C:\Users\eness\Desktop\LOOTIV\node_modules\ejs\lib\ejs.js:703:17)
+    at tryHandleCache (C:\Users\eness\Desktop\LOOTIV\node_modules\ejs\lib\ejs.js:274:36)
+    at exports.renderFile [as engine] (C:\Users\eness\Desktop\LOOTIV\node_modules\ejs\lib\ejs.js:491:10)
+    at View.render (C:\Users\eness\Desktop\LOOTIV\node_modules\express\lib\view.js:135:8)
+    at tryRender (C:\Users\eness\Desktop\LOOTIV\node_modules\express\lib\application.js:657:10)
+    at app.render (C:\Users\eness\Desktop\LOOTIV\node_modules\express\lib\application.js:609:3)
+    at ServerResponse.render (C:\Users\eness\Desktop\LOOTIV\node_modules\express\lib\response.js:1049:7)
+    at C:\Users\eness\Desktop\LOOTIV\server.js:1039:7
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+
+[2026-08-14T11:28:01.326Z] Route hatasi: GET /oyun/okey101
+ReferenceError: C:\Users\eness\Desktop\LOOTIV\views\salon.ejs:108
+    106|         
+    107|         <!-- Oyuncu İstatistikleri -->
+ >> 108|         <% if (userStats) { %>
+    109|         <div class="bg-surface-container-lowest rounded-xl border border-outline-variant/30 shadow-sm p-4">
+    110|           <h3 class="font-headline-sm text-on-surface mb-3 flex items-center gap-2">
+    111|             <span class="material-symbols-outlined text-primary">analytics</span> İstatistiklerim
+
+userStats is not defined
+    at eval ("C:\\Users\\eness\\Desktop\\LOOTIV\\views\\salon.ejs":48:8)
+    at salon (C:\Users\eness\Desktop\LOOTIV\node_modules\ejs\lib\ejs.js:703:17)
+    at tryHandleCache (C:\Users\eness\Desktop\LOOTIV\node_modules\ejs\lib\ejs.js:274:36)
+    at exports.renderFile [as engine] (C:\Users\eness\Desktop\LOOTIV\node_modules\ejs\lib\ejs.js:491:10)
+    at View.render (C:\Users\eness\Desktop\LOOTIV\node_modules\express\lib\view.js:135:8)
+    at tryRender (C:\Users\eness\Desktop\LOOTIV\node_modules\express\lib\application.js:657:10)
+    at app.render (C:\Users\eness\Desktop\LOOTIV\node_modules\express\lib\application.js:609:3)
+    at ServerResponse.render (C:\Users\eness\Desktop\LOOTIV\node_modules\express\lib\response.js:1049:7)
+    at C:\Users\eness\Desktop\LOOTIV\server.js:1039:7
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+
+[2026-08-14T11:28:03.149Z] Route hatasi: GET /oyun/okey
+ReferenceError: C:\Users\eness\Desktop\LOOTIV\views\salon.ejs:108
+    106|         
+    107|         <!-- Oyuncu İstatistikleri -->
+ >> 108|         <% if (userStats) { %>
+    109|         <div class="bg-surface-container-lowest rounded-xl border border-outline-variant/30 shadow-sm p-4">
+    110|           <h3 class="font-headline-sm text-on-surface mb-3 flex items-center gap-2">
+    111|             <span class="material-symbols-outlined text-primary">analytics</span> İstatistiklerim
+
+userStats is not defined
+    at eval ("C:\\Users\\eness\\Desktop\\LOOTIV\\views\\salon.ejs":48:8)
+    at salon (C:\Users\eness\Desktop\LOOTIV\node_modules\ejs\lib\ejs.js:703:17)
+    at tryHandleCache (C:\Users\eness\Desktop\LOOTIV\node_modules\ejs\lib\ejs.js:274:36)
+    at exports.renderFile [as engine] (C:\Users\eness\Desktop\LOOTIV\node_modules\ejs\lib\ejs.js:491:10)
+    at View.render (C:\Users\eness\Desktop\LOOTIV\node_modules\express\lib\view.js:135:8)
+    at tryRender (C:\Users\eness\Desktop\LOOTIV\node_modules\express\lib\application.js:657:10)
+    at app.render (C:\Users\eness\Desktop\LOOTIV\node_modules\express\lib\application.js:609:3)
+    at ServerResponse.render (C:\Users\eness\Desktop\LOOTIV\node_modules\express\lib\response.js:1049:7)
+    at C:\Users\eness\Desktop\LOOTIV\server.js:1039:7
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+
+[2026-08-14T11:28:06.653Z] Route hatasi: GET /oyun/okey101
+ReferenceError: C:\Users\eness\Desktop\LOOTIV\views\salon.ejs:108
+    106|         
+    107|         <!-- Oyuncu İstatistikleri -->
+ >> 108|         <% if (userStats) { %>
+    109|         <div class="bg-surface-container-lowest rounded-xl border border-outline-variant/30 shadow-sm p-4">
+    110|           <h3 class="font-headline-sm text-on-surface mb-3 flex items-center gap-2">
+    111|             <span class="material-symbols-outlined text-primary">analytics</span> İstatistiklerim
+
+userStats is not defined
+    at eval ("C:\\Users\\eness\\Desktop\\LOOTIV\\views\\salon.ejs":48:8)
+    at salon (C:\Users\eness\Desktop\LOOTIV\node_modules\ejs\lib\ejs.js:703:17)
+    at tryHandleCache (C:\Users\eness\Desktop\LOOTIV\node_modules\ejs\lib\ejs.js:274:36)
+    at exports.renderFile [as engine] (C:\Users\eness\Desktop\LOOTIV\node_modules\ejs\lib\ejs.js:491:10)
+    at View.render (C:\Users\eness\Desktop\LOOTIV\node_modules\express\lib\view.js:135:8)
+    at tryRender (C:\Users\eness\Desktop\LOOTIV\node_modules\express\lib\application.js:657:10)
+    at app.render (C:\Users\eness\Desktop\LOOTIV\node_modules\express\lib\application.js:609:3)
+    at ServerResponse.render (C:\Users\eness\Desktop\LOOTIV\node_modules\express\lib\response.js:1049:7)
+    at C:\Users\eness\Desktop\LOOTIV\server.js:1039:7
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+
+[2026-08-14T11:28:45.831Z] Route hatasi: GET /oyun/okey101
+ReferenceError: C:\Users\eness\Desktop\LOOTIV\views\salon.ejs:108
+    106|         
+    107|         <!-- Oyuncu İstatistikleri -->
+ >> 108|         <% if (userStats) { %>
+    109|         <div class="bg-surface-container-lowest rounded-xl border border-outline-variant/30 shadow-sm p-4">
+    110|           <h3 class="font-headline-sm text-on-surface mb-3 flex items-center gap-2">
+    111|             <span class="material-symbols-outlined text-primary">analytics</span> İstatistiklerim
+
+userStats is not defined
+    at eval ("C:\\Users\\eness\\Desktop\\LOOTIV\\views\\salon.ejs":48:8)
+    at salon (C:\Users\eness\Desktop\LOOTIV\node_modules\ejs\lib\ejs.js:703:17)
+    at tryHandleCache (C:\Users\eness\Desktop\LOOTIV\node_modules\ejs\lib\ejs.js:274:36)
+    at exports.renderFile [as engine] (C:\Users\eness\Desktop\LOOTIV\node_modules\ejs\lib\ejs.js:491:10)
+    at View.render (C:\Users\eness\Desktop\LOOTIV\node_modules\express\lib\view.js:135:8)
+    at tryRender (C:\Users\eness\Desktop\LOOTIV\node_modules\express\lib\application.js:657:10)
+    at app.render (C:\Users\eness\Desktop\LOOTIV\node_modules\express\lib\application.js:609:3)
+    at ServerResponse.render (C:\Users\eness\Desktop\LOOTIV\node_modules\express\lib\response.js:1049:7)
+    at C:\Users\eness\Desktop\LOOTIV\server.js:1039:7
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+
+[2026-08-14T11:32:40.019Z] uncaughtException
+Error: listen EADDRINUSE: address already in use :::3000
+    at Server.setupListenHandle [as _listen2] (node:net:1948:16)
+    at listenInCluster (node:net:2005:12)
+    at Server.listen (node:net:2110:7)
+    at C:\Users\eness\Desktop\LOOTIV\server.js:2709:12
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+
+[2026-08-14T12:33:27.165Z] uncaughtException
+Error: listen EADDRINUSE: address already in use :::3000
+    at Server.setupListenHandle [as _listen2] (node:net:1948:16)
+    at listenInCluster (node:net:2005:12)
+    at Server.listen (node:net:2110:7)
+    at C:\Users\eness\Desktop\LOOTIV\server.js:2718:12
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
